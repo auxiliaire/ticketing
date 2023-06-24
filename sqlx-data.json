@@ -1,5 +1,5 @@
 {
-    "db": "SQLite",
+    "db": "MySql",
     "37f60f5043e079d3f461629d5c2611a2bbdda0ed35bb98878a4eb36cdfc01263": {
       "describe": {
         "columns": [],

@@ -1,20 +1,20 @@
 use anyhow::Context;
 use axum::{Extension, Router};
 use http::Method;
-use sqlx::SqlitePool;
+use sqlx::MySqlPool;
 use tower_http::cors::{Any, CorsLayer};
 
 pub mod error;
 pub mod tickets;
 
-pub async fn serve(db: SqlitePool) -> anyhow::Result<()> {
+pub async fn serve(db: MySqlPool) -> anyhow::Result<()> {
     axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
         .serve(router(db).into_make_service())
         .await
         .context("failed to serve API")
 }
 
-pub fn router(db: SqlitePool) -> Router {
+pub fn router(db: MySqlPool) -> Router {
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
         .allow_headers(Any)

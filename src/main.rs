@@ -1,14 +1,14 @@
 mod api;
 
 use anyhow::Context;
-use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::mysql::MySqlPoolOptions;
 
 #[tokio::main]
 async fn main() {
     let database_url = dotenvy::var("DATABASE_URL")
         .context("DATABASE_URL must be set")
         .unwrap();
-    let pool = SqlitePoolOptions::new()
+    let pool = MySqlPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
         .await

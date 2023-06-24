@@ -6,7 +6,7 @@ use axum::{
     Extension, Router,
 };
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::MySqlPool;
 
 use crate::api::error;
 
@@ -23,7 +23,7 @@ pub fn router() -> Router {
 }
 
 async fn get_tickets(
-    pool: Extension<SqlitePool>,
+    pool: Extension<MySqlPool>,
     param: Result<Path<i64>, PathRejection>,
 ) -> impl IntoResponse {
     match param {
@@ -45,7 +45,7 @@ async fn get_tickets(
 }
 
 async fn post_tickets(
-    pool: Extension<SqlitePool>,
+    pool: Extension<MySqlPool>,
     payload: Result<Json<Ticket>, JsonRejection>,
 ) -> impl IntoResponse {
     match payload {
