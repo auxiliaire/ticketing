@@ -12,7 +12,7 @@ use crate::api::error;
 
 #[derive(Serialize, Deserialize, sqlx::FromRow, sqlx::Decode)]
 pub struct Ticket {
-    id: i64,
+    id: u64,
     title: String,
 }
 
@@ -24,11 +24,11 @@ pub fn router() -> Router {
 
 async fn get_tickets(
     pool: Extension<MySqlPool>,
-    param: Result<Path<i64>, PathRejection>,
+    param: Result<Path<u64>, PathRejection>,
 ) -> impl IntoResponse {
     match param {
         Ok(path) => {
-            let result = sqlx::query_as!(Ticket, "SELECT * FROM tickets WHERE id = $1", path.0)
+            let result = sqlx::query_as!(Ticket, "SELECT * FROM tickets WHERE id = ?", path.0)
                 .fetch_one(&*pool)
                 .await;
             match result {
@@ -51,12 +51,12 @@ async fn post_tickets(
     match payload {
         Ok(ticket) => {
             println!("Ticket({}): '{}'", ticket.id, ticket.title);
-            let result = sqlx::query!("INSERT INTO tickets (title) VALUES ($1)", ticket.title)
+            let result = sqlx::query!("INSERT INTO tickets (title) VALUES (?)", ticket.title)
                 .execute(&*pool)
                 .await;
             match result {
                 Ok(r) => Json(Ticket {
-                    id: r.last_insert_rowid(),
+                    id: r.last_insert_id(),
                     title: String::from(ticket.title.as_str()),
                 })
                 .into_response(),

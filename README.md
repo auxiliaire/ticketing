@@ -33,7 +33,7 @@ This is an integrated Rust backend and frontend (with Yew) example.
 
 ## Starting
 
-```
+```bash
 rustup override set nightly
-touch dev.sqlite
+cargo -Z unstable-options -C ./ watch -c -w src -x run
 ```
