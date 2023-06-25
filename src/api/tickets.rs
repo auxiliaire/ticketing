@@ -5,13 +5,14 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
+use entity::tickets::{self, Entity as Ticket};
+use sea_orm::{DatabaseConnection, EntityTrait, Set};
 use serde::{Deserialize, Serialize};
-use sqlx::MySqlPool;
 
 use crate::api::error;
 
-#[derive(Serialize, Deserialize, sqlx::FromRow, sqlx::Decode)]
-pub struct Ticket {
+#[derive(Serialize, Deserialize)]
+pub struct TicketDto {
     id: u64,
     title: String,
 }
@@ -23,16 +24,24 @@ pub fn router() -> Router {
 }
 
 async fn get_tickets(
-    pool: Extension<MySqlPool>,
+    db: Extension<DatabaseConnection>,
     param: Result<Path<u64>, PathRejection>,
 ) -> impl IntoResponse {
     match param {
         Ok(path) => {
-            let result = sqlx::query_as!(Ticket, "SELECT * FROM tickets WHERE id = ?", path.0)
-                .fetch_one(&*pool)
-                .await;
+            let result = Ticket::find_by_id(path.0).one(&*db).await;
             match result {
-                Ok(ticket) => Json(ticket).into_response(),
+                Ok(model) => match model {
+                    Some(ticket) => Json(TicketDto {
+                        id: ticket.id,
+                        title: ticket.title,
+                    })
+                    .into_response(),
+                    None => {
+                        error::to_uniform_response(StatusCode::NOT_FOUND, String::from("Not found"))
+                            .into_response()
+                    }
+                },
                 Err(e) => {
                     error::to_uniform_response(StatusCode::NOT_FOUND, e.to_string()).into_response()
                 }
@@ -45,19 +54,21 @@ async fn get_tickets(
 }
 
 async fn post_tickets(
-    pool: Extension<MySqlPool>,
-    payload: Result<Json<Ticket>, JsonRejection>,
+    db: Extension<DatabaseConnection>,
+    payload: Result<Json<TicketDto>, JsonRejection>,
 ) -> impl IntoResponse {
     match payload {
-        Ok(ticket) => {
-            println!("Ticket({}): '{}'", ticket.id, ticket.title);
-            let result = sqlx::query!("INSERT INTO tickets (title) VALUES (?)", ticket.title)
-                .execute(&*pool)
-                .await;
+        Ok(ticket_dto) => {
+            println!("Ticket({}): '{}'", ticket_dto.id, ticket_dto.title);
+            let ticket = tickets::ActiveModel {
+                title: Set(ticket_dto.title.to_owned()),
+                ..Default::default()
+            };
+            let result = tickets::Entity::insert(ticket).exec(&*db).await;
             match result {
-                Ok(r) => Json(Ticket {
-                    id: r.last_insert_id(),
-                    title: String::from(ticket.title.as_str()),
+                Ok(r) => Json(TicketDto {
+                    id: r.last_insert_id,
+                    title: String::from(ticket_dto.title.as_str()),
                 })
                 .into_response(),
                 Err(e) => error::to_uniform_response(StatusCode::BAD_REQUEST, e.to_string())
