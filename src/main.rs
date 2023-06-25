@@ -2,7 +2,7 @@ mod api;
 
 use anyhow::Context;
 use migration::{Migrator, MigratorTrait};
-use sea_orm::{ConnectOptions, Database, DbErr};
+use sea_orm::{ConnectOptions, Database};
 
 #[tokio::main]
 async fn main() {
