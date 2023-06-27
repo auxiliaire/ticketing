@@ -1,5 +1,7 @@
 use sea_orm_migration::prelude::*;
 
+use crate::m20230627_000002_create_project_table::Project;
+
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
@@ -19,6 +21,14 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(Ticket::Title).string().not_null())
+                    .col(ColumnDef::new(Ticket::Description).text().not_null())
+                    .col(ColumnDef::new(Ticket::ProjectId).big_unsigned())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk-ticket-project_id")
+                            .from(Ticket::Table, Ticket::ProjectId)
+                            .to(Project::Table, Project::Id),
+                    )
                     .to_owned(),
             )
             .await
@@ -34,7 +44,10 @@ impl MigrationTrait for Migration {
 /// Learn more at https://docs.rs/sea-query#iden
 #[derive(Iden)]
 pub enum Ticket {
+    #[iden = "tickets"]
     Table,
     Id,
     Title,
+    Description,
+    ProjectId,
 }

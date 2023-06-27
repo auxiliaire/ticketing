@@ -5,7 +5,7 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
-use entity::{ticket, ticket::Entity as Ticket};
+use entity::{tickets, tickets::Entity as Ticket};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 
 use crate::api::error;
@@ -44,12 +44,12 @@ async fn get_tickets(
 
 async fn post_tickets(
     db: Extension<DatabaseConnection>,
-    payload: Result<Json<ticket::Model>, JsonRejection>,
+    payload: Result<Json<tickets::Model>, JsonRejection>,
 ) -> impl IntoResponse {
     match payload {
         Ok(model) => {
             println!("Ticket(): '{}'", model.title);
-            let result = ticket::ActiveModel {
+            let result = tickets::ActiveModel {
                 title: Set(model.title.to_owned()),
                 ..Default::default()
             }

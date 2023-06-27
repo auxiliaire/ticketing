@@ -9,16 +9,18 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Ticket::Table)
+                    .table(User::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(Ticket::Id)
+                        ColumnDef::new(User::Id)
                             .big_unsigned()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Ticket::Title).string().not_null())
+                    .col(ColumnDef::new(User::Name).string().not_null())
+                    .col(ColumnDef::new(User::Password).string().not_null())
+                    .col(ColumnDef::new(User::Role).string().not_null())
                     .to_owned(),
             )
             .await
@@ -26,15 +28,18 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Ticket::Table).to_owned())
+            .drop_table(Table::drop().table(User::Table).to_owned())
             .await
     }
 }
 
 /// Learn more at https://docs.rs/sea-query#iden
 #[derive(Iden)]
-pub enum Ticket {
+pub enum User {
+    #[iden = "users"]
     Table,
     Id,
-    Title,
+    Name,
+    Password,
+    Role,
 }

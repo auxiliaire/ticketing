@@ -2,5 +2,8 @@
 
 pub mod prelude;
 
-pub mod ticket;
+pub mod comments;
+pub mod projects;
+pub mod ticket_updates;
 pub mod tickets;
+pub mod users;
