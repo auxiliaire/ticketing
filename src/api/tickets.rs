@@ -14,7 +14,7 @@ pub fn router() -> Router {
     Router::new()
         .route("/tickets", get(get_tickets))
         .route("/tickets/:id", get(get_ticket))
-        .route("/tickets", post(post_tickets))
+        .route("/tickets", post(post_ticket))
 }
 
 async fn get_tickets(db: Extension<DatabaseConnection>) -> impl IntoResponse {
@@ -52,7 +52,7 @@ async fn get_ticket(
     }
 }
 
-async fn post_tickets(
+async fn post_ticket(
     db: Extension<DatabaseConnection>,
     payload: Result<Json<tickets::Model>, JsonRejection>,
 ) -> impl IntoResponse {
