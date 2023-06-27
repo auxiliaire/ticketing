@@ -12,11 +12,21 @@ use crate::api::error;
 
 pub fn router() -> Router {
     Router::new()
-        .route("/tickets/:id", get(get_tickets))
+        .route("/tickets", get(get_tickets))
+        .route("/tickets/:id", get(get_ticket))
         .route("/tickets", post(post_tickets))
 }
 
-async fn get_tickets(
+async fn get_tickets(db: Extension<DatabaseConnection>) -> impl IntoResponse {
+    let result = Ticket::find().all(&*db).await;
+    match result {
+        Ok(list) => Json(list).into_response(),
+        Err(e) => error::to_uniform_response(StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            .into_response(),
+    }
+}
+
+async fn get_ticket(
     db: Extension<DatabaseConnection>,
     param: Result<Path<u64>, PathRejection>,
 ) -> impl IntoResponse {
@@ -51,6 +61,7 @@ async fn post_tickets(
             println!("Ticket(): '{}'", model.title);
             let result = tickets::ActiveModel {
                 title: Set(model.title.to_owned()),
+                description: Set(model.description.to_owned()),
                 ..Default::default()
             }
             .insert(&*db)
