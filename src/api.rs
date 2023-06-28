@@ -16,7 +16,13 @@ pub async fn serve(db: DatabaseConnection) -> anyhow::Result<()> {
 
 pub fn router(db: DatabaseConnection) -> Router {
     let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
+        .allow_methods([
+            Method::POST,
+            Method::GET,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
         .allow_headers(Any)
         .allow_origin(Any);
 

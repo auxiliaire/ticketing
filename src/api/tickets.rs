@@ -2,7 +2,7 @@ use axum::{
     extract::{rejection::JsonRejection, rejection::PathRejection, Json, Path},
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
     Extension, Router,
 };
 use entity::{tickets, tickets::Entity as Ticket};
@@ -12,10 +12,11 @@ use crate::api::error;
 
 pub fn router() -> Router {
     Router::new()
+        .route("/tickets", post(post_ticket))
         .route("/tickets", get(get_tickets))
         .route("/tickets/:id", get(get_ticket))
-        .route("/tickets", post(post_ticket))
         .route("/tickets/:id", put(put_ticket))
+        .route("/tickets/:id", delete(delete_ticket))
 }
 
 async fn get_tickets(db: Extension<DatabaseConnection>) -> impl IntoResponse {
@@ -116,5 +117,39 @@ async fn put_ticket(
         }
         _ => error::to_uniform_response(StatusCode::NOT_FOUND, String::from("Not found"))
             .into_response(),
+    }
+}
+
+async fn delete_ticket(
+    db: Extension<DatabaseConnection>,
+    param: Result<Path<u64>, PathRejection>,
+) -> impl IntoResponse {
+    match param {
+        Ok(path) => {
+            let ticket_to_be_deleted = tickets::ActiveModel {
+                id: sea_orm::ActiveValue::Set(path.0),
+                ..Default::default()
+            };
+            let result = ticket_to_be_deleted.delete(&*db).await;
+            match result {
+                Ok(delete_result) => match delete_result.rows_affected {
+                    0 => {
+                        error::to_uniform_response(StatusCode::NOT_FOUND, String::from("Not found"))
+                            .into_response()
+                    }
+                    n => {
+                        error::to_uniform_response(StatusCode::NO_CONTENT, format!("Deleted {}", n))
+                            .into_response()
+                    }
+                },
+                Err(e) => {
+                    error::to_uniform_response(StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+                        .into_response()
+                }
+            }
+        }
+        Err(e) => {
+            error::to_uniform_response(StatusCode::BAD_REQUEST, e.to_string()).into_response()
+        }
     }
 }
