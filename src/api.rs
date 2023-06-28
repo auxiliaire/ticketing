@@ -6,6 +6,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 pub mod error;
 pub mod tickets;
+pub mod users;
 
 pub async fn serve(db: DatabaseConnection) -> anyhow::Result<()> {
     axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
@@ -27,6 +28,7 @@ pub fn router(db: DatabaseConnection) -> Router {
         .allow_origin(Any);
 
     Router::new()
+        .merge(users::router())
         .merge(tickets::router())
         .layer(Extension(db))
         .layer(cors)
