@@ -12,9 +12,7 @@ pub struct Model {
     pub ticket_id: u64,
     pub previous_state: String,
     pub next_state: String,
-    #[serde(skip_deserializing)]
     pub timestamp: DateTime,
-    #[serde(skip_deserializing)]
     pub user_id: u64,
 }
 
