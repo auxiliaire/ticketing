@@ -13,8 +13,8 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub description: String,
     pub project_id: Option<u64>,
-    #[serde(skip_deserializing)]
     pub status: String,
+    pub user_id: Option<u64>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -31,6 +31,14 @@ pub enum Relation {
     Projects,
     #[sea_orm(has_many = "super::ticket_updates::Entity")]
     TicketUpdates,
+    #[sea_orm(
+        belongs_to = "super::users::Entity",
+        from = "Column::UserId",
+        to = "super::users::Column::Id",
+        on_update = "Restrict",
+        on_delete = "Restrict"
+    )]
+    Users,
 }
 
 impl Related<super::comments::Entity> for Entity {
@@ -48,6 +56,12 @@ impl Related<super::projects::Entity> for Entity {
 impl Related<super::ticket_updates::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::TicketUpdates.def()
+    }
+}
+
+impl Related<super::users::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Users.def()
     }
 }
 
