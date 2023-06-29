@@ -5,6 +5,7 @@ mod m20230627_000002_create_project_table;
 mod m20230627_000003_create_ticket_table;
 mod m20230627_000004_create_ticket_update_table;
 mod m20230627_000005_create_comment_table;
+mod m20230629_000001_alter_ticket_table;
 
 pub struct Migrator;
 
@@ -17,6 +18,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230627_000003_create_ticket_table::Migration),
             Box::new(m20230627_000004_create_ticket_update_table::Migration),
             Box::new(m20230627_000005_create_comment_table::Migration),
+            Box::new(m20230629_000001_alter_ticket_table::Migration),
         ]
     }
 }

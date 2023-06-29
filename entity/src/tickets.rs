@@ -13,6 +13,7 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub description: String,
     pub project_id: Option<u64>,
+    pub status: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

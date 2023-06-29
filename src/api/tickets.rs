@@ -105,6 +105,7 @@ async fn put_ticket(
                 id: Set(o.id),
                 title: Set(u.title.to_owned()),
                 description: Set(u.description.to_owned()),
+                status: Set(u.status.to_owned()),
                 project_id: Set(u.project_id.to_owned()),
             }
             .update(&*db)
