@@ -13,6 +13,7 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub description: String,
     pub project_id: Option<u64>,
+    #[serde(skip_deserializing)]
     pub status: String,
 }
 

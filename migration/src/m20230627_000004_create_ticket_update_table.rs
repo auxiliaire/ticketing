@@ -61,7 +61,7 @@ impl MigrationTrait for Migration {
 
 /// Learn more at https://docs.rs/sea-query#iden
 #[derive(Iden)]
-enum TicketUpdate {
+pub enum TicketUpdate {
     #[iden = "ticket_updates"]
     Table,
     Id,

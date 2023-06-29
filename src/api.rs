@@ -6,6 +6,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 pub mod error;
 pub mod projects;
+pub mod ticket_updates;
 pub mod tickets;
 pub mod users;
 
@@ -31,6 +32,7 @@ pub fn router(db: DatabaseConnection) -> Router {
     Router::new()
         .merge(users::router())
         .merge(tickets::router())
+        .merge(ticket_updates::router())
         .merge(projects::router())
         .layer(Extension(db))
         .layer(cors)
