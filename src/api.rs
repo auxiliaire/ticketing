@@ -4,6 +4,7 @@ use http::Method;
 use sea_orm::DatabaseConnection;
 use tower_http::cors::{Any, CorsLayer};
 
+pub mod comments;
 pub mod error;
 pub mod projects;
 pub mod ticket_updates;
@@ -33,6 +34,7 @@ pub fn router(db: DatabaseConnection) -> Router {
         .merge(users::router())
         .merge(tickets::router())
         .merge(ticket_updates::router())
+        .merge(comments::router())
         .merge(projects::router())
         .layer(Extension(db))
         .layer(cors)
