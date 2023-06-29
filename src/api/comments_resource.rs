@@ -7,8 +7,16 @@ use axum::{
 };
 use entity::{comments, comments::Entity as Comment};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
+use serde::{Deserialize, Serialize};
 
 use crate::api::error;
+
+#[derive(Serialize, Deserialize)]
+struct CommentDto {
+    pub text: String,
+    pub ticket_id: u64,
+    pub user_id: u64,
+}
 
 pub fn router() -> Router {
     Router::new()
@@ -56,7 +64,7 @@ async fn get_comment(
 
 async fn post_comment(
     db: Extension<DatabaseConnection>,
-    payload: Result<Json<comments::Model>, JsonRejection>,
+    payload: Result<Json<CommentDto>, JsonRejection>,
 ) -> impl IntoResponse {
     match payload {
         Ok(model) => {
@@ -83,7 +91,7 @@ async fn post_comment(
 async fn put_comment(
     db: Extension<DatabaseConnection>,
     param: Result<Path<u64>, PathRejection>,
-    payload: Result<Json<comments::Model>, JsonRejection>,
+    payload: Result<Json<CommentDto>, JsonRejection>,
 ) -> impl IntoResponse {
     let original = match param {
         Ok(path) => {
@@ -104,8 +112,8 @@ async fn put_comment(
             let result = comments::ActiveModel {
                 id: Set(o.id),
                 text: Set(u.text.to_owned()),
-                ticket_id: Set(u.ticket_id),
-                user_id: Set(u.user_id),
+                ticket_id: Set(o.ticket_id),
+                user_id: Set(o.user_id),
                 ..Default::default()
             }
             .update(&*db)

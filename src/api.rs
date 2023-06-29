@@ -4,12 +4,12 @@ use http::Method;
 use sea_orm::DatabaseConnection;
 use tower_http::cors::{Any, CorsLayer};
 
-pub mod comments;
+pub mod comments_resource;
 pub mod error;
-pub mod projects;
-pub mod ticket_updates;
-pub mod tickets;
-pub mod users;
+pub mod projects_resource;
+pub mod ticket_updates_resource;
+pub mod tickets_resource;
+pub mod users_resource;
 
 pub async fn serve(db: DatabaseConnection) -> anyhow::Result<()> {
     axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
@@ -31,11 +31,11 @@ pub fn router(db: DatabaseConnection) -> Router {
         .allow_origin(Any);
 
     Router::new()
-        .merge(users::router())
-        .merge(tickets::router())
-        .merge(ticket_updates::router())
-        .merge(comments::router())
-        .merge(projects::router())
+        .merge(users_resource::router())
+        .merge(tickets_resource::router())
+        .merge(ticket_updates_resource::router())
+        .merge(comments_resource::router())
+        .merge(projects_resource::router())
         .layer(Extension(db))
         .layer(cors)
 }
