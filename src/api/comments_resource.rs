@@ -103,12 +103,8 @@ async fn put_comment(
         }
         Err(_) => None,
     };
-    let update = match payload {
-        Ok(model) => Some(model),
-        Err(_) => None,
-    };
-    match (original, update) {
-        (Some(o), Some(u)) => {
+    match (original, payload) {
+        (Some(o), Ok(u)) => {
             let result = comments::ActiveModel {
                 id: Set(o.id),
                 text: Set(u.text.to_owned()),
