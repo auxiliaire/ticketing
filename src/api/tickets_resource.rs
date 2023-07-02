@@ -1,14 +1,15 @@
 use axum::{
-    extract::{rejection::JsonRejection, rejection::PathRejection, Json, Path},
+    extract::{Json, Path},
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, post, put},
     Extension, Router,
 };
+use axum_extra::extract::WithRejection;
 use entity::{tickets, tickets::Entity as Ticket};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait, Set};
 
-use crate::api::error;
+use super::error::{ApiError, JsonError};
 
 pub fn router() -> Router {
     Router::new()
@@ -20,134 +21,95 @@ pub fn router() -> Router {
 }
 
 async fn get_tickets(db: Extension<DatabaseConnection>) -> impl IntoResponse {
-    let result = Ticket::find().all(&*db).await;
-    match result {
-        Ok(list) => Json(list).into_response(),
-        Err(e) => error::to_uniform_response(StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-            .into_response(),
-    }
+    Ticket::find().all(&*db).await.map_or_else(
+        |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
+        |list| Json(list).into_response(),
+    )
 }
 
 async fn get_ticket(
     db: Extension<DatabaseConnection>,
-    param: Result<Path<u64>, PathRejection>,
+    WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
 ) -> impl IntoResponse {
-    match param {
-        Ok(path) => {
-            let result = Ticket::find_by_id(path.0).one(&*db).await;
-            match result {
-                Ok(model) => match model {
-                    Some(ticket) => Json(ticket).into_response(),
-                    None => {
-                        error::to_uniform_response(StatusCode::NOT_FOUND, String::from("Not found"))
-                            .into_response()
-                    }
-                },
-                Err(e) => {
-                    error::to_uniform_response(StatusCode::NOT_FOUND, e.to_string()).into_response()
-                }
+    Ticket::find_by_id(id).one(&*db).await.map_or_else(
+        |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
+        |result_option| match result_option {
+            Some(ticket) => Json(ticket).into_response(),
+            None => {
+                JsonError::from((StatusCode::NOT_FOUND, String::from("Not found"))).into_response()
             }
-        }
-        Err(e) => {
-            error::to_uniform_response(StatusCode::BAD_REQUEST, e.to_string()).into_response()
-        }
-    }
+        },
+    )
 }
 
 async fn post_ticket(
     db: Extension<DatabaseConnection>,
-    payload: Result<Json<tickets::Model>, JsonRejection>,
+    WithRejection(Json(model), _): WithRejection<Json<tickets::Model>, ApiError>,
 ) -> impl IntoResponse {
-    match payload {
-        Ok(model) => {
-            println!("Ticket(): '{}'", model.title);
-            let result = tickets::ActiveModel {
-                title: Set(model.title.to_owned()),
-                description: Set(model.description.to_owned()),
-                project_id: Set(model.project_id.to_owned()),
-                ..Default::default()
-            }
-            .insert(&*db)
-            .await;
-            match result {
-                Ok(r) => Json(r).into_response(),
-                Err(e) => error::to_uniform_response(StatusCode::BAD_REQUEST, e.to_string())
-                    .into_response(),
-            }
-        }
-        Err(e) => error::to_uniform_response(StatusCode::UNPROCESSABLE_ENTITY, e.to_string())
-            .into_response(),
+    println!("Ticket(): '{}'", model.title);
+    tickets::ActiveModel {
+        title: Set(model.title.to_owned()),
+        description: Set(model.description.to_owned()),
+        project_id: Set(model.project_id.to_owned()),
+        ..Default::default()
     }
+    .insert(&*db)
+    .await
+    .map_or_else(
+        |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
+        |r| Json(r).into_response(),
+    )
 }
 
 async fn put_ticket(
     db: Extension<DatabaseConnection>,
-    param: Result<Path<u64>, PathRejection>,
-    payload: Result<Json<tickets::Model>, JsonRejection>,
+    WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
+    WithRejection(Json(update), _): WithRejection<Json<tickets::Model>, ApiError>,
 ) -> impl IntoResponse {
-    let original = match param {
-        Ok(path) => {
-            let result = Ticket::find_by_id(path.0).one(&*db).await;
-            match result {
-                Ok(model) => model,
-                Err(_) => None,
-            }
+    let original_result = Ticket::find_by_id(id).one(&*db).await;
+    match original_result {
+        Ok(Some(original)) => tickets::ActiveModel {
+            id: Set(original.id),
+            title: Set(update.title.to_owned()),
+            description: Set(update.description.to_owned()),
+            status: Set(update.status.to_owned()),
+            project_id: Set(update.project_id),
+            user_id: Set(update.user_id),
         }
-        Err(_) => None,
-    };
-    match (original, payload) {
-        (Some(o), Ok(u)) => {
-            let result = tickets::ActiveModel {
-                id: Set(o.id),
-                title: Set(u.title.to_owned()),
-                description: Set(u.description.to_owned()),
-                status: Set(u.status.to_owned()),
-                project_id: Set(u.project_id),
-                user_id: Set(u.user_id),
-            }
-            .update(&*db)
-            .await;
-            match result {
-                Ok(r) => Json(r).into_response(),
-                Err(e) => error::to_uniform_response(StatusCode::BAD_REQUEST, e.to_string())
-                    .into_response(),
-            }
+        .update(&*db)
+        .await
+        .map_or_else(
+            |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
+            |r| Json(r).into_response(),
+        ),
+        Ok(None) => {
+            JsonError::from((StatusCode::NOT_FOUND, String::from("Not found"))).into_response()
         }
-        _ => error::to_uniform_response(StatusCode::NOT_FOUND, String::from("Not found"))
-            .into_response(),
+        Err(e) => {
+            JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response()
+        }
     }
 }
 
 async fn delete_ticket(
     db: Extension<DatabaseConnection>,
-    param: Result<Path<u64>, PathRejection>,
+    WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
 ) -> impl IntoResponse {
-    match param {
-        Ok(path) => {
-            let ticket_to_be_deleted = tickets::ActiveModel {
-                id: sea_orm::ActiveValue::Set(path.0),
-                ..Default::default()
-            };
-            let result = ticket_to_be_deleted.delete(&*db).await;
-            match result {
-                Ok(delete_result) => match delete_result.rows_affected {
-                    0 => {
-                        error::to_uniform_response(StatusCode::NOT_FOUND, String::from("Not found"))
-                            .into_response()
-                    }
-                    n => {
-                        error::to_uniform_response(StatusCode::NO_CONTENT, format!("Deleted {}", n))
-                            .into_response()
-                    }
-                },
-                Err(e) => {
-                    error::to_uniform_response(StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-                        .into_response()
-                }
-            }
-        }
-        Err(e) => {
-            error::to_uniform_response(StatusCode::BAD_REQUEST, e.to_string()).into_response()
-        }
+    tickets::ActiveModel {
+        id: sea_orm::ActiveValue::Set(id),
+        ..Default::default()
     }
+    .delete(&*db)
+    .await
+    .map_or_else(
+        |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
+        |DeleteResult { rows_affected }| match rows_affected {
+            0 => {
+                JsonError::from((StatusCode::NOT_FOUND, String::from("Not found"))).into_response()
+            }
+            n => {
+                JsonError::from((StatusCode::NO_CONTENT, format!("Deleted {}", n))).into_response()
+            }
+        },
+    )
 }
