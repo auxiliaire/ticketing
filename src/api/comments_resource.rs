@@ -28,73 +28,65 @@ pub fn router() -> Router {
         .route("/comments/:id", delete(delete_comment))
 }
 
-async fn get_comments(db: Extension<DatabaseConnection>) -> impl IntoResponse {
-    Comment::find().all(&*db).await.map_or_else(
-        |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
-        |list| Json(list).into_response(),
-    )
+async fn get_comments(
+    db: Extension<DatabaseConnection>,
+) -> Result<Json<Vec<comments::Model>>, ApiError> {
+    let list = Comment::find().all(&*db).await?;
+    Ok(Json(list))
 }
 
 async fn get_comment(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> impl IntoResponse {
-    Comment::find_by_id(id).one(&*db).await.map_or_else(
-        |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
-        |result_option| match result_option {
-            Some(comment) => Json(comment).into_response(),
-            None => {
-                JsonError::from((StatusCode::NOT_FOUND, String::from("Not found"))).into_response()
-            }
-        },
+) -> Result<Json<comments::Model>, ApiError> {
+    Comment::find_by_id(id).one(&*db).await?.map_or(
+        Err(ApiError::new(
+            StatusCode::NOT_FOUND,
+            String::from("Not found"),
+        )),
+        |comment| Ok(Json(comment)),
     )
 }
 
 async fn post_comment(
     db: Extension<DatabaseConnection>,
     WithRejection(Json(model), _): WithRejection<Json<comments::Model>, ApiError>,
-) -> impl IntoResponse {
+) -> Result<Json<comments::Model>, ApiError> {
     println!("New comment on ticket({})", model.ticket_id);
-    comments::ActiveModel {
+    let comment = comments::ActiveModel {
         text: Set(model.text.to_owned()),
         ticket_id: Set(model.ticket_id.to_owned()),
         user_id: Set(model.user_id.to_owned()),
         ..Default::default()
     }
     .insert(&*db)
-    .await
-    .map_or_else(
-        |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
-        |r| Json(r).into_response(),
-    )
+    .await?;
+    Ok(Json(comment))
 }
 
 async fn put_comment(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
     WithRejection(Json(update), _): WithRejection<Json<comments::Model>, ApiError>,
-) -> impl IntoResponse {
-    let original_result = Comment::find_by_id(id).one(&*db).await;
+) -> Result<Json<comments::Model>, ApiError> {
+    let original_result = Comment::find_by_id(id).one(&*db).await?;
     match original_result {
-        Ok(Some(original)) => comments::ActiveModel {
-            id: Set(original.id),
-            text: Set(update.text.to_owned()),
-            ticket_id: Set(original.ticket_id),
-            user_id: Set(original.user_id),
-            ..Default::default()
+        Some(original) => {
+            let updated = comments::ActiveModel {
+                id: Set(original.id),
+                text: Set(update.text.to_owned()),
+                ticket_id: Set(original.ticket_id),
+                user_id: Set(original.user_id),
+                ..Default::default()
+            }
+            .update(&*db)
+            .await?;
+            Ok(Json(updated))
         }
-        .update(&*db)
-        .await
-        .map_or_else(
-            |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
-            |r| Json(r).into_response(),
-        ),
-        Ok(None) => {
-            JsonError::from((StatusCode::NOT_FOUND, String::from("Not found"))).into_response()
-        }
-        Err(e) => {
-            JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response()
-        }
+        None => Err(ApiError::new(
+            StatusCode::NOT_FOUND,
+            String::from("Not found"),
+        )),
     }
 }
 

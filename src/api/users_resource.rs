@@ -20,72 +20,62 @@ pub fn router() -> Router {
         .route("/users/:id", delete(delete_user))
 }
 
-async fn get_users(db: Extension<DatabaseConnection>) -> impl IntoResponse {
-    User::find().all(&*db).await.map_or_else(
-        |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
-        |list| Json(list).into_response(),
-    )
+async fn get_users(db: Extension<DatabaseConnection>) -> Result<Json<Vec<users::Model>>, ApiError> {
+    let list = User::find().all(&*db).await?;
+    Ok(Json(list))
 }
 
 async fn get_user(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> impl IntoResponse {
-    User::find_by_id(id).one(&*db).await.map_or_else(
-        |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
-        |result_option| match result_option {
-            Some(user) => Json(user).into_response(),
-            None => {
-                JsonError::from((StatusCode::NOT_FOUND, String::from("Not found"))).into_response()
-            }
-        },
+) -> Result<Json<users::Model>, ApiError> {
+    User::find_by_id(id).one(&*db).await?.map_or(
+        Err(ApiError::new(
+            StatusCode::NOT_FOUND,
+            String::from("Not found"),
+        )),
+        |user| Ok(Json(user)),
     )
 }
 
 async fn post_user(
     db: Extension<DatabaseConnection>,
     WithRejection(Json(model), _): WithRejection<Json<users::Model>, ApiError>,
-) -> impl IntoResponse {
+) -> Result<Json<users::Model>, ApiError> {
     println!("User(): '{}'", model.name);
-    users::ActiveModel {
+    let user = users::ActiveModel {
         name: Set(model.name.to_owned()),
         password: Set(model.password.to_owned()),
         role: Set(model.role.to_owned()),
         ..Default::default()
     }
     .insert(&*db)
-    .await
-    .map_or_else(
-        |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
-        |model| Json(model).into_response(),
-    )
+    .await?;
+    Ok(Json(user))
 }
 
 async fn put_user(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
     WithRejection(Json(update), _): WithRejection<Json<users::Model>, ApiError>,
-) -> impl IntoResponse {
-    let original_result = User::find_by_id(id).one(&*db).await;
+) -> Result<Json<users::Model>, ApiError> {
+    let original_result = User::find_by_id(id).one(&*db).await?;
     match original_result {
-        Ok(Some(original)) => users::ActiveModel {
-            id: Set(original.id),
-            name: Set(update.name.to_owned()),
-            password: Set(update.password.to_owned()),
-            role: Set(update.role.to_owned()),
+        Some(original) => {
+            let updated = users::ActiveModel {
+                id: Set(original.id),
+                name: Set(update.name.to_owned()),
+                password: Set(update.password.to_owned()),
+                role: Set(update.role.to_owned()),
+            }
+            .update(&*db)
+            .await?;
+            Ok(Json(updated))
         }
-        .update(&*db)
-        .await
-        .map_or_else(
-            |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
-            |r| Json(r).into_response(),
-        ),
-        Ok(None) => {
-            JsonError::from((StatusCode::NOT_FOUND, String::from("Not found"))).into_response()
-        }
-        Err(e) => {
-            JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response()
-        }
+        None => Err(ApiError::new(
+            StatusCode::NOT_FOUND,
+            String::from("Not found"),
+        )),
     }
 }
 
