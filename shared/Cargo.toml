@@ -1,0 +1,14 @@
+[package]
+name = "shared"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "shared"
+path = "src/lib.rs"
+
+[dependencies]
+regex = "1.9"
+serde = { version = "1", features = [ "derive" ] }
+serde_valid = "0.16"

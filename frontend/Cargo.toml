@@ -9,6 +9,17 @@ name = "frontend"
 path = "src/lib.rs"
 
 [dependencies]
+shared = { path = "../shared"}
+gloo = "0.8"
+gloo-net = "0.3"
+instant = { version = "0.1", features = ["wasm-bindgen"] }
+log = "0.4"
+serde = { version = "1", features = [ "derive" ] }
+serde_valid = "0.16"
+wasm-bindgen = "0.2"
+wasm-logger = "0.2"
+web-sys = { version = "0.3", features = [ "Event", "EventTarget", "InputEvent", "MouseEvent" ] }
+yew-router = "0.17"
 
 [dependencies.yew]
 version = "0.20"

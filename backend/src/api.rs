@@ -2,6 +2,7 @@ use anyhow::Context;
 use axum::{Extension, Router};
 use http::Method;
 use sea_orm::DatabaseConnection;
+use shared::api::get_socket_address;
 use tower_http::cors::{Any, CorsLayer};
 
 pub mod comments_resource;
@@ -12,7 +13,7 @@ pub mod tickets_resource;
 pub mod users_resource;
 
 pub async fn serve(db: DatabaseConnection) -> anyhow::Result<()> {
-    axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
+    axum::Server::bind(&get_socket_address())
         .serve(router(db).into_make_service())
         .await
         .context("failed to serve API")

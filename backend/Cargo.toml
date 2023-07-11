@@ -1,0 +1,31 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "backend"
+path = "src/lib.rs"
+
+[dependencies]
+entity = { path = "../entity" }
+migration = { path = "../migration" }
+shared = { path = "../shared" }
+log = "0.4.17"
+axum = { version = "0.6" }
+axum-extra = "0.7"
+serde = { version = "1", features = [ "derive" ] }
+serde_json = "1.0"
+futures = "0.3.27"
+tokio = { version = "1.28", features = [ "full" ] }
+http = "0.2"
+tower-http = { version = "0.4", features = [ "cors" ] }
+dotenvy = "0.15"
+anyhow = "1.0"
+mime = "0.3"
+thiserror = "1.0"
+
+[dependencies.sea-orm]
+version = "0.11"
+features = [ "sqlx-mysql", "runtime-tokio-rustls", "macros", "with-chrono" ]
