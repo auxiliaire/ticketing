@@ -31,11 +31,9 @@ pub fn text_input(props: &Props) -> Html {
         error_classes,
     } = props.clone();
 
-    let get_classes = || {
-        match valid {
-            true => base_classes,
-            false => [base_classes.as_str(), " ", error_classes.as_str()].concat()
-        }
+    let get_classes = || match valid {
+        true => base_classes,
+        false => [base_classes.as_str(), error_classes.as_str()].join(" "),
     };
 
     let get_type = || match mask {

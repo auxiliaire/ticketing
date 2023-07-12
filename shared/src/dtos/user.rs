@@ -5,16 +5,16 @@ use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Validate)]
+#[rule(UserValidation::are_passwords_matching(password, password_repeat))]
 pub struct User {
     pub id: Option<u64>,
     #[validate(min_length = 8)]
     #[validate(max_length = 20)]
     pub name: String,
-    #[validate(
-        custom(UserValidation::password_validation),
-        message = "Password should contain alphanumeric and special characters at a length range of 8-20."
-    )]
+    #[validate(custom(UserValidation::password_validation))]
     pub password: String,
+    #[serde(skip_serializing)]
+    pub password_repeat: String,
     #[validate(
         enumerate("Developer", "Manager"),
         message = "User should be either Developer or Manager."
@@ -40,6 +40,7 @@ impl User {
             id: None,
             name: String::from(""),
             password: String::from(""),
+            password_repeat: String::from(""),
             role: String::from(""),
         }
     }

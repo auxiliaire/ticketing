@@ -1,7 +1,6 @@
 use yew::prelude::*;
 
 use crate::components::registration_form::RegistrationForm;
-use serde_valid::Validate;
 use shared::dtos::user::User as UserDto;
 
 pub enum Msg {
@@ -21,8 +20,6 @@ impl Component for Registration {
         match msg {
             Msg::UserSubmitted(user) => {
                 log::debug!("Submitted: {}", user);
-                let err = user.validate().unwrap_err();
-                log::debug!("Validation: {}", err.to_string());
             }
         }
         true

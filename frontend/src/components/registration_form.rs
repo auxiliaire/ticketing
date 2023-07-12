@@ -1,9 +1,11 @@
+use serde_valid::Validate;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
+use crate::components::bulma::field::Field;
 use crate::components::text_input::TextInput;
 use shared::dtos::user::User as UserDto;
-use shared::validation::user::UserValidation as validation;
+use shared::validation::error_messages::{ErrorMessages, ErrorsWrapper};
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
@@ -21,9 +23,12 @@ pub enum Msg {
 
 pub struct RegistrationForm {
     user: UserDto,
-    password_verification: String,
     on_submit: Callback<UserDto>,
     dirty: bool,
+    common_error: Option<AttrValue>,
+    name_error: Option<AttrValue>,
+    password_error: Option<AttrValue>,
+    role_error: Option<AttrValue>,
 }
 impl Component for RegistrationForm {
     type Message = Msg;
@@ -32,9 +37,12 @@ impl Component for RegistrationForm {
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             user: UserDto::default(),
-            password_verification: String::from(""),
             on_submit: ctx.props().on_submit.to_owned(),
             dirty: false,
+            common_error: None,
+            name_error: None,
+            password_error: None,
+            role_error: None,
         }
     }
 
@@ -52,17 +60,26 @@ impl Component for RegistrationForm {
                 self.user.password = String::from(password.as_str());
             }
             Msg::UpdatePasswordVerification(password) => {
-                self.password_verification = String::from(password.as_str());
+                self.user.password_repeat = String::from(password.as_str());
             }
             Msg::UpdateRole(role) => {
                 self.user.role = String::from(role.as_str());
             }
             Msg::Submit() => {
-                log::debug!("Submit pressed, user: {}", self.user);
                 self.dirty = true;
-                //if self.is_username_valid() && self.is_password_valid() {
-                    self.on_submit.emit(self.user.clone());
-                //}
+                let result = self.user.validate();
+                match result {
+                    Ok(_) => self.on_submit.emit(self.user.clone()),
+                    Err(e) => {
+                        let errors = ErrorsWrapper(e);
+                        self.common_error = errors.get_common_messages().map(AttrValue::from);
+                        self.name_error = errors.get_property_messages("name").map(AttrValue::from);
+                        self.password_error = errors
+                            .get_property_messages("password")
+                            .map(AttrValue::from);
+                        self.role_error = errors.get_property_messages("role").map(AttrValue::from);
+                    }
+                }
             }
             Msg::Cancel() => {
                 let navigator = ctx.link().navigator().unwrap();
@@ -78,30 +95,21 @@ impl Component for RegistrationForm {
         html! {
             <div class="card">
                 <div class="card-content">
-                    <div class="field">
-                        <label class="label">{ "Name" }</label>
-                        <div class="control">
-                            <TextInput value={self.user.name.clone()} on_change={ctx.link().callback(Msg::UpdateName)} valid={self.is_username_valid()} />
-                        </div>
-                    </div>
-                    <div class="field">
-                        <label class="label">{ "Password" }</label>
-                        <div class="control">
-                            <TextInput value={self.user.password.clone()} on_change={ctx.link().callback(Msg::UpdatePassword)} mask={true} valid={self.is_password_valid()} />
-                        </div>
-                    </div>
-                    <div class="field">
-                        <label class="label">{ "Password Verification" }</label>
-                        <div class="control">
-                            <TextInput value={self.password_verification.clone()} on_change={ctx.link().callback(Msg::UpdatePasswordVerification)} mask={true} valid={self.is_password_valid()} />
-                        </div>
-                    </div>
-                    <div class="field">
-                        <label class="label">{ "Role" }</label>
-                        <div class="control">
-                            <TextInput value={self.user.role.clone()} on_change={ctx.link().callback(Msg::UpdateRole)} />
-                        </div>
-                    </div>
+                    if let Some(common_error) = &self.common_error {
+                        <p class="help is-danger">{ common_error }</p>
+                    }
+                    <Field label="Name" help={&self.name_error}>
+                        <TextInput value={self.user.name.clone()} on_change={ctx.link().callback(Msg::UpdateName)} valid={self.name_error.is_none()} />
+                    </Field>
+                    <Field label="Password" help={&self.password_error}>
+                        <TextInput value={self.user.password.clone()} on_change={ctx.link().callback(Msg::UpdatePassword)} mask={true} valid={self.password_error.is_none()} />
+                    </Field>
+                    <Field label="Password Verification">
+                        <TextInput value={self.user.password_repeat.clone()} on_change={ctx.link().callback(Msg::UpdatePasswordVerification)} mask={true} />
+                    </Field>
+                    <Field label="Role" help={&self.role_error}>
+                        <TextInput value={self.user.role.clone()} on_change={ctx.link().callback(Msg::UpdateRole)} valid={self.role_error.is_none()} />
+                    </Field>
                 </div>
                 <footer class="card-footer">
                     <div class="card-footer-item">
@@ -120,12 +128,4 @@ impl Component for RegistrationForm {
     }
 }
 
-impl RegistrationForm {
-    pub fn is_username_valid(&self) -> bool {
-        !self.dirty || validation::is_username_valid(self.user.name.as_str())
-    }
-
-    pub fn is_password_valid(&self) -> bool {
-        !self.dirty || ((self.user.password == self.password_verification) && (validation::is_password_valid(self.user.password.as_str())))
-    }
-}
+impl RegistrationForm {}
