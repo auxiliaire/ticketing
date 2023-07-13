@@ -58,3 +58,13 @@ impl ErrorMessages for ErrorsWrapper {
             })
     }
 }
+
+pub trait IsEmpty<T> {
+    fn is_empty(&self) -> bool;
+}
+
+impl IsEmpty<Option<IArray<IString>>> for Option<IArray<IString>> {
+    fn is_empty(&self) -> bool {
+        self.as_ref().map(|a| a.is_empty()).unwrap_or(true)
+    }
+}

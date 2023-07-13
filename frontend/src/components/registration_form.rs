@@ -6,7 +6,7 @@ use yew_router::scope_ext::RouterScopeExt;
 use crate::components::bulma::field::Field;
 use crate::components::text_input::TextInput;
 use shared::dtos::user::User as UserDto;
-use shared::validation::error_messages::{ErrorMessages, ErrorsWrapper};
+use shared::validation::error_messages::{ErrorMessages, ErrorsWrapper, IsEmpty};
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
@@ -106,16 +106,16 @@ impl Component for RegistrationForm {
                         </p>
                     }
                     <Field label="Name" help={&self.name_error}>
-                        <TextInput value={self.user.name.clone()} on_change={ctx.link().callback(Msg::UpdateName)} valid={self.name_error.is_none()} />
+                        <TextInput value={self.user.name.clone()} on_change={ctx.link().callback(Msg::UpdateName)} valid={self.name_error.is_empty()} />
                     </Field>
                     <Field label="Password" help={&self.password_error}>
-                        <TextInput value={self.user.password.clone()} on_change={ctx.link().callback(Msg::UpdatePassword)} mask={true} valid={self.password_error.is_none()} />
+                        <TextInput value={self.user.password.clone()} on_change={ctx.link().callback(Msg::UpdatePassword)} mask={true} valid={self.password_error.is_empty()} />
                     </Field>
                     <Field label="Password Verification">
                         <TextInput value={self.user.password_repeat.clone()} on_change={ctx.link().callback(Msg::UpdatePasswordVerification)} mask={true} />
                     </Field>
                     <Field label="Role" help={&self.role_error}>
-                        <TextInput value={self.user.role.clone()} on_change={ctx.link().callback(Msg::UpdateRole)} valid={self.role_error.is_none()} />
+                        <TextInput value={self.user.role.clone()} on_change={ctx.link().callback(Msg::UpdateRole)} valid={self.role_error.is_empty()} />
                     </Field>
                 </div>
                 <footer class="card-footer">
