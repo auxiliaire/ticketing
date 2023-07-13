@@ -33,7 +33,23 @@ This is an integrated Rust backend and frontend (with Yew) example.
 
 ## Starting
 
+### Prerequisites
+
 ```bash
 rustup override set nightly
+```
+
+### Start the backend
+
+```bash
 cargo -Z unstable-options -C ./ watch -c -w src -x run
 ```
+
+### Start the frontend
+
+```bash
+cd frontend
+trunk serve
+```
+
+Visit [Localhost](http://127.0.0.1:8080/).
