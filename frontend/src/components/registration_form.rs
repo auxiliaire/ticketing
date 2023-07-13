@@ -1,4 +1,3 @@
-use implicit_clone::sync::{IArray, IString};
 use serde_valid::Validate;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -6,7 +5,7 @@ use yew_router::scope_ext::RouterScopeExt;
 use crate::components::bulma::field::Field;
 use crate::components::text_input::TextInput;
 use shared::dtos::user::User as UserDto;
-use shared::validation::error_messages::{ErrorMessages, ErrorsWrapper, IsEmpty};
+use shared::validation::error_messages::{ErrorMessages, ErrorsTrait, ErrorsWrapper, IsEmpty};
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
@@ -26,10 +25,10 @@ pub struct RegistrationForm {
     user: UserDto,
     on_submit: Callback<UserDto>,
     dirty: bool,
-    common_error: Option<IArray<IString>>,
-    name_error: Option<IArray<IString>>,
-    password_error: Option<IArray<IString>>,
-    role_error: Option<IArray<IString>>,
+    common_error: ErrorMessages,
+    name_error: ErrorMessages,
+    password_error: ErrorMessages,
+    role_error: ErrorMessages,
 }
 impl Component for RegistrationForm {
     type Message = Msg;

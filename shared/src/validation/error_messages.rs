@@ -6,15 +6,16 @@ use serde_valid::{
     validation::Errors,
 };
 
+pub type ErrorMessages = Option<IArray<IString>>;
 pub struct ErrorsWrapper(pub Errors);
 
-pub trait ErrorMessages {
-    fn get_common_messages(&self) -> Option<IArray<IString>>;
-    fn get_property_messages(&self, property_key: &str) -> Option<IArray<IString>>;
+pub trait ErrorsTrait {
+    fn get_common_messages(&self) -> ErrorMessages;
+    fn get_property_messages(&self, property_key: &str) -> ErrorMessages;
 }
 
-impl ErrorMessages for ErrorsWrapper {
-    fn get_common_messages(&self) -> Option<IArray<IString>> {
+impl ErrorsTrait for ErrorsWrapper {
+    fn get_common_messages(&self) -> ErrorMessages {
         let empty: Vec<Value> = Vec::new();
         let err = json!(self.0);
         err["errors"]
@@ -36,7 +37,7 @@ impl ErrorMessages for ErrorsWrapper {
             })
     }
 
-    fn get_property_messages(&self, property_key: &str) -> Option<IArray<IString>> {
+    fn get_property_messages(&self, property_key: &str) -> ErrorMessages {
         let empty: Vec<Value> = Vec::new();
         let err = json!(self.0);
         err["properties"][property_key]["errors"]
@@ -59,11 +60,11 @@ impl ErrorMessages for ErrorsWrapper {
     }
 }
 
-pub trait IsEmpty<T> {
+pub trait IsEmpty {
     fn is_empty(&self) -> bool;
 }
 
-impl IsEmpty<Option<IArray<IString>>> for Option<IArray<IString>> {
+impl IsEmpty for ErrorMessages {
     fn is_empty(&self) -> bool {
         self.as_ref().map(|a| a.is_empty()).unwrap_or(true)
     }
