@@ -57,7 +57,7 @@ impl Component for User {
                                 <div class="content">
                                     <p class="title">{ "Role" }</p>
                                     <div class="content">
-                                        { &user.role }
+                                        { &user.role.map_or(String::from(""), |r| r.to_string()) }
                                     </div>
                                 </div>
                             </article>

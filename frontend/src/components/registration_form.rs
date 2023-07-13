@@ -1,11 +1,17 @@
+use std::str::FromStr;
+
+use implicit_clone::sync::{IArray, IString};
 use serde_valid::Validate;
+use shared::validation::user::{OptionUserRole, UserRole};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::components::bulma::field::Field;
-use crate::components::text_input::TextInput;
+use crate::components::html::select::Select;
+use crate::components::html::text_input::TextInput;
 use shared::dtos::user::User as UserDto;
 use shared::validation::error_messages::{ErrorMessages, ErrorsTrait, ErrorsWrapper, IsEmpty};
+use strum::IntoEnumIterator;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
@@ -63,7 +69,7 @@ impl Component for RegistrationForm {
                 self.user.password_repeat = String::from(password.as_str());
             }
             Msg::UpdateRole(role) => {
-                self.user.role = String::from(role.as_str());
+                self.user.role = UserRole::from_str(role.as_str()).ok();
             }
             Msg::Submit() => {
                 self.dirty = true;
@@ -114,7 +120,7 @@ impl Component for RegistrationForm {
                         <TextInput value={self.user.password_repeat.clone()} on_change={ctx.link().callback(Msg::UpdatePasswordVerification)} mask={true} />
                     </Field>
                     <Field label="Role" help={&self.role_error}>
-                        <TextInput value={self.user.role.clone()} on_change={ctx.link().callback(Msg::UpdateRole)} valid={self.role_error.is_empty()} />
+                        <Select value={OptionUserRole(self.user.role).to_string()} options={self.get_roles()} on_change={ctx.link().callback(Msg::UpdateRole)} valid={self.role_error.is_empty()} placeholder="Choose role" />
                     </Field>
                 </div>
                 <footer class="card-footer">
@@ -134,4 +140,10 @@ impl Component for RegistrationForm {
     }
 }
 
-impl RegistrationForm {}
+impl RegistrationForm {
+    fn get_roles(&self) -> IArray<IString> {
+        UserRole::iter()
+            .map(|v| IString::from(v.to_string()))
+            .collect::<IArray<IString>>()
+    }
+}

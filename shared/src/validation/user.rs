@@ -1,3 +1,26 @@
+use serde::{Deserialize, Serialize};
+use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
+
+#[derive(
+    Clone, Copy, Debug, Display, EnumIter, EnumString, PartialEq, Eq, Serialize, Deserialize,
+)]
+pub enum UserRole {
+    Developer,
+    Manager,
+}
+
+pub struct OptionUserRole(pub Option<UserRole>);
+
+impl std::fmt::Display for OptionUserRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.0.map(|r| r.to_string()).unwrap_or(String::from(""))
+        )
+    }
+}
+
 pub struct UserValidation;
 
 impl UserValidation {
@@ -34,6 +57,21 @@ impl UserValidation {
             true => Ok(()),
             false => Err(serde_valid::validation::Error::Custom(
                 "Passwords should match.".to_owned(),
+            )),
+        }
+    }
+
+    pub fn role_validation(role: &Option<UserRole>) -> Result<(), serde_valid::validation::Error> {
+        match role {
+            Some(_) => Ok(()),
+            None => Err(serde_valid::validation::Error::Custom(
+                String::from("Role should be one of the followings: ")
+                    + UserRole::iter()
+                        .map(|r| r.to_string())
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                        .as_str()
+                    + ".",
             )),
         }
     }

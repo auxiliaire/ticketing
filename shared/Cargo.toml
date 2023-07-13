@@ -13,3 +13,4 @@ implicit-clone = "0.3"
 regex = "1.9"
 serde = { version = "1", features = [ "derive" ] }
 serde_valid = "0.16"
+strum = { version = "0.25", features = [ "derive" ] }

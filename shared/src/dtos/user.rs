@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::validation::user::UserValidation;
+use crate::validation::user::{UserRole, UserValidation};
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 
@@ -15,11 +15,8 @@ pub struct User {
     pub password: String,
     #[serde(skip_serializing)]
     pub password_repeat: String,
-    #[validate(
-        enumerate("Developer", "Manager"),
-        message = "User should be either Developer or Manager."
-    )]
-    pub role: String,
+    #[validate(custom(UserValidation::role_validation))]
+    pub role: Option<UserRole>,
 }
 
 impl Display for User {
@@ -30,6 +27,7 @@ impl Display for User {
             self.id.map_or(String::from(""), |id| format!("{}", id)),
             self.name,
             self.role
+                .map_or(String::from(""), |r| format!("{}", r.to_string()))
         )
     }
 }
@@ -41,7 +39,7 @@ impl User {
             name: String::from(""),
             password: String::from(""),
             password_repeat: String::from(""),
-            role: String::from(""),
+            role: None,
         }
     }
 }

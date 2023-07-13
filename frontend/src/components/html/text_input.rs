@@ -42,7 +42,7 @@ pub fn text_input(props: &Props) -> Html {
     };
 
     let oninput = Callback::from(move |input_event: InputEvent| {
-        on_change.emit(get_value_from_input_event(input_event))
+        on_change.emit(get_value_from_input_event(input_event.into()))
     });
 
     html! {
