@@ -26,8 +26,7 @@ impl Display for User {
             "( id: {}, name: {}, role: {})",
             self.id.map_or(String::from(""), |id| format!("{}", id)),
             self.name,
-            self.role
-                .map_or(String::from(""), |r| format!("{}", r.to_string()))
+            self.role.map_or(String::from(""), |r| r.to_string())
         )
     }
 }

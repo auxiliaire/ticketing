@@ -8,5 +8,5 @@ pub fn get_socket_address() -> SocketAddr {
 }
 
 pub fn get_api_url() -> String {
-    format!("http://{}:{}/", IP_ADDRESS.to_string(), PORT)
+    format!("http://{}:{}/", IP_ADDRESS, PORT)
 }
