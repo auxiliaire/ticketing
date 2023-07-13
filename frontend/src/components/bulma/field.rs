@@ -1,5 +1,5 @@
 use implicit_clone::sync::{IArray, IString};
-use yew::{classes, html, AttrValue, Children, Component, Properties, Html};
+use yew::{classes, html, AttrValue, Children, Component, Html, Properties};
 
 const ICON_CLASS: &str = "fas";
 
