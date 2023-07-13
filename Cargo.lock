@@ -800,6 +800,7 @@ version = "0.1.0"
 dependencies = [
  "gloo",
  "gloo-net",
+ "implicit-clone",
  "instant",
  "log",
  "serde",
@@ -2435,6 +2436,7 @@ dependencies = [
 name = "shared"
 version = "0.1.0"
 dependencies = [
+ "implicit-clone",
  "regex",
  "serde",
  "serde_valid",

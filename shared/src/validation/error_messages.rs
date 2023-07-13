@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use implicit_clone::sync::{IArray, IString};
 use serde_valid::{
     json::{json, Value},
     validation::Errors,
@@ -6,12 +9,12 @@ use serde_valid::{
 pub struct ErrorsWrapper(pub Errors);
 
 pub trait ErrorMessages {
-    fn get_common_messages(&self) -> Option<String>;
-    fn get_property_messages(&self, property_key: &str) -> Option<String>;
+    fn get_common_messages(&self) -> Option<IArray<IString>>;
+    fn get_property_messages(&self, property_key: &str) -> Option<IArray<IString>>;
 }
 
 impl ErrorMessages for ErrorsWrapper {
-    fn get_common_messages(&self) -> Option<String> {
+    fn get_common_messages(&self) -> Option<IArray<IString>> {
         let empty: Vec<Value> = Vec::new();
         let err = json!(self.0);
         err["errors"]
@@ -23,10 +26,17 @@ impl ErrorMessages for ErrorsWrapper {
                 _ => None,
             })
             .collect::<Option<Vec<&str>>>()
-            .map(|v| v.join(""))
+            .map(|v| v.iter().map(|s| String::from(*s)).collect())
+            .map(|v: Vec<String>| {
+                IArray::<IString>::Rc(
+                    v.iter()
+                        .map(|s| IString::Rc(Arc::<str>::from(s.as_str())))
+                        .collect(),
+                )
+            })
     }
 
-    fn get_property_messages(&self, property_key: &str) -> Option<String> {
+    fn get_property_messages(&self, property_key: &str) -> Option<IArray<IString>> {
         let empty: Vec<Value> = Vec::new();
         let err = json!(self.0);
         err["properties"][property_key]["errors"]
@@ -38,6 +48,13 @@ impl ErrorMessages for ErrorsWrapper {
                 _ => None,
             })
             .collect::<Option<Vec<&str>>>()
-            .map(|v| v.join(""))
+            .map(|v| v.iter().map(|s| String::from(*s)).collect())
+            .map(|v: Vec<String>| {
+                IArray::<IString>::Rc(
+                    v.iter()
+                        .map(|s| IString::Rc(Arc::<str>::from(s.as_str())))
+                        .collect(),
+                )
+            })
     }
 }

@@ -1,4 +1,5 @@
-use yew::{classes, html, AttrValue, Children, Component, Properties};
+use implicit_clone::sync::{IArray, IString};
+use yew::{classes, html, AttrValue, Children, Component, Properties, Html};
 
 const ICON_CLASS: &str = "fas";
 
@@ -8,7 +9,7 @@ pub struct Field;
 pub struct Props {
     pub label: AttrValue,
     pub children: Children,
-    pub help: Option<AttrValue>,
+    pub help: Option<IArray<IString>>,
     pub icon_left: Option<AttrValue>,
     pub icon_right: Option<AttrValue>,
 }
@@ -42,7 +43,15 @@ impl Component for Field {
                     }
                 </div>
                 if let Some(help) = &ctx.props().help {
-                    <p class="help is-danger">{ help }</p>
+                    <p class="help is-danger">
+                        <ul>
+                            {
+                                help.iter().map(|message| {
+                                    html!{<li>{ message }</li>}
+                                }).collect::<Html>()
+                            }
+                        </ul>
+                    </p>
                 }
               </div>
         )

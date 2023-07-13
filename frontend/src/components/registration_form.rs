@@ -1,3 +1,4 @@
+use implicit_clone::sync::{IArray, IString};
 use serde_valid::Validate;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -25,10 +26,10 @@ pub struct RegistrationForm {
     user: UserDto,
     on_submit: Callback<UserDto>,
     dirty: bool,
-    common_error: Option<AttrValue>,
-    name_error: Option<AttrValue>,
-    password_error: Option<AttrValue>,
-    role_error: Option<AttrValue>,
+    common_error: Option<IArray<IString>>,
+    name_error: Option<IArray<IString>>,
+    password_error: Option<IArray<IString>>,
+    role_error: Option<IArray<IString>>,
 }
 impl Component for RegistrationForm {
     type Message = Msg;
@@ -72,12 +73,10 @@ impl Component for RegistrationForm {
                     Ok(_) => self.on_submit.emit(self.user.clone()),
                     Err(e) => {
                         let errors = ErrorsWrapper(e);
-                        self.common_error = errors.get_common_messages().map(AttrValue::from);
-                        self.name_error = errors.get_property_messages("name").map(AttrValue::from);
-                        self.password_error = errors
-                            .get_property_messages("password")
-                            .map(AttrValue::from);
-                        self.role_error = errors.get_property_messages("role").map(AttrValue::from);
+                        self.common_error = errors.get_common_messages();
+                        self.name_error = errors.get_property_messages("name");
+                        self.password_error = errors.get_property_messages("password");
+                        self.role_error = errors.get_property_messages("role");
                     }
                 }
             }
@@ -96,7 +95,15 @@ impl Component for RegistrationForm {
             <div class="card">
                 <div class="card-content">
                     if let Some(common_error) = &self.common_error {
-                        <p class="help is-danger">{ common_error }</p>
+                        <p class="help is-danger">
+                            <ul>
+                            {
+                                common_error.iter().map(|message| {
+                                    html!{<li>{ message }</li>}
+                                }).collect::<Html>()
+                            }
+                            </ul>
+                        </p>
                     }
                     <Field label="Name" help={&self.name_error}>
                         <TextInput value={self.user.name.clone()} on_change={ctx.link().callback(Msg::UpdateName)} valid={self.name_error.is_none()} />
