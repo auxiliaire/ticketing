@@ -16,7 +16,7 @@ impl UserValidation {
 
     pub fn is_password_valid(password: &str) -> bool {
         let numbers = "0123456789";
-        let special_chars = ".%#*-_";
+        let special_chars = ".:!%#*-_+";
         let lower = "abcdefghijklmnopqrstuvwxyz";
         password.len() > 8
             && password.len() < 20
