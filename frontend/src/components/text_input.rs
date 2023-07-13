@@ -13,10 +13,10 @@ pub struct Props {
     pub mask: bool,
     #[prop_or(true)]
     pub valid: bool,
-    #[prop_or(String::from("input"))]
-    pub base_classes: String,
-    #[prop_or(String::from("is-danger"))]
-    pub error_classes: String,
+    #[prop_or(AttrValue::from("input"))]
+    pub base_classes: AttrValue,
+    #[prop_or(AttrValue::from("is-danger"))]
+    pub error_classes: AttrValue,
 }
 
 #[function_component(TextInput)]
@@ -32,7 +32,7 @@ pub fn text_input(props: &Props) -> Html {
     } = props.clone();
 
     let get_classes = || match valid {
-        true => base_classes,
+        true => base_classes.to_string(),
         false => [base_classes.as_str(), error_classes.as_str()].join(" "),
     };
 
