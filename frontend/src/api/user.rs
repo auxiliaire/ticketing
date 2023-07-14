@@ -37,4 +37,20 @@ impl UserApi {
             callback.emit(list);
         });
     }
+
+    pub fn create(user: User, callback: Callback<User>) {
+        spawn_local(async move {
+            let resp: User = Request::post(format!("{}{}", get_api_url(), USERS_ENDPOINT).as_str())
+                .json(&user)
+                .unwrap()
+                .send()
+                .await
+                .unwrap()
+                .json()
+                .await
+                .unwrap();
+
+            callback.emit(resp);
+        });
+    }
 }

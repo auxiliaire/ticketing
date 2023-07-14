@@ -1,10 +1,13 @@
+use frontend::api::user::UserApi;
 use yew::prelude::*;
+use yew_router::scope_ext::RouterScopeExt;
 
-use crate::components::registration_form::RegistrationForm;
+use crate::{components::registration_form::RegistrationForm, Route};
 use shared::dtos::user::User as UserDto;
 
 pub enum Msg {
     UserSubmitted(UserDto),
+    UserCreated(UserDto),
 }
 
 pub struct Registration {}
@@ -16,10 +19,18 @@ impl Component for Registration {
         Self {}
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::UserSubmitted(user) => {
                 log::debug!("Submitted: {}", user);
+                UserApi::create(user, ctx.link().callback(Msg::UserCreated));
+            }
+            Msg::UserCreated(user) => {
+                log::debug!("Created: {}", user);
+                let navigator = ctx.link().navigator().unwrap();
+                navigator.replace(&Route::User {
+                    id: user.id.unwrap(),
+                });
             }
         }
         true

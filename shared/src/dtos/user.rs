@@ -13,7 +13,7 @@ pub struct User {
     pub name: String,
     #[validate(custom(UserValidation::password_validation))]
     pub password: String,
-    #[serde(skip_serializing)]
+    #[serde(skip_serializing, skip_deserializing)]
     pub password_repeat: String,
     #[validate(custom(UserValidation::role_validation))]
     pub role: Option<UserRole>,
