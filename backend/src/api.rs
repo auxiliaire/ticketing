@@ -5,12 +5,9 @@ use sea_orm::DatabaseConnection;
 use shared::api::get_socket_address;
 use tower_http::cors::{Any, CorsLayer};
 
-pub mod comments_resource;
 pub mod error;
-pub mod projects_resource;
-pub mod ticket_updates_resource;
-pub mod tickets_resource;
-pub mod users_resource;
+pub mod resources;
+pub mod validated_json;
 
 pub async fn serve(db: DatabaseConnection) -> anyhow::Result<()> {
     axum::Server::bind(&get_socket_address())
@@ -32,11 +29,11 @@ pub fn router(db: DatabaseConnection) -> Router {
         .allow_origin(Any);
 
     Router::new()
-        .merge(users_resource::router())
-        .merge(tickets_resource::router())
-        .merge(ticket_updates_resource::router())
-        .merge(comments_resource::router())
-        .merge(projects_resource::router())
+        .merge(resources::users_resource::router())
+        .merge(resources::tickets_resource::router())
+        .merge(resources::ticket_updates_resource::router())
+        .merge(resources::comments_resource::router())
+        .merge(resources::projects_resource::router())
         .layer(Extension(db))
         .layer(cors)
 }

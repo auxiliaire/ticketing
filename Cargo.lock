@@ -342,6 +342,7 @@ name = "backend"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "axum",
  "axum-extra",
  "dotenvy",
@@ -354,6 +355,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "serde_valid",
  "shared",
  "thiserror",
  "tokio",
@@ -804,6 +806,7 @@ dependencies = [
  "instant",
  "log",
  "serde",
+ "serde_json",
  "serde_valid",
  "shared",
  "strum",

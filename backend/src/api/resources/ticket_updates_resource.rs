@@ -8,7 +8,7 @@ use axum_extra::extract::WithRejection;
 use entity::{ticket_updates, ticket_updates::Entity as TicketUpdate};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 
-use super::error::ApiError;
+use crate::api::error::ApiError;
 
 pub fn router() -> Router {
     Router::new()

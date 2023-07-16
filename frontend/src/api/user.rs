@@ -1,5 +1,5 @@
 use gloo_net::http::Request;
-use shared::api::get_api_url;
+use shared::api::{error_response::ErrorResponse, get_api_url};
 use shared::dtos::user::User;
 use yew::{platform::spawn_local, Callback};
 
@@ -38,19 +38,40 @@ impl UserApi {
         });
     }
 
-    pub fn create(user: User, callback: Callback<User>) {
+    pub fn create(user: User, callback: Callback<User>, callback_error: Callback<ErrorResponse>) {
         spawn_local(async move {
-            let resp: User = Request::post(format!("{}{}", get_api_url(), USERS_ENDPOINT).as_str())
+            let res = Request::post(format!("{}{}", get_api_url(), USERS_ENDPOINT).as_str())
                 .json(&user)
                 .unwrap()
                 .send()
-                .await
-                .unwrap()
-                .json()
-                .await
-                .unwrap();
+                .await;
 
-            callback.emit(resp);
+            match res {
+                Ok(resp) => {
+                    let text_result = resp.text().await;
+                    match text_result {
+                        Ok(text) => {
+                            let returned_user_result: Result<User, _> =
+                                serde_json::from_str(text.as_str());
+                            match returned_user_result {
+                                Ok(returned_user) => callback.emit(returned_user),
+                                Err(_) => {
+                                    let returned_error_result: Result<ErrorResponse, _> =
+                                        serde_json::from_str(text.as_str());
+                                    match returned_error_result {
+                                        Ok(error_response) => callback_error.emit(error_response),
+                                        Err(e) => {
+                                            callback_error.emit(ErrorResponse::from(e.to_string()))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
+                    }
+                }
+                Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
+            }
         });
     }
 }

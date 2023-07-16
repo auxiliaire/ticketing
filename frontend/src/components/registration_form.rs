@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use implicit_clone::sync::{IArray, IString};
-use serde_valid::Validate;
+use shared::api::error_response::ErrorResponse;
 use shared::validation::user::{OptionUserRole, UserRole};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -15,7 +15,7 @@ use strum::IntoEnumIterator;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
-    pub on_submit: Callback<UserDto>,
+    pub on_submit: Callback<(UserDto, Callback<ErrorResponse>)>,
 }
 
 pub enum Msg {
@@ -24,13 +24,13 @@ pub enum Msg {
     UpdatePasswordVerification(AttrValue),
     UpdateRole(AttrValue),
     Submit(),
+    UpdateErrors(ErrorResponse),
     Cancel(),
 }
 
 pub struct RegistrationForm {
     user: UserDto,
-    on_submit: Callback<UserDto>,
-    dirty: bool,
+    on_submit: Callback<(UserDto, Callback<ErrorResponse>)>,
     common_error: ErrorMessages,
     name_error: ErrorMessages,
     password_error: ErrorMessages,
@@ -44,7 +44,6 @@ impl Component for RegistrationForm {
         Self {
             user: UserDto::default(),
             on_submit: ctx.props().on_submit.to_owned(),
-            dirty: false,
             common_error: None,
             name_error: None,
             password_error: None,
@@ -72,17 +71,18 @@ impl Component for RegistrationForm {
                 self.user.role = UserRole::from_str(role.as_str()).ok();
             }
             Msg::Submit() => {
-                self.dirty = true;
-                let result = self.user.validate();
+                let result = Result::Ok(()); // self.user.validate();
                 match result {
-                    Ok(_) => self.on_submit.emit(self.user.clone()),
-                    Err(e) => {
-                        let errors = ErrorsWrapper(e);
-                        self.common_error = errors.get_common_messages();
-                        self.name_error = errors.get_property_messages("name");
-                        self.password_error = errors.get_property_messages("password");
-                        self.role_error = errors.get_property_messages("role");
-                    }
+                    Ok(_) => self
+                        .on_submit
+                        .emit((self.user.clone(), ctx.link().callback(Msg::UpdateErrors))),
+                    Err(e) => self.update_errors(ErrorsWrapper(e)),
+                }
+            }
+            Msg::UpdateErrors(error_response) => {
+                log::debug!("Error response: {}", error_response);
+                if let Some(errors) = error_response.details {
+                    self.update_errors(errors);
                 }
             }
             Msg::Cancel() => {
@@ -145,5 +145,15 @@ impl RegistrationForm {
         UserRole::iter()
             .map(|v| IString::from(v.to_string()))
             .collect::<IArray<IString>>()
+    }
+
+    fn update_errors<E>(&mut self, errors: E)
+    where
+        E: ErrorsTrait,
+    {
+        self.common_error = errors.get_common_messages();
+        self.name_error = errors.get_property_messages("name");
+        self.password_error = errors.get_property_messages("password");
+        self.role_error = errors.get_property_messages("role");
     }
 }

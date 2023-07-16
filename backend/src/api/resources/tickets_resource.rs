@@ -6,71 +6,71 @@ use axum::{
     Extension, Router,
 };
 use axum_extra::extract::WithRejection;
-use entity::{projects, projects::Entity as Project};
+use entity::{tickets, tickets::Entity as Ticket};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait, Set};
 
-use super::error::{ApiError, JsonError};
+use crate::api::error::{ApiError, JsonError};
 
 pub fn router() -> Router {
     Router::new()
-        .route("/projects", post(post_project))
-        .route("/projects", get(get_projects))
-        .route("/projects/:id", get(get_project))
-        .route("/projects/:id", put(put_project))
-        .route("/projects/:id", delete(delete_project))
+        .route("/tickets", post(post_ticket))
+        .route("/tickets", get(get_tickets))
+        .route("/tickets/:id", get(get_ticket))
+        .route("/tickets/:id", put(put_ticket))
+        .route("/tickets/:id", delete(delete_ticket))
 }
 
-async fn get_projects(
+async fn get_tickets(
     db: Extension<DatabaseConnection>,
-) -> Result<Json<Vec<projects::Model>>, ApiError> {
-    let list = Project::find().all(&*db).await?;
+) -> Result<Json<Vec<tickets::Model>>, ApiError> {
+    let list = Ticket::find().all(&*db).await?;
     Ok(Json(list))
 }
 
-async fn get_project(
+async fn get_ticket(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> Result<Json<projects::Model>, ApiError> {
-    Project::find_by_id(id).one(&*db).await?.map_or(
+) -> Result<Json<tickets::Model>, ApiError> {
+    Ticket::find_by_id(id).one(&*db).await?.map_or(
         Err(ApiError::new(
             StatusCode::NOT_FOUND,
             String::from("Not found"),
         )),
-        |project| Ok(Json(project)),
+        |ticket| Ok(Json(ticket)),
     )
 }
 
-async fn post_project(
+async fn post_ticket(
     db: Extension<DatabaseConnection>,
-    WithRejection(Json(model), _): WithRejection<Json<projects::Model>, ApiError>,
-) -> Result<Json<projects::Model>, ApiError> {
-    println!("Project(): '{}'", model.summary);
-    let project = projects::ActiveModel {
-        summary: Set(model.summary.to_owned()),
-        deadline: Set(model.deadline.to_owned()),
-        user_id: Set(model.user_id),
-        active: Set(model.active),
+    WithRejection(Json(model), _): WithRejection<Json<tickets::Model>, ApiError>,
+) -> Result<Json<tickets::Model>, ApiError> {
+    println!("Ticket(): '{}'", model.title);
+    let ticket = tickets::ActiveModel {
+        title: Set(model.title.to_owned()),
+        description: Set(model.description.to_owned()),
+        project_id: Set(model.project_id.to_owned()),
         ..Default::default()
     }
     .insert(&*db)
     .await?;
-    Ok(Json(project))
+    Ok(Json(ticket))
 }
 
-async fn put_project(
+async fn put_ticket(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-    WithRejection(Json(update), _): WithRejection<Json<projects::Model>, ApiError>,
-) -> impl IntoResponse {
-    let original_result = Project::find_by_id(id).one(&*db).await?;
+    WithRejection(Json(update), _): WithRejection<Json<tickets::Model>, ApiError>,
+) -> Result<Json<tickets::Model>, ApiError> {
+    let original_result = Ticket::find_by_id(id).one(&*db).await?;
     match original_result {
         Some(original) => {
-            let updated = projects::ActiveModel {
+            let updated = tickets::ActiveModel {
                 id: Set(original.id),
-                summary: Set(update.summary.to_owned()),
-                deadline: Set(update.deadline.to_owned()),
+                title: Set(update.title.to_owned()),
+                description: Set(update.description.to_owned()),
+                status: Set(update.status.to_owned()),
+                project_id: Set(update.project_id),
                 user_id: Set(update.user_id),
-                active: Set(update.active),
             }
             .update(&*db)
             .await?;
@@ -83,12 +83,12 @@ async fn put_project(
     }
 }
 
-async fn delete_project(
+async fn delete_ticket(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
 ) -> impl IntoResponse {
-    projects::ActiveModel {
-        id: Set(id),
+    tickets::ActiveModel {
+        id: sea_orm::ActiveValue::Set(id),
         ..Default::default()
     }
     .delete(&*db)

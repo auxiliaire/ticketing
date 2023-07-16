@@ -3,16 +3,16 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{components::registration_form::RegistrationForm, Route};
-use shared::dtos::user::User as UserDto;
+use shared::{api::error_response::ErrorResponse, dtos::user::User as UserDto};
 
-pub enum Msg {
-    UserSubmitted(UserDto),
-    UserCreated(UserDto),
+pub enum UserMsg {
+    Submitted((UserDto, Callback<ErrorResponse>)),
+    Created(UserDto),
 }
 
 pub struct Registration {}
 impl Component for Registration {
-    type Message = Msg;
+    type Message = UserMsg;
     type Properties = ();
 
     fn create(_: &Context<Self>) -> Self {
@@ -21,11 +21,11 @@ impl Component for Registration {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::UserSubmitted(user) => {
+            UserMsg::Submitted((user, callback_error)) => {
                 log::debug!("Submitted: {}", user);
-                UserApi::create(user, ctx.link().callback(Msg::UserCreated));
+                UserApi::create(user, ctx.link().callback(UserMsg::Created), callback_error);
             }
-            Msg::UserCreated(user) => {
+            UserMsg::Created(user) => {
                 log::debug!("Created: {}", user);
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.replace(&Route::User {
@@ -50,7 +50,7 @@ impl Component for Registration {
                     </div>
                 </section>
                 <div class="section">
-                    <RegistrationForm on_submit={ctx.link().callback(Msg::UserSubmitted)} />
+                    <RegistrationForm on_submit={ctx.link().callback(UserMsg::Submitted)} />
                 </div>
             </div>
         }

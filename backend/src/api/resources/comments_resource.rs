@@ -6,67 +6,78 @@ use axum::{
     Extension, Router,
 };
 use axum_extra::extract::WithRejection;
-use entity::{users, users::Entity as User};
+use entity::{comments, comments::Entity as Comment};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait, Set};
+use serde::{Deserialize, Serialize};
 
-use super::error::{ApiError, JsonError};
+use crate::api::error::{ApiError, JsonError};
+
+#[derive(Serialize, Deserialize)]
+struct CommentDto {
+    pub text: String,
+    pub ticket_id: u64,
+    pub user_id: u64,
+}
 
 pub fn router() -> Router {
     Router::new()
-        .route("/users", post(post_user))
-        .route("/users", get(get_users))
-        .route("/users/:id", get(get_user))
-        .route("/users/:id", put(put_user))
-        .route("/users/:id", delete(delete_user))
+        .route("/comments", post(post_comment))
+        .route("/comments", get(get_comments))
+        .route("/comments/:id", get(get_comment))
+        .route("/comments/:id", put(put_comment))
+        .route("/comments/:id", delete(delete_comment))
 }
 
-async fn get_users(db: Extension<DatabaseConnection>) -> Result<Json<Vec<users::Model>>, ApiError> {
-    let list = User::find().all(&*db).await?;
+async fn get_comments(
+    db: Extension<DatabaseConnection>,
+) -> Result<Json<Vec<comments::Model>>, ApiError> {
+    let list = Comment::find().all(&*db).await?;
     Ok(Json(list))
 }
 
-async fn get_user(
+async fn get_comment(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> Result<Json<users::Model>, ApiError> {
-    User::find_by_id(id).one(&*db).await?.map_or(
+) -> Result<Json<comments::Model>, ApiError> {
+    Comment::find_by_id(id).one(&*db).await?.map_or(
         Err(ApiError::new(
             StatusCode::NOT_FOUND,
             String::from("Not found"),
         )),
-        |user| Ok(Json(user)),
+        |comment| Ok(Json(comment)),
     )
 }
 
-async fn post_user(
+async fn post_comment(
     db: Extension<DatabaseConnection>,
-    WithRejection(Json(model), _): WithRejection<Json<users::Model>, ApiError>,
-) -> Result<Json<users::Model>, ApiError> {
-    println!("User(): '{}'", model.name);
-    let user = users::ActiveModel {
-        name: Set(model.name.to_owned()),
-        password: Set(model.password.to_owned()),
-        role: Set(model.role.to_owned()),
+    WithRejection(Json(model), _): WithRejection<Json<comments::Model>, ApiError>,
+) -> Result<Json<comments::Model>, ApiError> {
+    println!("New comment on ticket({})", model.ticket_id);
+    let comment = comments::ActiveModel {
+        text: Set(model.text.to_owned()),
+        ticket_id: Set(model.ticket_id.to_owned()),
+        user_id: Set(model.user_id.to_owned()),
         ..Default::default()
     }
     .insert(&*db)
     .await?;
-    Ok(Json(user))
+    Ok(Json(comment))
 }
 
-async fn put_user(
+async fn put_comment(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-    WithRejection(Json(update), _): WithRejection<Json<users::Model>, ApiError>,
-) -> Result<Json<users::Model>, ApiError> {
-    let original_result = User::find_by_id(id).one(&*db).await?;
+    WithRejection(Json(update), _): WithRejection<Json<comments::Model>, ApiError>,
+) -> Result<Json<comments::Model>, ApiError> {
+    let original_result = Comment::find_by_id(id).one(&*db).await?;
     match original_result {
         Some(original) => {
-            let updated = users::ActiveModel {
+            let updated = comments::ActiveModel {
                 id: Set(original.id),
-                name: Set(update.name.to_owned()),
-                password: Set(update.password.to_owned()),
-                role: Set(update.role.to_owned()),
+                text: Set(update.text.to_owned()),
+                ticket_id: Set(original.ticket_id),
+                user_id: Set(original.user_id),
+                ..Default::default()
             }
             .update(&*db)
             .await?;
@@ -79,11 +90,11 @@ async fn put_user(
     }
 }
 
-async fn delete_user(
+async fn delete_comment(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
 ) -> impl IntoResponse {
-    users::ActiveModel {
+    comments::ActiveModel {
         id: Set(id),
         ..Default::default()
     }

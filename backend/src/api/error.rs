@@ -8,6 +8,8 @@ use axum::{
 use sea_orm::{strum::Display, DbErr};
 use serde::Serialize;
 use serde_json::json;
+use serde_valid::validation::Errors;
+use shared::api::error_response::{ErrorDetail, ErrorResponse};
 use thiserror::Error;
 
 #[derive(Debug, Error, Serialize)]
@@ -17,6 +19,7 @@ pub struct JsonError {
     code: Option<String>,
     message: String,
     origin: Option<String>,
+    details: Option<Errors>,
 }
 
 impl Display for JsonError {
@@ -36,6 +39,7 @@ impl From<(StatusCode, String)> for JsonError {
             code: Option::None,
             message,
             origin: Option::None,
+            details: Option::None,
         }
     }
 }
@@ -47,6 +51,19 @@ impl From<(StatusCode, String, String)> for JsonError {
             code: Option::None,
             message,
             origin: Option::Some(origin),
+            details: Option::None,
+        }
+    }
+}
+
+impl From<(StatusCode, String, String, Errors)> for JsonError {
+    fn from((status, message, origin, details): (StatusCode, String, String, Errors)) -> Self {
+        JsonError {
+            status,
+            code: Option::None,
+            message,
+            origin: Option::Some(origin),
+            details: Option::Some(details),
         }
     }
 }
@@ -59,10 +76,11 @@ impl IntoResponse for JsonError {
                 header::CONTENT_TYPE,
                 HeaderValue::from_static(mime::APPLICATION_JSON.as_ref()),
             )],
-            json!({
-                "code": self.code.unwrap_or(self.status.to_string()),
-                "message": self.message,
-                "origin": self.origin.unwrap_or(String::from("unspecified")),
+            json!(ErrorResponse {
+                code: self.code.unwrap_or(self.status.to_string()),
+                message: self.message,
+                origin: self.origin.unwrap_or(String::from("unspecified")),
+                details: self.details.map(ErrorDetail::from),
             })
             .to_string(),
         )
@@ -75,6 +93,7 @@ pub enum ApiError {
     #[error(transparent)]
     JsonExtractorRejection(#[from] JsonRejection),
     PathExtractorRejection(#[from] PathRejection),
+    ValidationRejection(#[from] Errors),
     DbAppError(#[from] DbErr),
     HandlerError(#[from] JsonError),
 }
@@ -97,6 +116,12 @@ impl IntoResponse for ApiError {
                 path_rejection.status(),
                 path_rejection.body_text(),
                 String::from("path_rejection"),
+            )),
+            ApiError::ValidationRejection(validation_errors) => JsonError::from((
+                StatusCode::UNPROCESSABLE_ENTITY,
+                String::from("Validation Error"),
+                String::from("validation_rejection"),
+                validation_errors,
             )),
             ApiError::DbAppError(db_error) => JsonError::from((
                 StatusCode::INTERNAL_SERVER_ERROR,
