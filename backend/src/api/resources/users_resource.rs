@@ -10,7 +10,10 @@ use entity::{users, users::Entity as User};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait, Set};
 use shared::{dtos::user::User as UserDto, validation::user::OptionUserRole};
 
-use crate::api::{error::{ApiError, JsonError}, validated_json::ValidatedJson};
+use crate::api::{
+    error::{ApiError, JsonError},
+    validated_json::ValidatedJson,
+};
 
 pub fn router() -> Router {
     Router::new()
