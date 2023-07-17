@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use axum::{
     extract::rejection::{JsonRejection, PathRejection},
     http::{header, HeaderValue, StatusCode},
@@ -9,7 +7,8 @@ use sea_orm::{strum::Display, DbErr};
 use serde::Serialize;
 use serde_json::json;
 use serde_valid::validation::Errors;
-use shared::api::error_response::{ErrorDetail, ErrorResponse};
+use shared::api::error::{error_detail::ErrorDetail, error_response::ErrorResponse};
+use std::fmt::Display;
 use thiserror::Error;
 
 #[derive(Debug, Error, Serialize)]

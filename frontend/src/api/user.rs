@@ -1,5 +1,5 @@
 use gloo_net::http::Request;
-use shared::api::{error_response::ErrorResponse, get_api_url};
+use shared::api::{error::error_response::ErrorResponse, get_api_url};
 use shared::dtos::user::User;
 use yew::{platform::spawn_local, Callback};
 

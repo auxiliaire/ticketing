@@ -1,17 +1,18 @@
-use std::str::FromStr;
-
-use implicit_clone::sync::{IArray, IString};
-use shared::api::error_response::ErrorResponse;
-use shared::validation::user::{OptionUserRole, UserRole};
-use yew::prelude::*;
-use yew_router::scope_ext::RouterScopeExt;
-
 use crate::components::bulma::field::Field;
 use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
+use implicit_clone::sync::{IArray, IString};
+use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::user::User as UserDto;
-use shared::validation::error_messages::{ErrorMessages, ErrorsTrait, ErrorsWrapper, IsEmpty};
+use shared::validation::is_empty::IsEmpty;
+use shared::validation::user::{OptionUserRole, UserRole};
+use shared::validation::validation_messages::{
+    ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
+};
+use std::str::FromStr;
 use strum::IntoEnumIterator;
+use yew::prelude::*;
+use yew_router::scope_ext::RouterScopeExt;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
@@ -31,10 +32,10 @@ pub enum Msg {
 pub struct RegistrationForm {
     user: UserDto,
     on_submit: Callback<(UserDto, Callback<ErrorResponse>)>,
-    common_error: ErrorMessages,
-    name_error: ErrorMessages,
-    password_error: ErrorMessages,
-    role_error: ErrorMessages,
+    common_error: IValidationMessages,
+    name_error: IValidationMessages,
+    password_error: IValidationMessages,
+    role_error: IValidationMessages,
 }
 impl Component for RegistrationForm {
     type Message = Msg;
@@ -149,7 +150,7 @@ impl RegistrationForm {
 
     fn update_errors<E>(&mut self, errors: E)
     where
-        E: ErrorsTrait,
+        E: ValidationMessagesTrait,
     {
         self.common_error = errors.get_common_messages();
         self.name_error = errors.get_property_messages("name");

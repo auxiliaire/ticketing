@@ -1,9 +1,8 @@
+use crate::{components::registration_form::RegistrationForm, Route};
 use frontend::api::user::UserApi;
+use shared::{api::error::error_response::ErrorResponse, dtos::user::User as UserDto};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
-
-use crate::{components::registration_form::RegistrationForm, Route};
-use shared::{api::error_response::ErrorResponse, dtos::user::User as UserDto};
 
 pub enum UserMsg {
     Submitted((UserDto, Callback<ErrorResponse>)),
