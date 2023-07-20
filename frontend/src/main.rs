@@ -9,18 +9,21 @@ use pages::home::Home;
 use pages::page_not_found::PageNotFound;
 use pages::user::User;
 use pages::user_list::UserList;
-//use pages::post::Post;
-//use pages::post_list::PostList;
 use yew::html::Scope;
 
+use crate::pages::project::Project;
+use crate::pages::project_list::ProjectList;
+use crate::pages::project_new::ProjectNew;
 use crate::pages::registration::Registration;
 
 #[derive(Routable, PartialEq, Eq, Clone, Debug)]
 pub enum Route {
-    //#[at("/tickets/:id")]
-    //Post { id: u64 },
-    //#[at("/tickets")]
-    //Posts,
+    #[at("/projects/new")]
+    ProjectNew,
+    #[at("/projects/:id")]
+    Project { id: u64 },
+    #[at("/projects")]
+    Projects,
     #[at("/register")]
     Registration,
     #[at("/users/:id")]
@@ -122,6 +125,12 @@ impl App {
                                 <Link<Route> classes={classes!("navbar-item")} to={Route::Users}>
                                     { "List of users" }
                                 </Link<Route>>
+                                <Link<Route> classes={classes!("navbar-item")} to={Route::Projects}>
+                                    { "List of projects" }
+                                </Link<Route>>
+                                    <Link<Route> classes={classes!("navbar-item")} to={Route::ProjectNew}>
+                                    { "Create new project" }
+                                </Link<Route>>
                             </div>
                         </div>
                     </div>
@@ -133,12 +142,15 @@ impl App {
 
 fn switch(routes: Route) -> Html {
     match routes {
-        /*Route::Post { id } => {
-            html! { <Post seed={id} /> }
+        Route::ProjectNew => {
+            html! { <ProjectNew /> }
         }
-        Route::Posts => {
-            html! { <PostList /> }
-        }*/
+        Route::Project { id } => {
+            html! { <Project id={id} /> }
+        }
+        Route::Projects => {
+            html! { <ProjectList /> }
+        }
         Route::Registration => {
             html! { <Registration /> }
         }

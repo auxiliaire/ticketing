@@ -1,4 +1,4 @@
-use crate::{components::registration_form::RegistrationForm, Route};
+use crate::{components::forms::registration_form::RegistrationForm, Route};
 use frontend::api::user::UserApi;
 use shared::{api::error::error_response::ErrorResponse, dtos::user::User as UserDto};
 use yew::prelude::*;
@@ -49,7 +49,7 @@ impl Component for Registration {
                     </div>
                 </section>
                 <div class="section">
-                    <RegistrationForm on_submit={ctx.link().callback(UserMsg::Submitted)} />
+                    <RegistrationForm onsubmit={ctx.link().callback(UserMsg::Submitted)} />
                 </div>
             </div>
         }

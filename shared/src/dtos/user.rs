@@ -1,11 +1,10 @@
-use std::fmt::Display;
-
 use crate::validation::user::{UserRole, UserValidation};
+use implicit_clone::ImplicitClone;
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
+use std::fmt::Display;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
-#[rule(UserValidation::are_passwords_matching(password, password_repeat))]
 pub struct User {
     pub id: Option<u64>,
     #[validate(min_length = 8)]
@@ -13,7 +12,6 @@ pub struct User {
     pub name: String,
     #[validate(custom(UserValidation::password_validation))]
     pub password: String,
-    pub password_repeat: String,
     #[validate(custom(UserValidation::role_validation))]
     pub role: Option<UserRole>,
 }
@@ -31,3 +29,5 @@ impl Display for User {
 }
 
 impl User {}
+
+impl ImplicitClone for User {}

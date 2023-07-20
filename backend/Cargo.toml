@@ -13,7 +13,8 @@ entity = { path = "../entity" }
 migration = { path = "../migration" }
 shared = { path = "../shared" }
 async-trait = "0.1"
-log = "0.4.17"
+chrono = "0.4"
+log = "0.4"
 axum = { version = "0.6" }
 axum-extra = "0.7"
 serde = { version = "1", features = [ "derive" ] }

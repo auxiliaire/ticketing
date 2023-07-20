@@ -8,8 +8,12 @@ use axum::{
 use axum_extra::extract::WithRejection;
 use entity::{projects, projects::Entity as Project};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait, Set};
+use shared::dtos::project::Project as ProjectDto;
 
-use crate::api::error::{ApiError, JsonError};
+use crate::api::{
+    error::{ApiError, JsonError},
+    validated_json::ValidatedJson,
+};
 
 pub fn router() -> Router {
     Router::new()
@@ -22,39 +26,44 @@ pub fn router() -> Router {
 
 async fn get_projects(
     db: Extension<DatabaseConnection>,
-) -> Result<Json<Vec<projects::Model>>, ApiError> {
-    let list = Project::find().all(&*db).await?;
+) -> Result<Json<Vec<ProjectDto>>, ApiError> {
+    let list = Project::find()
+        .all(&*db)
+        .await?
+        .iter()
+        .map(|m| m.into())
+        .collect::<Vec<ProjectDto>>();
     Ok(Json(list))
 }
 
 async fn get_project(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> Result<Json<projects::Model>, ApiError> {
+) -> Result<Json<ProjectDto>, ApiError> {
     Project::find_by_id(id).one(&*db).await?.map_or(
         Err(ApiError::new(
             StatusCode::NOT_FOUND,
             String::from("Not found"),
         )),
-        |project| Ok(Json(project)),
+        |project| Ok(Json(project.into())),
     )
 }
 
 async fn post_project(
     db: Extension<DatabaseConnection>,
-    WithRejection(Json(model), _): WithRejection<Json<projects::Model>, ApiError>,
-) -> Result<Json<projects::Model>, ApiError> {
+    WithRejection(ValidatedJson(model), _): WithRejection<ValidatedJson<ProjectDto>, ApiError>,
+) -> Result<Json<ProjectDto>, ApiError> {
     println!("Project(): '{}'", model.summary);
     let project = projects::ActiveModel {
         summary: Set(model.summary.to_owned()),
-        deadline: Set(model.deadline.to_owned()),
+        deadline: Set(model.deadline.map(|d| d.date_naive())),
         user_id: Set(model.user_id),
         active: Set(model.active),
         ..Default::default()
     }
     .insert(&*db)
     .await?;
-    Ok(Json(project))
+    Ok(Json(project.into()))
 }
 
 async fn put_project(

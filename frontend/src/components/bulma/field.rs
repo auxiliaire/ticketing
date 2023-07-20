@@ -9,6 +9,8 @@ pub struct Field;
 pub struct Props {
     pub label: AttrValue,
     pub children: Children,
+    #[prop_or_default]
+    pub has_addons: bool,
     pub help: Option<IArray<IString>>,
     pub icon_left: Option<AttrValue>,
     pub icon_right: Option<AttrValue>,
@@ -27,7 +29,7 @@ impl Component for Field {
 
     fn view(&self, ctx: &yew::Context<Self>) -> yew::Html {
         html!(
-            <div class="field">
+            <div class={classes!(self.get_field_classes(ctx))}>
                 <label class="label">{ ctx.props().label.as_str() }</label>
                 <div class={classes!(self.get_control_classes(ctx))}>
                     { for ctx.props().children.iter() }
@@ -59,6 +61,14 @@ impl Component for Field {
 }
 
 impl Field {
+    fn get_field_classes(&self, ctx: &yew::Context<Self>) -> String {
+        let mut classes = vec!["field"];
+        if ctx.props().has_addons {
+            classes.push("has-addons");
+        }
+        classes.join(" ")
+    }
+
     fn get_control_classes(&self, ctx: &yew::Context<Self>) -> String {
         let mut classes = vec!["control"];
         if let Some(icon_left) = &ctx.props().icon_left {

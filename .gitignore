@@ -1,4 +1,5 @@
 /target
 /frontend/dist
 /.vscode
+/.VSCodeCounter
 .env

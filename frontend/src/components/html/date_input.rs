@@ -11,8 +11,6 @@ pub struct Props {
     pub on_click: Callback<MouseEvent>,
     #[prop_or(AttrValue::from("Type here"))]
     pub placeholder: AttrValue,
-    #[prop_or_default]
-    pub mask: bool,
     #[prop_or(true)]
     pub valid: bool,
     #[prop_or(AttrValue::from("input"))]
@@ -21,14 +19,13 @@ pub struct Props {
     pub error_classes: AttrValue,
 }
 
-#[function_component(TextInput)]
+#[function_component(DateInput)]
 pub fn text_input(props: &Props) -> Html {
     let Props {
         value,
         on_change,
         on_click,
         placeholder,
-        mask,
         valid,
         base_classes,
         error_classes,
@@ -37,11 +34,6 @@ pub fn text_input(props: &Props) -> Html {
     let get_classes = || match valid {
         true => base_classes.to_string(),
         false => [base_classes.as_str(), error_classes.as_str()].join(" "),
-    };
-
-    let get_type = || match mask {
-        true => "password",
-        false => "text",
     };
 
     let oninput = Callback::from(move |input_event: InputEvent| {
@@ -53,6 +45,6 @@ pub fn text_input(props: &Props) -> Html {
     });
 
     html! {
-        <input class={classes!(get_classes())} type={get_type()} {value} {oninput} {placeholder} {onclick} />
+        <input class={classes!(get_classes())} type="date" {value} {oninput} {placeholder} {onclick} />
     }
 }
