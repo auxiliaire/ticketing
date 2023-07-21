@@ -1,8 +1,7 @@
+use crate::{api::project::ProjectApi, Route};
+use shared::dtos::project::Project as ProjectDto;
 use yew::prelude::*;
 use yew_router::prelude::Link;
-
-use crate::{api::project::ProjectApi, components::project_card::ProjectCard, Route};
-use shared::dtos::project::Project as ProjectDto;
 
 pub enum Msg {
     FetchedProjects(Vec<ProjectDto>),
