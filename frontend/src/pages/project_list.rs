@@ -1,6 +1,7 @@
 use yew::prelude::*;
+use yew_router::prelude::Link;
 
-use crate::{api::project::ProjectApi, components::project_card::ProjectCard};
+use crate::{api::project::ProjectApi, components::project_card::ProjectCard, Route};
 use shared::dtos::project::Project as ProjectDto;
 
 pub enum Msg {
@@ -29,13 +30,21 @@ impl Component for ProjectList {
     }
 
     fn view(&self, _: &Context<Self>) -> Html {
-        let projects = self.list.iter().map(|project| {
-            html! {
-                <div class="tile is-parent">
-                    <div class="tile is-child">
-                        <ProjectCard name={project.summary.clone()} id={project.id} />
-                    </div>
-                </div>
+        let projects = self.list.iter().map(|ProjectDto { id, summary, deadline: _, user_id: _, active: _ }| {
+            match id {
+                Some(id) => html! {
+                    <tr>
+                        <th>
+                            {id}
+                        </th>
+                        <td>
+                            <Link<Route> classes={classes!("column", "is-full")} to={Route::Project { id: *id }}>
+                                {summary.clone()}
+                            </Link<Route>>
+                        </td>
+                    </tr>
+                },
+                None => html! { <></> }
             }
         });
 
@@ -55,9 +64,17 @@ impl Component for ProjectList {
                     { "This is the list of all the created projects retrieved from the API in the background." }
                 </p>
                 <div class="section">
-                    <div class="tile is-ancestor">
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                            <tr>
+                                <th>{ "Id" }</th>
+                                <th>{ "Summary" }</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                         { for projects }
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         }
