@@ -92,9 +92,10 @@ impl Component for ProjectForm {
             ProjectMsg::Submit() => {
                 let result = self.project.validate();
                 match result {
-                    Ok(_) => self
-                        .on_submit
-                        .emit((self.project.clone(), ctx.link().callback(ProjectMsg::UpdateErrors))),
+                    Ok(_) => self.on_submit.emit((
+                        self.project.clone(),
+                        ctx.link().callback(ProjectMsg::UpdateErrors),
+                    )),
                     Err(e) => self.update_errors(ErrorsWrapper(e)),
                 }
             }
