@@ -7,6 +7,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 pub mod error;
 pub mod resources;
+pub mod search;
 pub mod validated_json;
 
 pub async fn serve(db: DatabaseConnection) -> anyhow::Result<()> {

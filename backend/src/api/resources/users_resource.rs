@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Json, Path},
+    extract::{Json, Path, Query},
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, post, put},
@@ -7,11 +7,15 @@ use axum::{
 };
 use axum_extra::extract::WithRejection;
 use entity::{users, users::Entity as User};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
+    QueryFilter, Set,
+};
 use shared::{dtos::user::User as UserDto, validation::user::OptionUserRole};
 
 use crate::api::{
     error::{ApiError, JsonError},
+    search::Search,
     validated_json::ValidatedJson,
 };
 
@@ -24,8 +28,20 @@ pub fn router() -> Router {
         .route("/users/:id", delete(delete_user))
 }
 
-async fn get_users(db: Extension<DatabaseConnection>) -> Result<Json<Vec<users::Model>>, ApiError> {
-    let list = User::find().all(&*db).await?;
+async fn get_users(
+    db: Extension<DatabaseConnection>,
+    Query(search): Query<Search>,
+) -> Result<Json<Vec<users::Model>>, ApiError> {
+    let list =
+        match search.q {
+            Some(q) => User::find()
+                .filter(Condition::all().add(
+                    <entity::prelude::Users as sea_orm::EntityTrait>::Column::Name.contains(&q),
+                ))
+                .all(&*db),
+            None => User::find().all(&*db),
+        }
+        .await?;
     Ok(Json(list))
 }
 
