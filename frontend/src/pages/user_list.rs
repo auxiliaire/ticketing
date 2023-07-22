@@ -15,7 +15,7 @@ impl Component for UserList {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        UserApi::fetch_all(ctx.link().callback(Msg::FetchedUsers));
+        UserApi::fetch_all(None, ctx.link().callback(Msg::FetchedUsers));
         Self { list: Vec::new() }
     }
 

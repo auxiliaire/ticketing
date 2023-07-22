@@ -3,10 +3,13 @@ use crate::components::html::checkbox::Checkbox;
 use crate::components::html::date_input::DateInput;
 use crate::components::html::text_input::TextInput;
 use chrono::{DateTime, NaiveDate, Utc};
+use frontend::api::user::UserApi;
+use implicit_clone::sync::IArray;
 use implicit_clone::unsync::IString;
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::project::Project as ProjectDto;
+use shared::dtos::user::User as UserDto;
 use shared::validation::is_empty::IsEmpty;
 use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
@@ -23,7 +26,11 @@ pub enum ProjectMsg {
     UpdateSummary(AttrValue),
     UpdateDeadline(AttrValue),
     UpdateOwner(AttrValue),
+    UpdateUserId((u64, IString)),
     UpdateActive(bool),
+    SearchUser(AttrValue),
+    ToggleSearchDropdown(bool),
+    FetchedUsers(Vec<UserDto>),
     Submit(),
     UpdateErrors(ErrorResponse),
     Cancel(),
@@ -33,6 +40,10 @@ pub struct ProjectForm {
     project: ProjectDto,
     deadline: IString,
     owner: IString,
+    user_search: IString,
+    last_search: DateTime<Utc>,
+    dropdown_enabled: bool,
+    user_list: IArray<(u64, IString)>,
     on_submit: Callback<(ProjectDto, Callback<ErrorResponse>)>,
     common_error: IValidationMessages,
     summary_error: IValidationMessages,
@@ -48,6 +59,10 @@ impl Component for ProjectForm {
             project: ProjectDto::default(),
             deadline: IString::from(""),
             owner: IString::from(""),
+            user_search: IString::from(""),
+            last_search: Utc::now(),
+            dropdown_enabled: false,
+            user_list: IArray::from(vec![]),
             on_submit: ctx.props().onsubmit.to_owned(),
             common_error: None,
             summary_error: None,
@@ -83,11 +98,34 @@ impl Component for ProjectForm {
                     self.project.user_id = v;
                 }
             }
+            ProjectMsg::UpdateUserId((id, name)) => {
+                self.owner = IString::from(format!("{}", id));
+                self.project.user_id = id;
+                self.user_search = name;
+            }
             ProjectMsg::UpdateActive(active) => {
                 self.project.active = match active {
                     true => 1,
                     false => 0,
                 };
+            }
+            ProjectMsg::SearchUser(value) => {
+                log::debug!("Search: {}", value);
+                self.user_search = value;
+                UserApi::fetch_all(
+                    Some(self.user_search.clone()),
+                    ctx.link().callback(ProjectMsg::FetchedUsers),
+                );
+            }
+            ProjectMsg::ToggleSearchDropdown(value) => {
+                self.dropdown_enabled = value;
+            }
+            ProjectMsg::FetchedUsers(list) => {
+                let mut v = vec![];
+                for u in list {
+                    v.push((u.id.unwrap(), IString::from(u.name.clone())));
+                }
+                self.user_list = IArray::from(v);
             }
             ProjectMsg::Submit() => {
                 let result = self.project.validate();
@@ -116,6 +154,21 @@ impl Component for ProjectForm {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let on_cancel_pressed = |_: MouseEvent| ProjectMsg::Cancel();
         let on_submit_pressed = |_: MouseEvent| ProjectMsg::Submit();
+
+        let users = self.user_list.iter().map(|t| {
+            let select_user = ctx.link().callback(ProjectMsg::UpdateUserId);
+            let toggle_dropdown = ctx.link().callback(ProjectMsg::ToggleSearchDropdown);
+            let name = t.1.clone();
+            html! {
+                <a class="dropdown-item" onclick={move |_| {
+                    select_user.emit((t.0, t.1.clone()));
+                    toggle_dropdown.emit(false);
+                }}>{name}</a>
+            }
+        });
+
+        let on_search_focus = ctx.link().callback(ProjectMsg::ToggleSearchDropdown);
+
         html! {
             <div class="card">
                 <div class="card-content">
@@ -141,7 +194,17 @@ impl Component for ProjectForm {
                         </div>
                     </Field>
                     <Field label="Owner" help={&self.owner_error}>
-                        <TextInput value={self.owner.clone()} on_change={ctx.link().callback(ProjectMsg::UpdateOwner)} valid={self.owner_error.is_empty()} />
+                        <TextInput value={self.owner.clone()} on_change={ctx.link().callback(ProjectMsg::UpdateOwner)} valid={self.owner_error.is_empty()} base_classes="input is-hidden" />
+                        <div class={classes!(self.get_dropdown_classes())}>
+                            <div class="dropdown-trigger">
+                                <TextInput value={self.user_search.clone()} on_change={ctx.link().callback(ProjectMsg::SearchUser)} valid={self.owner_error.is_empty()} on_focus={move |_| on_search_focus.emit(true)} />
+                            </div>
+                            <div class="dropdown-menu" role="menu">
+                                <div class="dropdown-content">
+                                    { for users }
+                                </div>
+                            </div>
+                        </div>
                     </Field>
                     <div class="field">
                         <p class="control">
@@ -170,6 +233,14 @@ impl Component for ProjectForm {
 }
 
 impl ProjectForm {
+    fn get_dropdown_classes(&self) -> String {
+        let mut classes = vec!["dropdown"];
+        if self.dropdown_enabled && !self.user_list.is_empty() {
+            classes.push("is-active");
+        }
+        classes.join(" ")
+    }
+
     fn update_errors<E>(&mut self, errors: E)
     where
         E: ValidationMessagesTrait,

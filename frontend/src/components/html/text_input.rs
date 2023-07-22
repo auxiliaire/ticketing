@@ -9,6 +9,10 @@ pub struct Props {
     pub on_change: Callback<AttrValue>,
     #[prop_or_default]
     pub on_click: Callback<MouseEvent>,
+    #[prop_or_default]
+    pub on_focus: Callback<FocusEvent>,
+    #[prop_or_default]
+    pub on_blur: Callback<FocusEvent>,
     #[prop_or(AttrValue::from("Type here"))]
     pub placeholder: AttrValue,
     #[prop_or_default]
@@ -27,6 +31,8 @@ pub fn text_input(props: &Props) -> Html {
         value,
         on_change,
         on_click,
+        on_focus,
+        on_blur,
         placeholder,
         mask,
         valid,
@@ -52,7 +58,15 @@ pub fn text_input(props: &Props) -> Html {
         on_click.emit(mouse_event);
     });
 
+    let onfocus = Callback::from(move |focus_event| {
+        on_focus.emit(focus_event);
+    });
+
+    let onblur = Callback::from(move |focus_event| {
+        on_blur.emit(focus_event);
+    });
+
     html! {
-        <input class={classes!(get_classes())} type={get_type()} {value} {oninput} {placeholder} {onclick} />
+        <input class={classes!(get_classes())} type={get_type()} {value} {oninput} {placeholder} {onclick} {onfocus} {onblur} />
     }
 }

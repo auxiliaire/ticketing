@@ -1,4 +1,5 @@
 use gloo_net::http::Request;
+use implicit_clone::unsync::IString;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
 use shared::dtos::user::User;
 use yew::{platform::spawn_local, Callback};
@@ -23,16 +24,14 @@ impl UserApi {
         });
     }
 
-    pub fn fetch_all(callback: Callback<Vec<User>>) {
+    pub fn fetch_all(search: Option<IString>, callback: Callback<Vec<User>>) {
         spawn_local(async move {
-            let list: Vec<User> =
-                Request::get(format!("{}{}", get_api_url(), USERS_ENDPOINT).as_str())
-                    .send()
-                    .await
-                    .unwrap()
-                    .json()
-                    .await
-                    .unwrap();
+            let mut request_builder =
+                Request::get(format!("{}{}", get_api_url(), USERS_ENDPOINT).as_str());
+            if let Some(q) = search {
+                request_builder = request_builder.query([("q", q.as_str())]);
+            }
+            let list: Vec<User> = request_builder.send().await.unwrap().json().await.unwrap();
 
             callback.emit(list);
         });
