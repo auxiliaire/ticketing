@@ -8,6 +8,7 @@ use axum::{
 use axum_extra::extract::WithRejection;
 use entity::{tickets, tickets::Entity as Ticket};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait, Set};
+use shared::dtos::ticket::Ticket as TicketDto;
 
 use crate::api::error::{ApiError, JsonError};
 
@@ -20,23 +21,26 @@ pub fn router() -> Router {
         .route("/tickets/:id", delete(delete_ticket))
 }
 
-async fn get_tickets(
-    db: Extension<DatabaseConnection>,
-) -> Result<Json<Vec<tickets::Model>>, ApiError> {
-    let list = Ticket::find().all(&*db).await?;
+async fn get_tickets(db: Extension<DatabaseConnection>) -> Result<Json<Vec<TicketDto>>, ApiError> {
+    let list = Ticket::find()
+        .all(&*db)
+        .await?
+        .iter()
+        .map(|m| m.into())
+        .collect::<Vec<TicketDto>>();
     Ok(Json(list))
 }
 
 async fn get_ticket(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> Result<Json<tickets::Model>, ApiError> {
+) -> Result<Json<TicketDto>, ApiError> {
     Ticket::find_by_id(id).one(&*db).await?.map_or(
         Err(ApiError::new(
             StatusCode::NOT_FOUND,
             String::from("Not found"),
         )),
-        |ticket| Ok(Json(ticket)),
+        |ticket| Ok(Json(ticket.into())),
     )
 }
 
