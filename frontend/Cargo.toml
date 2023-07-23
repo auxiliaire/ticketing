@@ -13,6 +13,7 @@ shared = { path = "../shared"}
 chrono = { version = "0.4", features = [ "serde" ] }
 gloo = "0.8"
 gloo-net = "0.3"
+gloo-timers = "0.2"
 implicit-clone = "0.3"
 instant = { version = "0.1", features = ["wasm-bindgen"] }
 log = "0.4"

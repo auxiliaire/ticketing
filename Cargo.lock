@@ -804,6 +804,7 @@ dependencies = [
  "chrono",
  "gloo",
  "gloo-net",
+ "gloo-timers",
  "implicit-clone",
  "instant",
  "log",

@@ -4,6 +4,7 @@ use crate::components::html::date_input::DateInput;
 use crate::components::html::text_input::TextInput;
 use chrono::{DateTime, NaiveDate, Utc};
 use frontend::api::user::UserApi;
+use gloo_timers::callback::Timeout;
 use implicit_clone::sync::IArray;
 use implicit_clone::unsync::IString;
 use serde_valid::Validate;
@@ -16,6 +17,8 @@ use shared::validation::validation_messages::{
 };
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
+
+const SEARCH_DELAY_MS: u32 = 300;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
@@ -41,6 +44,7 @@ pub struct ProjectForm {
     deadline: IString,
     owner: IString,
     user_search: IString,
+    search_timeout: Option<Timeout>,
     dropdown_enabled: bool,
     user_list: IArray<(u64, IString)>,
     on_submit: Callback<(ProjectDto, Callback<ErrorResponse>)>,
@@ -59,6 +63,7 @@ impl Component for ProjectForm {
             deadline: IString::from(""),
             owner: IString::from(""),
             user_search: IString::from(""),
+            search_timeout: None,
             dropdown_enabled: false,
             user_list: IArray::from(vec![]),
             on_submit: ctx.props().onsubmit.to_owned(),
@@ -108,12 +113,16 @@ impl Component for ProjectForm {
                 };
             }
             ProjectMsg::SearchUser(value) => {
-                log::debug!("Search: {}", value);
                 self.user_search = value;
-                UserApi::fetch_all(
-                    Some(self.user_search.clone()),
-                    ctx.link().callback(ProjectMsg::FetchedUsers),
-                );
+                // We need to throttle the API call to prevent superfluous calls
+                let q = self.user_search.clone();
+                let fetch_callback = ctx.link().callback(ProjectMsg::FetchedUsers);
+                if let Some(timeout) = self.search_timeout.take() {
+                    timeout.cancel();
+                }
+                self.search_timeout = Some(Timeout::new(SEARCH_DELAY_MS, || {
+                    UserApi::fetch_all(Some(q), fetch_callback)
+                }));
             }
             ProjectMsg::ToggleSearchDropdown(value) => {
                 self.dropdown_enabled = value;
