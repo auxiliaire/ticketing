@@ -19,6 +19,7 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 const SEARCH_DELAY_MS: u32 = 300;
+const DROPDOWN_CLOSE_MS: u32 = 200;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
@@ -32,6 +33,7 @@ pub enum ProjectMsg {
     UpdateUserId((u64, IString)),
     UpdateActive(bool),
     SearchUser(AttrValue),
+    ToggleSearchDropdownDelayed(bool),
     ToggleSearchDropdown(bool),
     FetchedUsers(Vec<UserDto>),
     Submit(),
@@ -124,6 +126,18 @@ impl Component for ProjectForm {
                     UserApi::fetch_all(Some(q), fetch_callback)
                 }));
             }
+            ProjectMsg::ToggleSearchDropdownDelayed(value) => {
+                let toggle_search_dropdown = ctx.link().callback(ProjectMsg::ToggleSearchDropdown);
+                let timeout = match value {
+                    true => {
+                        Timeout::new(DROPDOWN_CLOSE_MS, move || toggle_search_dropdown.emit(true))
+                    }
+                    false => Timeout::new(DROPDOWN_CLOSE_MS, move || {
+                        toggle_search_dropdown.emit(false)
+                    }),
+                };
+                timeout.forget();
+            }
             ProjectMsg::ToggleSearchDropdown(value) => {
                 self.dropdown_enabled = value;
             }
@@ -164,17 +178,16 @@ impl Component for ProjectForm {
 
         let users = self.user_list.iter().map(|t| {
             let select_user = ctx.link().callback(ProjectMsg::UpdateUserId);
-            let toggle_dropdown = ctx.link().callback(ProjectMsg::ToggleSearchDropdown);
             let name = t.1.clone();
             html! {
                 <a class="dropdown-item" onclick={move |_| {
                     select_user.emit((t.0, t.1.clone()));
-                    toggle_dropdown.emit(false);
                 }}>{name}</a>
             }
         });
 
         let on_search_focus = ctx.link().callback(ProjectMsg::ToggleSearchDropdown);
+        let on_search_blur = ctx.link().callback(ProjectMsg::ToggleSearchDropdownDelayed);
 
         html! {
             <div class="card">
@@ -204,7 +217,8 @@ impl Component for ProjectForm {
                         <TextInput value={self.owner.clone()} on_change={ctx.link().callback(ProjectMsg::UpdateOwner)} valid={self.owner_error.is_empty()} base_classes="input is-hidden" />
                         <div class={classes!(self.get_dropdown_classes())}>
                             <div class="dropdown-trigger">
-                                <TextInput value={self.user_search.clone()} on_change={ctx.link().callback(ProjectMsg::SearchUser)} valid={self.owner_error.is_empty()} on_focus={move |_| on_search_focus.emit(true)} />
+                                <TextInput value={self.user_search.clone()} on_change={ctx.link().callback(ProjectMsg::SearchUser)} valid={self.owner_error.is_empty()}
+                                    on_focus={move |_| on_search_focus.emit(true)} on_blur={move |_| on_search_blur.emit(false)} />
                             </div>
                             <div class="dropdown-menu" role="menu">
                                 <div class="dropdown-content">
