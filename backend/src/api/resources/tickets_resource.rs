@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Json, Path},
+    extract::{Json, Path, Query},
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, post, put},
@@ -7,10 +7,16 @@ use axum::{
 };
 use axum_extra::extract::WithRejection;
 use entity::{tickets, tickets::Entity as Ticket};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
+    QueryFilter, Set,
+};
 use shared::dtos::ticket::Ticket as TicketDto;
 
-use crate::api::error::{ApiError, JsonError};
+use crate::api::{
+    error::{ApiError, JsonError},
+    filters::ticket_filter::TicketFilter,
+};
 
 pub fn router() -> Router {
     Router::new()
@@ -21,14 +27,23 @@ pub fn router() -> Router {
         .route("/tickets/:id", delete(delete_ticket))
 }
 
-async fn get_tickets(db: Extension<DatabaseConnection>) -> Result<Json<Vec<TicketDto>>, ApiError> {
-    let list = Ticket::find()
-        .all(&*db)
-        .await?
-        .iter()
-        .map(|m| m.into())
-        .collect::<Vec<TicketDto>>();
-    Ok(Json(list))
+async fn get_tickets(
+    db: Extension<DatabaseConnection>,
+    Query(filter): Query<TicketFilter>,
+) -> Result<Json<Vec<TicketDto>>, ApiError> {
+    let list = match filter.project_id {
+        Some(id) => Ticket::find()
+            .filter(
+                Condition::all()
+                    .add(<entity::prelude::Tickets as EntityTrait>::Column::ProjectId.eq(id)),
+            )
+            .all(&*db),
+        None => Ticket::find().all(&*db),
+    }
+    .await?;
+    Ok(Json(
+        list.iter().map(|m| m.into()).collect::<Vec<TicketDto>>(),
+    ))
 }
 
 async fn get_ticket(

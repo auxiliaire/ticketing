@@ -1,8 +1,8 @@
-use crate::Route;
 use crate::api::project::ProjectApi;
 use crate::api::user::UserApi;
 use crate::components::check_tag::CheckTag;
 use crate::components::user_link::UserLink;
+use crate::Route;
 use frontend::api::ticket::TicketApi;
 use implicit_clone::sync::IString;
 use shared::dtos::project::Project as ProjectDto;
@@ -33,7 +33,10 @@ impl Component for Project {
 
     fn create(ctx: &Context<Self>) -> Self {
         ProjectApi::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
-        TicketApi::fetch_all(ctx.link().callback(Msg::FetchedTickets));
+        TicketApi::fetch_all(
+            Some(ctx.props().id),
+            ctx.link().callback(Msg::FetchedTickets),
+        );
         Self {
             project: ProjectDto::default(),
             user: None,
@@ -69,27 +72,36 @@ impl Component for Project {
             ticket_list,
         } = self;
 
-        let tickets = ticket_list.iter().map(|TicketDto { id, title, description: _, project_id: _, status, user_id: _ }| {
-            match id {
-                Some(id) => html! {
-                    <tr>
-                        <th>
-                            {id}
-                        </th>
-                        <td>
-                            //<Link<Route> classes={classes!("column", "is-full")} to={Route::Ticket { id: *id }}>
-                                {title.clone()}
-                            //</Link<Route>>
-                        </td>
-                        <td>
-                            {status}
-                        </td>
-                    </tr>
-                },
-                None => html! { <></> }
-            }
-        });
-        
+        let tickets = ticket_list.iter().map(
+            |TicketDto {
+                 id,
+                 title,
+                 description: _,
+                 project_id: _,
+                 status,
+                 user_id: _,
+             }| {
+                match id {
+                    Some(id) => html! {
+                        <tr>
+                            <th>
+                                {id}
+                            </th>
+                            <td>
+                                //<Link<Route> classes={classes!("column", "is-full")} to={Route::Ticket { id: *id }}>
+                                    {title.clone()}
+                                //</Link<Route>>
+                            </td>
+                            <td>
+                                {status}
+                            </td>
+                        </tr>
+                    },
+                    None => html! { <></> },
+                }
+            },
+        );
+
         html! {
             <div class="section container">
                 <div class="tile is-ancestor is-vertical">
@@ -128,18 +140,26 @@ impl Component for Project {
                             <article class="tile is-child notification is-light">
                                 <div class="content">
                                     <p class="title">{ "Tickets" }</p>
-                                    <table class="table is-fullwidth is-hoverable">
-                                        <thead>
-                                            <tr>
-                                                <th>{ "Id" }</th>
-                                                <th>{ "Title" }</th>
-                                                <th>{ "Status" }</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                        { for tickets }
-                                        </tbody>
-                                    </table>
+                                    {
+                                        if self.ticket_list.is_empty() {
+                                            html! { <em>{ "No associated tickets" }</em> }
+                                        } else {
+                                            html! {
+                                                <table class="table is-fullwidth is-hoverable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>{ "Id" }</th>
+                                                            <th>{ "Title" }</th>
+                                                            <th>{ "Status" }</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    { for tickets }
+                                                    </tbody>
+                                                </table>
+                                            }
+                                        }
+                                    }
                                 </div>
                             </article>
                         </div>

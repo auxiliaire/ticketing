@@ -23,16 +23,14 @@ impl TicketApi {
         });
     }
 
-    pub fn fetch_all(callback: Callback<Vec<Ticket>>) {
+    pub fn fetch_all(project_id: Option<u64>, callback: Callback<Vec<Ticket>>) {
         spawn_local(async move {
-            let list: Vec<Ticket> =
-                Request::get(format!("{}{}", get_api_url(), TICKETS_ENDPOINT).as_str())
-                    .send()
-                    .await
-                    .unwrap()
-                    .json()
-                    .await
-                    .unwrap();
+            let mut request_builder =
+                Request::get(format!("{}{}", get_api_url(), TICKETS_ENDPOINT).as_str());
+            if let Some(p_id) = project_id {
+                request_builder = request_builder.query([("project_id", format!("{}", p_id))]);
+            }
+            let list: Vec<Ticket> = request_builder.send().await.unwrap().json().await.unwrap();
 
             callback.emit(list);
         });
