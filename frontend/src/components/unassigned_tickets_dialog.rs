@@ -77,7 +77,7 @@ impl Component for UnassignedTicketsDialog {
                     <button class="delete" aria-label="close" onclick={self.app_state.close_dialog.reform(move |_| ())}></button>
                 </header>
                 <section class="modal-card-body">
-                    <div class="select is-multiple">
+                    <div class="select is-multiple is-fullwidth">
                         <select multiple={true} size="8">
                             { for ticket_options }
                         </select>
