@@ -1,6 +1,7 @@
 use crate::api::project::ProjectApi;
 use crate::api::user::UserApi;
 use crate::components::check_tag::CheckTag;
+use crate::components::unassigned_tickets_dialog::UnassignedTicketsDialog;
 use crate::components::user_link::UserLink;
 use crate::{AppState, Dialog};
 use frontend::api::ticket::TicketApi;
@@ -78,19 +79,7 @@ impl Component for Project {
                 let dialog = Rc::new(Dialog {
                     active: true,
                     content: html! {
-                        <>
-                            <header class="modal-card-head">
-                                <p class="modal-card-title">{ "Select tickets to assign" }</p>
-                                <button class="delete" aria-label="close" onclick={self.app_state.close_dialog.reform(move |_| ())}></button>
-                            </header>
-                            <section class="modal-card-body">
-
-                            </section>
-                            <footer class="modal-card-foot">
-                                <button class="button is-success">{ "Save changes" }</button>
-                                <button class="button" onclick={self.app_state.close_dialog.reform(move |_| ())}>{ "Cancel" }</button>
-                            </footer>
-                        </>
+                        <UnassignedTicketsDialog />
                     },
                 });
                 self.app_state.update_dialog.emit(dialog);

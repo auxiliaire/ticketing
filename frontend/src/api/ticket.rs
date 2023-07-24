@@ -4,6 +4,7 @@ use shared::dtos::ticket::Ticket;
 use yew::{platform::spawn_local, Callback};
 
 const TICKETS_ENDPOINT: &str = "tickets";
+const UNASSIGNED_MARKER: &str = "/unassigned";
 
 pub struct TicketApi;
 
@@ -31,6 +32,22 @@ impl TicketApi {
                 request_builder = request_builder.query([("project_id", format!("{}", p_id))]);
             }
             let list: Vec<Ticket> = request_builder.send().await.unwrap().json().await.unwrap();
+
+            callback.emit(list);
+        });
+    }
+
+    pub fn fetch_unassigned(callback: Callback<Vec<Ticket>>) {
+        spawn_local(async move {
+            let list: Vec<Ticket> = Request::get(
+                format!("{}{}{}", get_api_url(), TICKETS_ENDPOINT, UNASSIGNED_MARKER).as_str(),
+            )
+            .send()
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
 
             callback.emit(list);
         });
