@@ -63,17 +63,41 @@ impl Component for ProjectList {
                     { "This is the list of all the created projects retrieved from the API in the background." }
                 </p>
                 <div class="section">
-                    <table class="table is-fullwidth is-hoverable">
-                        <thead>
-                            <tr>
-                                <th>{ "Id" }</th>
-                                <th>{ "Summary" }</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        { for projects }
-                        </tbody>
-                    </table>
+                    {
+                        if self.list.is_empty() {
+                            html! {
+                                <em>{ "No projects yet" }</em>
+                            }
+                        }
+                        else
+                        {
+                            html! {
+                                <table class="table is-fullwidth is-hoverable">
+                                    <thead>
+                                        <tr>
+                                            <th>{ "Id" }</th>
+                                            <th>{ "Summary" }</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    { for projects }
+                                    </tbody>
+                                </table>
+                            }
+                        }
+                    }
+                </div>
+                <div class="section pt-0">
+                    <div class="field is-grouped">
+                        <p class="control">
+                            <Link<Route> classes={classes!("button", "is-full")} to={Route::ProjectNew}>
+                                <span class="icon is-small">
+                                    <i class="fas fa-plus"></i>
+                                </span>
+                                <span>{ "Start a new project" }</span>
+                            </Link<Route>>
+                        </p>
+                    </div>
                 </div>
             </div>
         }
