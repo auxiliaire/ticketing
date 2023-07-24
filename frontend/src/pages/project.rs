@@ -2,14 +2,14 @@ use crate::api::project::ProjectApi;
 use crate::api::user::UserApi;
 use crate::components::check_tag::CheckTag;
 use crate::components::user_link::UserLink;
-use crate::Route;
+use crate::{AppState, Dialog};
 use frontend::api::ticket::TicketApi;
 use implicit_clone::sync::IString;
 use shared::dtos::project::Project as ProjectDto;
 use shared::dtos::ticket::Ticket as TicketDto;
 use shared::dtos::user::User as UserDto;
+use std::rc::Rc;
 use yew::prelude::*;
-use yew_router::prelude::Link;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
@@ -20,12 +20,16 @@ pub enum Msg {
     FetchedProject(ProjectDto),
     FetchedUser(UserDto),
     FetchedTickets(Vec<TicketDto>),
+    ContextChanged(Rc<AppState>),
+    OpenDialog(),
 }
 
 pub struct Project {
     project: ProjectDto,
     user: Option<(u64, IString)>,
     ticket_list: Vec<TicketDto>,
+    app_state: Rc<AppState>,
+    _listener: ContextHandle<Rc<AppState>>,
 }
 impl Component for Project {
     type Message = Msg;
@@ -37,10 +41,16 @@ impl Component for Project {
             Some(ctx.props().id),
             ctx.link().callback(Msg::FetchedTickets),
         );
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<Rc<AppState>>(ctx.link().callback(Msg::ContextChanged))
+            .expect("context to be set");
         Self {
             project: ProjectDto::default(),
             user: None,
             ticket_list: vec![],
+            app_state,
+            _listener,
         }
     }
 
@@ -61,16 +71,44 @@ impl Component for Project {
             Msg::FetchedTickets(tickets) => {
                 self.ticket_list = tickets;
             }
+            Msg::ContextChanged(state) => {
+                self.app_state = state;
+            }
+            Msg::OpenDialog() => {
+                let dialog = Rc::new(Dialog {
+                    active: true,
+                    content: html! {
+                        <>
+                            <header class="modal-card-head">
+                                <p class="modal-card-title">{ "Select tickets to assign" }</p>
+                                <button class="delete" aria-label="close" onclick={self.app_state.close_dialog.reform(move |_| ())}></button>
+                            </header>
+                            <section class="modal-card-body">
+
+                            </section>
+                            <footer class="modal-card-foot">
+                                <button class="button is-success">{ "Save changes" }</button>
+                                <button class="button" onclick={self.app_state.close_dialog.reform(move |_| ())}>{ "Cancel" }</button>
+                            </footer>
+                        </>
+                    },
+                });
+                self.app_state.update_dialog.emit(dialog);
+            }
         }
         true
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let Self {
             project,
             user,
             ticket_list,
+            app_state: _,
+            _listener,
         } = self;
+
+        let on_assign_click = |_| Msg::OpenDialog();
 
         let tickets = ticket_list.iter().map(
             |TicketDto {
@@ -160,6 +198,24 @@ impl Component for Project {
                                             }
                                         }
                                     }
+                                    <div class="field is-grouped mt-6">
+                                        <p class="control">
+                                            <button class="button" onclick={ctx.link().callback(on_assign_click)}>
+                                                <span class="icon is-small">
+                                                    <i class="fas fa-arrow-up"></i>
+                                                </span>
+                                                <span>{ "Assign a ticket" }</span>
+                                            </button>
+                                        </p>
+                                        <p class="control">
+                                            <button class="button">
+                                                <span class="icon is-small">
+                                                    <i class="fas fa-plus"></i>
+                                                </span>
+                                                <span>{ "Create a new one" }</span>
+                                            </button>
+                                        </p>
+                                    </div>
                                 </div>
                             </article>
                         </div>

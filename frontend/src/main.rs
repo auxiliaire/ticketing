@@ -1,20 +1,19 @@
+use crate::pages::project::Project;
+use crate::pages::project_list::ProjectList;
+use crate::pages::project_new::ProjectNew;
+use crate::pages::registration::Registration;
+use pages::home::Home;
+use pages::page_not_found::PageNotFound;
+use pages::user::User;
+use pages::user_list::UserList;
+use std::rc::Rc;
+use yew::html::Scope;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
 mod api;
 mod components;
 mod pages;
-
-use pages::home::Home;
-use pages::page_not_found::PageNotFound;
-use pages::user::User;
-use pages::user_list::UserList;
-use yew::html::Scope;
-
-use crate::pages::project::Project;
-use crate::pages::project_list::ProjectList;
-use crate::pages::project_new::ProjectNew;
-use crate::pages::registration::Registration;
 
 #[derive(Routable, PartialEq, Eq, Clone, Debug)]
 pub enum Route {
@@ -37,59 +36,108 @@ pub enum Route {
     NotFound,
 }
 
-pub enum Msg {
+pub enum AppMsg {
     ToggleNavbar,
+    UpdateDialog(Rc<Dialog>),
+    CloseDialog,
+}
+
+#[derive(Clone, Default, PartialEq)]
+pub struct Dialog {
+    active: bool,
+    content: Html,
+}
+
+#[derive(Clone, Default, PartialEq)]
+pub struct AppState {
+    update_dialog: Callback<Rc<Dialog>>,
+    close_dialog: Callback<()>,
+    navbar_active: bool,
 }
 
 pub struct App {
-    navbar_active: bool,
+    state: Rc<AppState>,
+    dialog: Rc<Dialog>,
 }
 impl Component for App {
-    type Message = Msg;
+    type Message = AppMsg;
     type Properties = ();
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let update_dialog = ctx.link().callback(AppMsg::UpdateDialog);
+        let close_dialog = ctx.link().callback(|_| AppMsg::CloseDialog);
+        let state = Rc::new(AppState {
             navbar_active: false,
+            update_dialog,
+            close_dialog,
+        });
+        Self {
+            state,
+            dialog: Rc::new(Dialog::default()),
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::ToggleNavbar => {
-                self.navbar_active = !self.navbar_active;
-                true
+            AppMsg::ToggleNavbar => {
+                let shared_state = Rc::make_mut(&mut self.state);
+                shared_state.navbar_active = !shared_state.navbar_active;
+            }
+            AppMsg::UpdateDialog(dialog) => {
+                self.dialog = dialog;
+            }
+            AppMsg::CloseDialog => {
+                let dialog = Rc::make_mut(&mut self.dialog);
+                dialog.active = false;
             }
         }
+        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let modal_active = match self.dialog.active {
+            true => "is-active",
+            false => "",
+        };
+
         html! {
             <BrowserRouter>
-                { self.view_nav(ctx.link()) }
+                <ContextProvider<Rc<AppState>> context={self.state.clone()}>
+                    { self.view_nav(ctx.link()) }
 
-                <main>
-                    <Switch<Route> render={switch} />
-                </main>
-                <footer class="footer">
-                    <div class="content has-text-centered">
-                        { "Powered by " }
-                        <a href="https://yew.rs">{ "Yew" }</a>
-                        { " using " }
-                        <a href="https://bulma.io">{ "Bulma" }</a>
-                        { " and images from " }
-                        <a href="https://unsplash.com">{ "Unsplash" }</a>
+                    <main>
+                        <Switch<Route> render={switch} />
+                    </main>
+                    <footer class="footer">
+                        <div class="content has-text-centered">
+                            { "Powered by " }
+                            <a href="https://crates.io/crates/axum">{ "Axum" }</a>
+                            { ", " }
+                            <a href="https://www.sea-ql.org/SeaORM/">{ "SeaORM" }</a>
+                            { ", " }
+                            <a href="https://yew.rs">{ "Yew" }</a>
+                            { " and " }
+                            <a href="https://bulma.io">{ "Bulma" }</a>
+                        </div>
+                    </footer>
+                    <div id="app-modal" class={classes!("modal", modal_active)}>
+                        <div class="modal-background"></div>
+                        <div class="modal-card">
+                            { self.dialog.clone().content.clone() }
+                        </div>
                     </div>
-                </footer>
+                </ContextProvider<Rc<AppState>>>
             </BrowserRouter>
         }
     }
 }
 impl App {
     fn view_nav(&self, link: &Scope<Self>) -> Html {
-        let Self { navbar_active, .. } = *self;
-
-        let active_class = if !navbar_active { "is-active" } else { "" };
+        let active_class = if !self.state.navbar_active {
+            "is-active"
+        } else {
+            ""
+        };
 
         html! {
             <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
@@ -98,7 +146,7 @@ impl App {
 
                     <button class={classes!("navbar-burger", "burger", active_class)}
                         aria-label="menu" aria-expanded="false"
-                        onclick={link.callback(|_| Msg::ToggleNavbar)}
+                        onclick={link.callback(|_| AppMsg::ToggleNavbar)}
                     >
                         <span aria-hidden="true"></span>
                         <span aria-hidden="true"></span>
