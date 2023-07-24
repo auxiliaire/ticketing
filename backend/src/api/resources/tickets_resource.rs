@@ -22,6 +22,7 @@ pub fn router() -> Router {
     Router::new()
         .route("/tickets", post(post_ticket))
         .route("/tickets", get(get_tickets))
+        .route("/tickets/unassigned", get(get_unassigned_tickets))
         .route("/tickets/:id", get(get_ticket))
         .route("/tickets/:id", put(put_ticket))
         .route("/tickets/:id", delete(delete_ticket))
@@ -41,6 +42,21 @@ async fn get_tickets(
         None => Ticket::find().all(&*db),
     }
     .await?;
+    Ok(Json(
+        list.iter().map(|m| m.into()).collect::<Vec<TicketDto>>(),
+    ))
+}
+
+async fn get_unassigned_tickets(
+    db: Extension<DatabaseConnection>,
+) -> Result<Json<Vec<TicketDto>>, ApiError> {
+    let list = Ticket::find()
+        .filter(
+            Condition::all()
+                .add(<entity::prelude::Tickets as EntityTrait>::Column::ProjectId.is_null()),
+        )
+        .all(&*db)
+        .await?;
     Ok(Json(
         list.iter().map(|m| m.into()).collect::<Vec<TicketDto>>(),
     ))
