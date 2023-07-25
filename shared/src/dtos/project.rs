@@ -21,6 +21,11 @@ pub struct Project {
     pub active: i8,
 }
 
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
+pub struct ProjectTickets {
+    pub tickets: Vec<u64>,
+}
+
 impl Display for Project {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(

@@ -1,9 +1,11 @@
 use gloo_net::http::Request;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
-use shared::dtos::project::Project;
+use shared::dtos::project::{Project, ProjectTickets};
+use shared::dtos::ticket::Ticket;
 use yew::{platform::spawn_local, Callback};
 
 const PROJECTS_ENDPOINT: &str = "projects";
+const TICKETS_ENDPOINT: &str = "tickets";
 
 pub struct ProjectApi;
 
@@ -33,6 +35,55 @@ impl ProjectApi {
                     .json()
                     .await
                     .unwrap();
+
+            callback.emit(list);
+        });
+    }
+
+    pub fn fetch_assigned_tickets(project_id: u64, callback: Callback<Vec<Ticket>>) {
+        spawn_local(async move {
+            let list: Vec<Ticket> = Request::get(
+                format!(
+                    "{}{}/{}/{}",
+                    get_api_url(),
+                    PROJECTS_ENDPOINT,
+                    project_id,
+                    TICKETS_ENDPOINT
+                )
+                .as_str(),
+            )
+            .send()
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
+
+            callback.emit(list);
+        });
+    }
+
+    pub fn assign_tickets(project_id: u64, tickets: Vec<u64>, callback: Callback<Vec<Ticket>>) {
+        spawn_local(async move {
+            let project_tickets = ProjectTickets { tickets };
+            let list: Vec<Ticket> = Request::post(
+                format!(
+                    "{}{}/{}/{}",
+                    get_api_url(),
+                    PROJECTS_ENDPOINT,
+                    project_id,
+                    TICKETS_ENDPOINT
+                )
+                .as_str(),
+            )
+            .json(&project_tickets)
+            .unwrap()
+            .send()
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
 
             callback.emit(list);
         });

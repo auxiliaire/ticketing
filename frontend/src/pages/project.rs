@@ -1,16 +1,27 @@
 use crate::api::project::ProjectApi;
 use crate::api::user::UserApi;
 use crate::components::check_tag::CheckTag;
-use crate::components::unassigned_tickets_dialog::UnassignedTicketsDialog;
+use crate::components::option_data::OptionData;
+use crate::components::select_dialog::SelectDialog;
 use crate::components::user_link::UserLink;
 use crate::{AppState, Dialog};
 use frontend::api::ticket::TicketApi;
-use implicit_clone::sync::IString;
+use implicit_clone::sync::{IArray, IString};
 use shared::dtos::project::Project as ProjectDto;
 use shared::dtos::ticket::Ticket as TicketDto;
 use shared::dtos::user::User as UserDto;
 use std::rc::Rc;
 use yew::prelude::*;
+
+impl OptionData for TicketDto {
+    fn get_key(&self) -> implicit_clone::unsync::IString {
+        implicit_clone::unsync::IString::from(format!("{}", self.id.unwrap()))
+    }
+
+    fn get_label(&self) -> implicit_clone::unsync::IString {
+        implicit_clone::unsync::IString::from(format!("{}", self.title.as_str()))
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
@@ -23,6 +34,7 @@ pub enum Msg {
     FetchedTickets(Vec<TicketDto>),
     ContextChanged(Rc<AppState>),
     OpenDialog(),
+    SelectedTickets(IArray<u64>),
 }
 
 pub struct Project {
@@ -38,8 +50,8 @@ impl Component for Project {
 
     fn create(ctx: &Context<Self>) -> Self {
         ProjectApi::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
-        TicketApi::fetch_all(
-            Some(ctx.props().id),
+        ProjectApi::fetch_assigned_tickets(
+            ctx.props().id,
             ctx.link().callback(Msg::FetchedTickets),
         );
         let (app_state, _listener) = ctx
@@ -76,13 +88,25 @@ impl Component for Project {
                 self.app_state = state;
             }
             Msg::OpenDialog() => {
+                let optionsapi: Callback<Callback<Vec<TicketDto>>> =
+                    Callback::from(TicketApi::fetch_unassigned);
+                let onselect: Callback<IArray<u64>> = ctx.link().callback(Msg::SelectedTickets);
                 let dialog = Rc::new(Dialog {
                     active: true,
                     content: html! {
-                        <UnassignedTicketsDialog />
+                        <SelectDialog<u64, TicketDto> {optionsapi} {onselect} />
                     },
                 });
                 self.app_state.update_dialog.emit(dialog);
+            }
+            Msg::SelectedTickets(tickets) => {
+                let callback = ctx.link().callback(Msg::FetchedTickets);
+                ProjectApi::assign_tickets(
+                    ctx.props().id,
+                    tickets.iter().collect::<Vec<u64>>(),
+                    callback,
+                );
+                self.app_state.close_dialog.emit(());
             }
         }
         true

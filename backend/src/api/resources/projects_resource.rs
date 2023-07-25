@@ -6,9 +6,16 @@ use axum::{
     Extension, Router,
 };
 use axum_extra::extract::WithRejection;
+use entity::tickets::Entity as Ticket;
 use entity::{projects, projects::Entity as Project};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait, Set};
+use migration::Expr;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
+    QueryFilter, Set,
+};
 use shared::dtos::project::Project as ProjectDto;
+use shared::dtos::project::ProjectTickets as ProjectTicketsDto;
+use shared::dtos::ticket::Ticket as TicketDto;
 
 use crate::api::{
     error::{ApiError, JsonError},
@@ -20,6 +27,8 @@ pub fn router() -> Router {
         .route("/projects", post(post_project))
         .route("/projects", get(get_projects))
         .route("/projects/:id", get(get_project))
+        .route("/projects/:id/tickets", get(get_project_tickets))
+        .route("/projects/:id/tickets", post(post_project_tickets))
         .route("/projects/:id", put(put_project))
         .route("/projects/:id", delete(delete_project))
 }
@@ -47,6 +56,50 @@ async fn get_project(
         )),
         |project| Ok(Json(project.into())),
     )
+}
+
+async fn get_project_tickets(
+    db: Extension<DatabaseConnection>,
+    WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
+) -> Result<Json<Vec<TicketDto>>, ApiError> {
+    let list = Ticket::find()
+        .filter(
+            Condition::all()
+                .add(<entity::prelude::Tickets as EntityTrait>::Column::ProjectId.eq(id)),
+        )
+        .all(&*db)
+        .await?;
+    Ok(Json(
+        list.iter().map(|m| m.into()).collect::<Vec<TicketDto>>(),
+    ))
+}
+
+async fn post_project_tickets(
+    db: Extension<DatabaseConnection>,
+    WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
+    WithRejection(ValidatedJson(tickets_dto), _): WithRejection<
+        ValidatedJson<ProjectTicketsDto>,
+        ApiError,
+    >,
+) -> Result<Json<Vec<TicketDto>>, ApiError> {
+    Ticket::update_many()
+        .col_expr(
+            <entity::prelude::Tickets as EntityTrait>::Column::ProjectId,
+            Expr::value(id),
+        )
+        .filter(<entity::prelude::Tickets as EntityTrait>::Column::Id.is_in(tickets_dto.tickets))
+        .exec(&*db)
+        .await?;
+    let list = Ticket::find()
+        .filter(
+            Condition::all()
+                .add(<entity::prelude::Tickets as EntityTrait>::Column::ProjectId.eq(id)),
+        )
+        .all(&*db)
+        .await?;
+    Ok(Json(
+        list.iter().map(|m| m.into()).collect::<Vec<TicketDto>>(),
+    ))
 }
 
 async fn post_project(
