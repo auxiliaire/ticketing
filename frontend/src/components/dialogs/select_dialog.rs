@@ -1,12 +1,10 @@
+use super::{super::event_helper::get_values_from_select_change, super::option_data::OptionData};
+use crate::AppState;
 use implicit_clone::{sync::IArray, ImplicitClone};
 use std::{rc::Rc, sync::Arc};
 use yew::{
     html, html::onchange::Event, Callback, Component, Context, ContextHandle, Html, Properties,
 };
-
-use crate::AppState;
-
-use super::{event_helper::get_values_from_select_change, option_data::OptionData};
 
 pub enum SelectDialogMsg<V> {
     FetchedOptions(Vec<V>),

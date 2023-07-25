@@ -1,8 +1,7 @@
 use crate::components::bulma::field::Field;
 use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
-use implicit_clone::sync::{IArray, IString};
-use implicit_clone::unsync::IString as UIString;
+use implicit_clone::unsync::{IArray, IString};
 use serde_valid::validation::{Error, Errors, ObjectErrors, PropertyErrorsMap};
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
@@ -34,7 +33,7 @@ pub enum RegistrationMsg {
 
 pub struct RegistrationForm {
     user: UserDto,
-    password_repeat: UIString,
+    password_repeat: IString,
     on_submit: Callback<(UserDto, Callback<ErrorResponse>)>,
     common_error: IValidationMessages,
     name_error: IValidationMessages,
@@ -48,7 +47,7 @@ impl Component for RegistrationForm {
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             user: UserDto::default(),
-            password_repeat: UIString::from(""),
+            password_repeat: IString::from(""),
             on_submit: ctx.props().onsubmit.to_owned(),
             common_error: None,
             name_error: None,

@@ -1,8 +1,10 @@
 use crate::api::project::ProjectApi;
 use crate::api::user::UserApi;
 use crate::components::check_tag::CheckTag;
+use crate::components::dialogs::form_dialog::FormDialog;
+use crate::components::dialogs::select_dialog::SelectDialog;
+use crate::components::forms::ticket_form::TicketForm;
 use crate::components::option_data::OptionData;
-use crate::components::select_dialog::SelectDialog;
 use crate::components::user_link::UserLink;
 use crate::{AppState, Dialog};
 use frontend::api::ticket::TicketApi;
@@ -33,8 +35,10 @@ pub enum Msg {
     FetchedUser(UserDto),
     FetchedTickets(Vec<TicketDto>),
     ContextChanged(Rc<AppState>),
-    OpenDialog(),
+    OpenSelectDialog(),
+    OpenFormDialog(),
     SelectedTickets(IArray<u64>),
+    SubmittedForm(),
 }
 
 pub struct Project {
@@ -87,7 +91,7 @@ impl Component for Project {
             Msg::ContextChanged(state) => {
                 self.app_state = state;
             }
-            Msg::OpenDialog() => {
+            Msg::OpenSelectDialog() => {
                 let optionsapi: Callback<Callback<Vec<TicketDto>>> =
                     Callback::from(TicketApi::fetch_unassigned);
                 let onselect: Callback<IArray<u64>> = ctx.link().callback(Msg::SelectedTickets);
@@ -95,6 +99,18 @@ impl Component for Project {
                     active: true,
                     content: html! {
                         <SelectDialog<u64, TicketDto> {optionsapi} {onselect} />
+                    },
+                });
+                self.app_state.update_dialog.emit(dialog);
+            }
+            Msg::OpenFormDialog() => {
+                let on_submit = |_| Msg::SubmittedForm();
+                let dialog = Rc::new(Dialog {
+                    active: true,
+                    content: html! {
+                        <FormDialog>
+                            <TicketForm isdialog={true} projectid={ctx.props().id} onsubmit={ctx.link().callback(on_submit)} />
+                        </FormDialog>
                     },
                 });
                 self.app_state.update_dialog.emit(dialog);
@@ -107,6 +123,9 @@ impl Component for Project {
                     callback,
                 );
                 self.app_state.close_dialog.emit(());
+            }
+            Msg::SubmittedForm() => {
+                log::debug!("Form submitted");
             }
         }
         true
@@ -121,7 +140,8 @@ impl Component for Project {
             _listener,
         } = self;
 
-        let on_assign_click = |_| Msg::OpenDialog();
+        let on_assign_click = |_| Msg::OpenSelectDialog();
+        let on_add_click = |_| Msg::OpenFormDialog();
 
         let tickets = ticket_list.iter().map(
             |TicketDto {
@@ -221,7 +241,7 @@ impl Component for Project {
                                             </button>
                                         </p>
                                         <p class="control">
-                                            <button class="button">
+                                            <button class="button" onclick={ctx.link().callback(on_add_click)}>
                                                 <span class="icon is-small">
                                                     <i class="fas fa-plus"></i>
                                                 </span>

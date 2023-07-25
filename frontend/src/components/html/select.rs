@@ -1,7 +1,6 @@
-use implicit_clone::sync::{IArray, IString};
-use yew::prelude::*;
-
 use crate::components::event_helper::get_value_from_input_event;
+use implicit_clone::unsync::{IArray, IString};
+use yew::prelude::*;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
@@ -42,13 +41,13 @@ pub fn select(props: &Props) -> Html {
 
     html! {
         <div class={classes!(get_classes())}>
-            <select {value} {onchange}>
+            <select value={value.clone()} {onchange}>
                 if let Some(ph) = placeholder {
                     <option value="" selected={true}>{ph}</option>
                 }
                 {
                     options.iter().map(|option| {
-                        html!{<option>{ option }</option>}
+                        html!{<option selected={value == option}>{ option }</option>}
                     }).collect::<Html>()
                 }
             </select>

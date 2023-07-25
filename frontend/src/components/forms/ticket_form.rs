@@ -3,8 +3,7 @@ use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
 use frontend::api::user::UserApi;
 use gloo_timers::callback::Timeout;
-use implicit_clone::sync::{IArray, IString};
-use implicit_clone::unsync::IString as UIString;
+use implicit_clone::unsync::{IArray, IString};
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::ticket::Ticket as TicketDto;
@@ -26,6 +25,8 @@ const DROPDOWN_CLOSE_MS: u32 = 200;
 pub struct Props {
     pub onsubmit: Callback<(TicketDto, Callback<ErrorResponse>)>,
     pub projectid: Option<u64>,
+    #[prop_or_default]
+    pub isdialog: bool,
 }
 
 pub enum TicketMsg {
@@ -33,7 +34,7 @@ pub enum TicketMsg {
     UpdateDescription(AttrValue),
     UpdateStatus(AttrValue),
     UpdateOwner(AttrValue),
-    UpdateUserId((u64, UIString)),
+    UpdateUserId((u64, IString)),
     SearchUser(AttrValue),
     ToggleSearchDropdownDelayed(bool),
     ToggleSearchDropdown(bool),
@@ -46,11 +47,12 @@ pub enum TicketMsg {
 pub struct TicketForm {
     ticket: TicketDto,
     project_id: Option<u64>,
-    owner: UIString,
-    user_search: UIString,
+    is_dialog: bool,
+    owner: IString,
+    user_search: IString,
     search_timeout: Option<Timeout>,
     dropdown_enabled: bool,
-    user_list: IArray<(u64, UIString)>,
+    user_list: IArray<(u64, IString)>,
     on_submit: Callback<(TicketDto, Callback<ErrorResponse>)>,
     common_error: IValidationMessages,
     title_error: IValidationMessages,
@@ -67,8 +69,9 @@ impl Component for TicketForm {
         Self {
             ticket: TicketDto::default(),
             project_id: ctx.props().projectid,
-            owner: UIString::from(""),
-            user_search: UIString::from(""),
+            is_dialog: ctx.props().isdialog,
+            owner: IString::from(""),
+            user_search: IString::from(""),
             search_timeout: None,
             dropdown_enabled: false,
             user_list: IArray::from(vec![]),
@@ -106,7 +109,7 @@ impl Component for TicketForm {
                 }
             }
             TicketMsg::UpdateUserId((id, name)) => {
-                self.owner = UIString::from(format!("{}", id));
+                self.owner = IString::from(format!("{}", id));
                 self.ticket.user_id = Some(id);
                 self.user_search = name;
             }
@@ -140,7 +143,7 @@ impl Component for TicketForm {
             TicketMsg::FetchedUsers(list) => {
                 let mut v = vec![];
                 for u in list {
-                    v.push((u.id.unwrap(), UIString::from(u.name.clone())));
+                    v.push((u.id.unwrap(), IString::from(u.name.clone())));
                 }
                 self.user_list = IArray::from(v);
             }
@@ -169,9 +172,43 @@ impl Component for TicketForm {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let on_cancel_pressed = |_: MouseEvent| TicketMsg::Cancel();
-        let on_submit_pressed = |_: MouseEvent| TicketMsg::Submit();
+        match self.is_dialog {
+            true => html! {
+                <>
+                    <section class="modal-card-body">
+                        { self.form_body(ctx) }
+                    </section>
+                    <footer class="modal-card-foot">
+                        { self.submit_button(ctx) }
+                        { self.cancel_button(ctx) }
+                    </footer>
+                </>
+            },
+            false => html! {
+                <div class="card">
+                    <div class="card-content">
+                        { self.form_body(ctx) }
+                    </div>
+                    <footer class="card-footer">
+                        <div class="card-footer-item">
+                            <div class="field is-grouped">
+                                <div class="control">
+                                    { self.submit_button(ctx) }
+                                </div>
+                                <div class="control">
+                                    { self.cancel_button(ctx) }
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            },
+        }
+    }
+}
 
+impl TicketForm {
+    fn form_body(&self, ctx: &Context<Self>) -> Html {
         let users = self.user_list.iter().map(|t| {
             let select_user = ctx.link().callback(TicketMsg::UpdateUserId);
             let name = t.1.clone();
@@ -186,66 +223,67 @@ impl Component for TicketForm {
         let on_search_blur = ctx.link().callback(TicketMsg::ToggleSearchDropdownDelayed);
 
         html! {
-            <div class="card">
-                <div class="card-content">
-                    if let Some(common_error) = &self.common_error {
-                        <p class="help is-danger">
-                            <ul>
-                            {
-                                common_error.iter().map(|message| {
-                                    html!{<li>{ message }</li>}
-                                }).collect::<Html>()
-                            }
-                            </ul>
-                        </p>
-                    }
-                    <Field label="Summary" help={&self.title_error}>
-                        <TextInput value={self.ticket.title.clone()} on_change={ctx.link().callback(TicketMsg::UpdateTitle)} valid={self.title_error.is_empty()} />
-                    </Field>
-                    <Field label="Description" help={&self.description_error}>
-                        <TextInput value={self.ticket.description.clone()} on_change={ctx.link().callback(TicketMsg::UpdateDescription)} valid={self.description_error.is_empty()} />
-                    </Field>
-                    <Field label="Project" help={&self.project_error}>
-                        <TextInput value={self.get_project_id()} on_change={ctx.link().callback(TicketMsg::UpdateDescription)} valid={self.project_error.is_empty()} />
-                    </Field>
-                    <Field label="Status" help={&self.status_error}>
-                        <Select value={self.ticket.status.to_string()} options={self.get_statuses()} on_change={ctx.link().callback(TicketMsg::UpdateStatus)} valid={self.status_error.is_empty()} placeholder="Select status" />
-                    </Field>
-                    <Field label="Owner" help={&self.owner_error}>
-                        <TextInput value={self.owner.clone()} on_change={ctx.link().callback(TicketMsg::UpdateOwner)} valid={self.owner_error.is_empty()} base_classes="input is-hidden" />
-                        <div class={classes!(self.get_dropdown_classes())}>
-                            <div class="dropdown-trigger">
-                                <TextInput value={self.user_search.clone()} on_change={ctx.link().callback(TicketMsg::SearchUser)} valid={self.owner_error.is_empty()}
-                                    on_focus={move |_| on_search_focus.emit(true)} on_blur={move |_| on_search_blur.emit(false)} />
-                            </div>
-                            <div class="dropdown-menu" role="menu">
-                                <div class="dropdown-content">
-                                    { for users }
-                                </div>
-                            </div>
+            <>
+                if let Some(common_error) = &self.common_error {
+                    <p class="help is-danger">
+                        <ul>
+                        {
+                            common_error.iter().map(|message| {
+                                html!{<li>{ message }</li>}
+                            }).collect::<Html>()
+                        }
+                        </ul>
+                    </p>
+                }
+                <Field label="Summary" help={&self.title_error}>
+                    <TextInput value={self.ticket.title.clone()} on_change={ctx.link().callback(TicketMsg::UpdateTitle)} valid={self.title_error.is_empty()} />
+                </Field>
+                <Field label="Description" help={&self.description_error}>
+                    <TextInput value={self.ticket.description.clone()} on_change={ctx.link().callback(TicketMsg::UpdateDescription)} valid={self.description_error.is_empty()} />
+                </Field>
+                <Field label="Project" help={&self.project_error}>
+                    <TextInput value={self.get_project_id()} on_change={ctx.link().callback(TicketMsg::UpdateDescription)} valid={self.project_error.is_empty()} />
+                </Field>
+                <Field label="Status" help={&self.status_error}>
+                    <Select value={self.ticket.status.to_string()} options={self.get_statuses()} on_change={ctx.link().callback(TicketMsg::UpdateStatus)} valid={self.status_error.is_empty()} />
+                </Field>
+                <Field label="Owner" help={&self.owner_error}>
+                    <TextInput value={self.owner.clone()} on_change={ctx.link().callback(TicketMsg::UpdateOwner)} valid={self.owner_error.is_empty()} base_classes="input is-hidden" />
+                    <div class={classes!(self.get_dropdown_classes())}>
+                        <div class="dropdown-trigger">
+                            <TextInput value={self.user_search.clone()} on_change={ctx.link().callback(TicketMsg::SearchUser)} valid={self.owner_error.is_empty()}
+                                on_focus={move |_| on_search_focus.emit(true)} on_blur={move |_| on_search_blur.emit(false)} />
                         </div>
-                    </Field>
-                </div>
-                <footer class="card-footer">
-                    <div class="card-footer-item">
-                        <div class="field is-grouped">
-                            <div class="control">
-                                <button class="button is-link" onmouseup={ctx.link().callback(on_submit_pressed)}>{ "Submit" }</button>
-                            </div>
-                            <div class="control">
-                                <button class="button is-link is-light" onmouseup={ctx.link().callback(on_cancel_pressed)}>{ "Cancel" }</button>
+                        <div class="dropdown-menu" role="menu">
+                            <div class="dropdown-content">
+                                { for users }
                             </div>
                         </div>
                     </div>
-                </footer>
-            </div>
+                </Field>
+            </>
         }
     }
-}
 
-impl TicketForm {
-    fn get_project_id(&self) -> UIString {
-        self.ticket.project_id.or(self.project_id).map_or(UIString::from(""), |id| UIString::from(format!("{}", id)))
+    fn submit_button(&self, ctx: &Context<Self>) -> Html {
+        let on_submit_pressed = |_: MouseEvent| TicketMsg::Submit();
+        html! {
+            <button class="button is-link" onmouseup={ctx.link().callback(on_submit_pressed)}>{ "Submit" }</button>
+        }
+    }
+
+    fn cancel_button(&self, ctx: &Context<Self>) -> Html {
+        let on_cancel_pressed = |_: MouseEvent| TicketMsg::Cancel();
+        html! {
+            <button class="button is-link is-light" onmouseup={ctx.link().callback(on_cancel_pressed)}>{ "Cancel" }</button>
+        }
+    }
+
+    fn get_project_id(&self) -> IString {
+        self.ticket
+            .project_id
+            .or(self.project_id)
+            .map_or(IString::from(""), |id| IString::from(format!("{}", id)))
     }
 
     fn get_statuses(&self) -> IArray<IString> {
