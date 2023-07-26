@@ -12,6 +12,7 @@ pub struct Ticket {
     #[validate(max_length = 160)]
     pub title: String,
     #[validate(min_length = 8)]
+    #[validate(max_length = 500)]
     pub description: String,
     pub project_id: Option<u64>,
     pub status: TicketStatus,
@@ -22,7 +23,7 @@ impl Display for Ticket {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "( id: {}, summary: '{}', deadline: {} )",
+            "( id: {}, title: '{}', status: {} )",
             self.id.map_or(String::from("-"), |id| format!("{}", id)),
             self.title,
             self.status,

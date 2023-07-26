@@ -237,7 +237,7 @@ impl Component for ProjectForm {
                     </div>
                 </div>
                 <footer class="card-footer">
-                    <div class="card-footer-item">
+                    <div class="card-content">
                         <div class="field is-grouped">
                             <div class="control">
                                 <button class="button is-link" onmouseup={ctx.link().callback(on_submit_pressed)}>{ "Submit" }</button>

@@ -1,4 +1,5 @@
 pub mod bulma;
+pub mod button_link;
 pub mod check_tag;
 pub mod dialogs;
 pub mod event_helper;
@@ -7,4 +8,3 @@ pub mod html;
 pub mod option_data;
 pub mod project_card;
 pub mod user_card;
-pub mod user_link;

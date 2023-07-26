@@ -2,6 +2,8 @@ use crate::pages::project::Project;
 use crate::pages::project_list::ProjectList;
 use crate::pages::project_new::ProjectNew;
 use crate::pages::registration::Registration;
+use crate::pages::ticket::Ticket;
+use crate::pages::ticket_new::TicketNew;
 use pages::home::Home;
 use pages::page_not_found::PageNotFound;
 use pages::user::User;
@@ -29,6 +31,10 @@ pub enum Route {
     User { id: u64 },
     #[at("/users")]
     Users,
+    #[at("/tickets/new")]
+    TicketNew,
+    #[at("/tickets/:id")]
+    Ticket { id: u64 },
     #[at("/")]
     Home,
     #[not_found]
@@ -159,9 +165,9 @@ impl App {
                             { "Home" }
                         </Link<Route>>
                         /*<Link<Route> classes={classes!("navbar-item")} to={Route::Tickets}>
-                            { "Posts" }
+                            { "Tickets" }
                         </Link<Route>>*/
-                            <Link<Route> classes={classes!("navbar-item")} to={Route::Registration}>
+                        <Link<Route> classes={classes!("navbar-item")} to={Route::Registration}>
                             { "Register" }
                         </Link<Route>>
 
@@ -180,6 +186,12 @@ impl App {
                                     { "Create new project" }
                                 </Link<Route>>
                             </div>
+                        </div>
+
+                        <div class="navbar-item">
+                            <Link<Route> classes={classes!("button", "is-info", "is-light")} to={Route::TicketNew}>
+                                { "Create" }
+                            </Link<Route>>
                         </div>
                     </div>
                 </div>
@@ -207,6 +219,12 @@ fn switch(routes: Route) -> Html {
         }
         Route::Users => {
             html! { <UserList /> }
+        }
+        Route::TicketNew => {
+            html! { <TicketNew /> }
+        }
+        Route::Ticket { id } => {
+            html! { <Ticket id={id} /> }
         }
         Route::Home => {
             html! { <Home /> }

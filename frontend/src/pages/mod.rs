@@ -4,5 +4,7 @@ pub mod project;
 pub mod project_list;
 pub mod project_new;
 pub mod registration;
+pub mod ticket;
+pub mod ticket_new;
 pub mod user;
 pub mod user_list;

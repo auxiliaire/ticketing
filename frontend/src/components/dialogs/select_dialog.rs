@@ -109,8 +109,8 @@ where
                     </div>
                 </section>
                 <footer class="modal-card-foot">
-                    <button class="button is-success" onclick={ctx.link().callback(on_select)}>{ "Save changes" }</button>
-                    <button class="button" onclick={self.app_state.close_dialog.reform(move |_| ())}>{ "Cancel" }</button>
+                    <button class="button is-link" onclick={ctx.link().callback(on_select)}>{ "Save changes" }</button>
+                    <button class="button is-link is-light" onclick={self.app_state.close_dialog.reform(move |_| ())}>{ "Cancel" }</button>
                 </footer>
             </>
         }

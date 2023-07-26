@@ -1,4 +1,5 @@
 use crate::components::bulma::field::Field;
+use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
 use frontend::api::user::UserApi;
@@ -13,6 +14,7 @@ use shared::validation::ticket::TicketStatus;
 use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
 };
+use std::rc::Rc;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 use yew::prelude::*;
@@ -25,13 +27,13 @@ const DROPDOWN_CLOSE_MS: u32 = 200;
 pub struct Props {
     pub onsubmit: Callback<(TicketDto, Callback<ErrorResponse>)>,
     pub projectid: Option<u64>,
-    #[prop_or_default]
-    pub isdialog: bool,
 }
 
 pub enum TicketMsg {
+    DialogContextChanged(Rc<DialogContext>),
     UpdateTitle(AttrValue),
     UpdateDescription(AttrValue),
+    UpdateProjectId(AttrValue),
     UpdateStatus(AttrValue),
     UpdateOwner(AttrValue),
     UpdateUserId((u64, IString)),
@@ -45,9 +47,9 @@ pub enum TicketMsg {
 }
 
 pub struct TicketForm {
+    dialog_context: Option<Rc<DialogContext>>,
     ticket: TicketDto,
     project_id: Option<u64>,
-    is_dialog: bool,
     owner: IString,
     user_search: IString,
     search_timeout: Option<Timeout>,
@@ -66,10 +68,18 @@ impl Component for TicketForm {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
+        let option_dialog_context = ctx
+            .link()
+            .context::<Rc<DialogContext>>(ctx.link().callback(TicketMsg::DialogContextChanged));
+        let dialog_context = option_dialog_context.map(|(context, _listener)| context);
+
         Self {
-            ticket: TicketDto::default(),
+            dialog_context,
+            ticket: TicketDto {
+                project_id: ctx.props().projectid,
+                ..Default::default()
+            },
             project_id: ctx.props().projectid,
-            is_dialog: ctx.props().isdialog,
             owner: IString::from(""),
             user_search: IString::from(""),
             search_timeout: None,
@@ -91,11 +101,17 @@ impl Component for TicketForm {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            TicketMsg::DialogContextChanged(context) => {
+                self.dialog_context = Some(context);
+            }
             TicketMsg::UpdateTitle(title) => {
                 self.ticket.title = String::from(title.as_str());
             }
             TicketMsg::UpdateDescription(description) => {
                 self.ticket.description = String::from(description.as_str());
+            }
+            TicketMsg::UpdateProjectId(value) => {
+                self.ticket.project_id = value.as_str().parse::<u64>().ok();
             }
             TicketMsg::UpdateStatus(value) => {
                 if let Ok(status) = TicketStatus::from_str(value.as_str()) {
@@ -104,9 +120,7 @@ impl Component for TicketForm {
             }
             TicketMsg::UpdateOwner(value) => {
                 self.owner = value;
-                if let Ok(v) = self.owner.as_str().parse::<u64>() {
-                    self.ticket.user_id = Some(v);
-                }
+                self.ticket.user_id = self.owner.as_str().parse::<u64>().ok();
             }
             TicketMsg::UpdateUserId((id, name)) => {
                 self.owner = IString::from(format!("{}", id));
@@ -163,16 +177,21 @@ impl Component for TicketForm {
                     self.update_errors(errors);
                 }
             }
-            TicketMsg::Cancel() => {
-                let navigator = ctx.link().navigator().unwrap();
-                navigator.back();
-            }
+            TicketMsg::Cancel() => match self.dialog_context.clone() {
+                Some(context) => {
+                    context.closehandler.emit(());
+                }
+                None => {
+                    let navigator = ctx.link().navigator().unwrap();
+                    navigator.back();
+                }
+            },
         }
         true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        match self.is_dialog {
+        match self.dialog_context.is_some() {
             true => html! {
                 <>
                     <section class="modal-card-body">
@@ -190,7 +209,7 @@ impl Component for TicketForm {
                         { self.form_body(ctx) }
                     </div>
                     <footer class="card-footer">
-                        <div class="card-footer-item">
+                        <div class="card-content">
                             <div class="field is-grouped">
                                 <div class="control">
                                     { self.submit_button(ctx) }
@@ -235,14 +254,14 @@ impl TicketForm {
                         </ul>
                     </p>
                 }
-                <Field label="Summary" help={&self.title_error}>
+                <Field label="Title" help={&self.title_error}>
                     <TextInput value={self.ticket.title.clone()} on_change={ctx.link().callback(TicketMsg::UpdateTitle)} valid={self.title_error.is_empty()} />
                 </Field>
                 <Field label="Description" help={&self.description_error}>
                     <TextInput value={self.ticket.description.clone()} on_change={ctx.link().callback(TicketMsg::UpdateDescription)} valid={self.description_error.is_empty()} />
                 </Field>
                 <Field label="Project" help={&self.project_error}>
-                    <TextInput value={self.get_project_id()} on_change={ctx.link().callback(TicketMsg::UpdateDescription)} valid={self.project_error.is_empty()} />
+                    <TextInput value={self.get_project_id()} on_change={ctx.link().callback(TicketMsg::UpdateProjectId)} valid={self.project_error.is_empty()} />
                 </Field>
                 <Field label="Status" help={&self.status_error}>
                     <Select value={self.ticket.status.to_string()} options={self.get_statuses()} on_change={ctx.link().callback(TicketMsg::UpdateStatus)} valid={self.status_error.is_empty()} />
@@ -305,8 +324,10 @@ impl TicketForm {
         E: ValidationMessagesTrait,
     {
         self.common_error = errors.get_common_messages();
-        self.title_error = errors.get_property_messages("summary");
-        self.description_error = errors.get_property_messages("ts_seconds_option");
+        self.title_error = errors.get_property_messages("title");
+        self.description_error = errors.get_property_messages("description");
+        self.project_error = errors.get_property_messages("project_id");
+        self.status_error = errors.get_property_messages("status");
         self.owner_error = errors.get_property_messages("user_id");
     }
 }

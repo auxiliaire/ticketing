@@ -1,4 +1,4 @@
-use crate::{api::project::ProjectApi, Route};
+use crate::{api::project::ProjectApi, Route, components::check_tag::CheckTag};
 use shared::dtos::project::Project as ProjectDto;
 use yew::prelude::*;
 use yew_router::prelude::Link;
@@ -29,7 +29,7 @@ impl Component for ProjectList {
     }
 
     fn view(&self, _: &Context<Self>) -> Html {
-        let projects = self.list.iter().map(|ProjectDto { id, summary, deadline: _, user_id: _, active: _ }| {
+        let projects = self.list.iter().map(|ProjectDto { id, summary, deadline, user_id: _, active }| {
             match id {
                 Some(id) => html! {
                     <tr>
@@ -37,10 +37,12 @@ impl Component for ProjectList {
                             {id}
                         </th>
                         <td>
-                            <Link<Route> classes={classes!("column", "is-full")} to={Route::Project { id: *id }}>
+                            <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0")} to={Route::Project { id: *id }}>
                                 {summary.clone()}
                             </Link<Route>>
                         </td>
+                        <td>{ deadline.map_or(String::from("-"), |d| d.format("%F").to_string()) }</td>
+                        <td><CheckTag checked={*active == 1} /></td>
                     </tr>
                 },
                 None => html! { <></> }
@@ -77,6 +79,8 @@ impl Component for ProjectList {
                                         <tr>
                                             <th>{ "Id" }</th>
                                             <th>{ "Summary" }</th>
+                                            <th>{ "Deadline" }</th>
+                                            <th>{ "Active" }</th>
                                         </tr>
                                     </thead>
                                     <tbody>

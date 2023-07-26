@@ -84,6 +84,8 @@ async fn post_ticket(
         title: Set(model.title.to_owned()),
         description: Set(model.description.to_owned()),
         project_id: Set(model.project_id.to_owned()),
+        status: Set(model.status.to_owned()),
+        user_id: Set(model.user_id.to_owned()),
         ..Default::default()
     }
     .insert(&*db)

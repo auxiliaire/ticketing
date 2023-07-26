@@ -1,19 +1,21 @@
 use crate::api::project::ProjectApi;
 use crate::api::user::UserApi;
+use crate::components::button_link::{ButtonLink, ButtonLinkData};
 use crate::components::check_tag::CheckTag;
 use crate::components::dialogs::form_dialog::FormDialog;
 use crate::components::dialogs::select_dialog::SelectDialog;
 use crate::components::forms::ticket_form::TicketForm;
 use crate::components::option_data::OptionData;
-use crate::components::user_link::UserLink;
-use crate::{AppState, Dialog};
+use crate::{AppState, Dialog, Route};
 use frontend::api::ticket::TicketApi;
 use implicit_clone::sync::{IArray, IString};
+use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::project::Project as ProjectDto;
 use shared::dtos::ticket::Ticket as TicketDto;
 use shared::dtos::user::User as UserDto;
 use std::rc::Rc;
 use yew::prelude::*;
+use yew_router::prelude::Link;
 
 impl OptionData for TicketDto {
     fn get_key(&self) -> implicit_clone::unsync::IString {
@@ -38,12 +40,13 @@ pub enum Msg {
     OpenSelectDialog(),
     OpenFormDialog(),
     SelectedTickets(IArray<u64>),
-    SubmittedForm(),
+    SubmittedForm((TicketDto, Callback<ErrorResponse>)),
+    TicketCreated(TicketDto),
 }
 
 pub struct Project {
     project: ProjectDto,
-    user: Option<(u64, IString)>,
+    user: Option<ButtonLinkData<Route>>,
     ticket_list: Vec<TicketDto>,
     app_state: Rc<AppState>,
     _listener: ContextHandle<Rc<AppState>>,
@@ -83,7 +86,12 @@ impl Component for Project {
                 UserApi::fetch(self.project.user_id, ctx.link().callback(Msg::FetchedUser));
             }
             Msg::FetchedUser(user) => {
-                self.user = Some((user.id.unwrap(), IString::from(user.name)));
+                self.user = Some(ButtonLinkData {
+                    label: IString::from(user.name),
+                    to: Route::User {
+                        id: user.id.unwrap(),
+                    },
+                });
             }
             Msg::FetchedTickets(tickets) => {
                 self.ticket_list = tickets;
@@ -104,12 +112,11 @@ impl Component for Project {
                 self.app_state.update_dialog.emit(dialog);
             }
             Msg::OpenFormDialog() => {
-                let on_submit = |_| Msg::SubmittedForm();
                 let dialog = Rc::new(Dialog {
                     active: true,
                     content: html! {
-                        <FormDialog>
-                            <TicketForm isdialog={true} projectid={ctx.props().id} onsubmit={ctx.link().callback(on_submit)} />
+                        <FormDialog title="Create a new Ticket">
+                            <TicketForm projectid={ctx.props().id} onsubmit={ctx.link().callback(Msg::SubmittedForm)} />
                         </FormDialog>
                     },
                 });
@@ -124,8 +131,21 @@ impl Component for Project {
                 );
                 self.app_state.close_dialog.emit(());
             }
-            Msg::SubmittedForm() => {
-                log::debug!("Form submitted");
+            Msg::SubmittedForm((ticket, callback_error)) => {
+                log::debug!("Form submitted: {}", ticket);
+                TicketApi::create(
+                    ticket,
+                    ctx.link().callback(Msg::TicketCreated),
+                    callback_error,
+                );
+            }
+            Msg::TicketCreated(ticket) => {
+                log::debug!("Created: {}", ticket);
+                self.app_state.close_dialog.emit(());
+                ProjectApi::fetch_assigned_tickets(
+                    ctx.props().id,
+                    ctx.link().callback(Msg::FetchedTickets),
+                );
             }
         }
         true
@@ -159,9 +179,9 @@ impl Component for Project {
                                 {id}
                             </th>
                             <td>
-                                //<Link<Route> classes={classes!("column", "is-full")} to={Route::Ticket { id: *id }}>
+                                <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0", "pb-0")} to={Route::Ticket { id: *id }}>
                                     {title.clone()}
-                                //</Link<Route>>
+                                </Link<Route>>
                             </td>
                             <td>
                                 {status}
@@ -193,7 +213,7 @@ impl Component for Project {
                                     <div class="columns">
                                         <div class="column is-one-quarter"><h5 class="title is-5">{ "Created by" }</h5></div>
                                         <div class="column">
-                                            <UserLink {user} />
+                                            <ButtonLink<Route> data={user.clone()} />
                                         </div>
                                     </div>
                                     <div class="columns">
