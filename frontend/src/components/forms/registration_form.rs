@@ -33,6 +33,7 @@ pub enum RegistrationMsg {
 
 pub struct RegistrationForm {
     user: UserDto,
+    password: IString,
     password_repeat: IString,
     on_submit: Callback<(UserDto, Callback<ErrorResponse>)>,
     common_error: IValidationMessages,
@@ -47,6 +48,7 @@ impl Component for RegistrationForm {
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             user: UserDto::default(),
+            password: IString::from(""),
             password_repeat: IString::from(""),
             on_submit: ctx.props().onsubmit.to_owned(),
             common_error: None,
@@ -67,7 +69,8 @@ impl Component for RegistrationForm {
             }
             RegistrationMsg::UpdatePassword(password) => {
                 log::debug!("password update");
-                self.user.password = String::from(password.as_str());
+                self.user.password = Some(String::from(password.as_str()));
+                self.password = password;
             }
             RegistrationMsg::UpdatePasswordVerification(password) => {
                 self.password_repeat = password;
@@ -120,7 +123,7 @@ impl Component for RegistrationForm {
                         <TextInput value={self.user.name.clone()} on_change={ctx.link().callback(RegistrationMsg::UpdateName)} valid={self.name_error.is_empty()} />
                     </Field>
                     <Field label="Password" help={&self.password_error}>
-                        <TextInput value={self.user.password.clone()} on_change={ctx.link().callback(RegistrationMsg::UpdatePassword)} mask={true} valid={self.password_error.is_empty()} />
+                        <TextInput value={self.password.clone()} on_change={ctx.link().callback(RegistrationMsg::UpdatePassword)} mask={true} valid={self.password_error.is_empty()} />
                     </Field>
                     <Field label="Password Verification">
                         <TextInput value={self.password_repeat.clone()} on_change={ctx.link().callback(RegistrationMsg::UpdatePasswordVerification)} mask={true} />
@@ -150,7 +153,7 @@ impl RegistrationForm {
     fn validate(&self) -> Result<(), Errors> {
         let user_valid = self.user.validate();
         let passwords_matching = UserValidation::are_passwords_matching(
-            self.user.password.as_str(),
+            self.password.as_str(),
             self.password_repeat.as_str(),
         );
         use serde_valid::validation::Errors::Object as ErrorsObject;

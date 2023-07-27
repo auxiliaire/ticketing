@@ -31,7 +31,7 @@ pub fn router() -> Router {
 async fn get_users(
     db: Extension<DatabaseConnection>,
     Query(search): Query<Search>,
-) -> Result<Json<Vec<users::Model>>, ApiError> {
+) -> Result<Json<Vec<UserDto>>, ApiError> {
     let list =
         match search.q {
             Some(q) => User::find()
@@ -41,56 +41,59 @@ async fn get_users(
                 .all(&*db),
             None => User::find().all(&*db),
         }
-        .await?;
+        .await?
+        .iter()
+        .map(|u| u.into())
+        .collect::<Vec<UserDto>>();
     Ok(Json(list))
 }
 
 async fn get_user(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> Result<Json<users::Model>, ApiError> {
+) -> Result<Json<UserDto>, ApiError> {
     User::find_by_id(id).one(&*db).await?.map_or(
         Err(ApiError::new(
             StatusCode::NOT_FOUND,
             String::from("Not found"),
         )),
-        |user| Ok(Json(user)),
+        |user| Ok(Json(user.into())),
     )
 }
 
 async fn post_user(
     db: Extension<DatabaseConnection>,
     WithRejection(ValidatedJson(model), _): WithRejection<ValidatedJson<UserDto>, ApiError>,
-) -> Result<Json<users::Model>, ApiError> {
+) -> Result<Json<UserDto>, ApiError> {
     println!("User(): '{}'", model.name);
     let user = users::ActiveModel {
         name: Set(model.name.to_owned()),
-        password: Set(model.password.to_owned()),
+        password: Set(model.password.unwrap().to_owned()),
         role: Set(OptionUserRole(model.role).to_string()),
         ..Default::default()
     }
     .insert(&*db)
     .await?;
-    Ok(Json(user))
+    Ok(Json(user.into()))
 }
 
 async fn put_user(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-    WithRejection(Json(update), _): WithRejection<Json<users::Model>, ApiError>,
-) -> Result<Json<users::Model>, ApiError> {
+    WithRejection(Json(update), _): WithRejection<Json<UserDto>, ApiError>,
+) -> Result<Json<UserDto>, ApiError> {
     let original_result = User::find_by_id(id).one(&*db).await?;
     match original_result {
         Some(original) => {
             let updated = users::ActiveModel {
                 id: Set(original.id),
                 name: Set(update.name.to_owned()),
-                password: Set(update.password.to_owned()),
-                role: Set(update.role.to_owned()),
+                password: Set(update.password.unwrap().to_owned()),
+                role: Set(update.role.map_or(String::from(""), |r| r.to_string())),
             }
             .update(&*db)
             .await?;
-            Ok(Json(updated))
+            Ok(Json(updated.into()))
         }
         None => Err(ApiError::new(
             StatusCode::NOT_FOUND,

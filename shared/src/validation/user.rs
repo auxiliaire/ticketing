@@ -24,8 +24,10 @@ impl std::fmt::Display for OptionUserRole {
 pub struct UserValidation;
 
 impl UserValidation {
-    pub fn password_validation(password: &str) -> Result<(), serde_valid::validation::Error> {
-        match Self::is_password_valid(password) {
+    pub fn password_validation(
+        password: &Option<String>,
+    ) -> Result<(), serde_valid::validation::Error> {
+        match password.is_some() && Self::is_password_valid(password.clone().unwrap().as_str()) {
             true => Ok(()),
             false => Err(serde_valid::validation::Error::Custom(
                 "Password should contain alphanumeric and special characters at a length range of 8-20.".to_owned(),
