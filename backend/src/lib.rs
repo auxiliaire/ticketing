@@ -1,8 +1,8 @@
-pub mod api;
-
 use anyhow::Context;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{ConnectOptions, Database};
+
+pub mod api;
 
 pub async fn main() {
     let database_url = dotenvy::var("DATABASE_URL")

@@ -1,3 +1,8 @@
+use crate::api::{
+    error::{ApiError, JsonError},
+    query::filters::search::Search,
+    validated_json::ValidatedJson,
+};
 use axum::{
     extract::{Json, Path, Query},
     http::StatusCode,
@@ -13,12 +18,6 @@ use sea_orm::{
 };
 use shared::{dtos::user::User as UserDto, validation::user::OptionUserRole};
 
-use crate::api::{
-    error::{ApiError, JsonError},
-    search::Search,
-    validated_json::ValidatedJson,
-};
-
 pub fn router() -> Router {
     Router::new()
         .route("/users", post(post_user))
@@ -32,19 +31,16 @@ async fn get_users(
     db: Extension<DatabaseConnection>,
     Query(search): Query<Search>,
 ) -> Result<Json<Vec<UserDto>>, ApiError> {
-    let list =
-        match search.q {
-            Some(q) => User::find()
-                .filter(Condition::all().add(
-                    <entity::prelude::Users as sea_orm::EntityTrait>::Column::Name.contains(&q),
-                ))
-                .all(&*db),
-            None => User::find().all(&*db),
-        }
-        .await?
-        .iter()
-        .map(|u| u.into())
-        .collect::<Vec<UserDto>>();
+    let list = match search.q {
+        Some(q) => User::find()
+            .filter(Condition::all().add(users::Column::Name.contains(q)))
+            .all(&*db),
+        None => User::find().all(&*db),
+    }
+    .await?
+    .iter()
+    .map(|u| u.into())
+    .collect::<Vec<UserDto>>();
     Ok(Json(list))
 }
 

@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Json, Path},
+    extract::{Json, Path, Query},
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, post, put},
@@ -11,7 +11,7 @@ use entity::{projects, projects::Entity as Project};
 use migration::Expr;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
-    QueryFilter, Set,
+    QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
 };
 use shared::dtos::project::Project as ProjectDto;
 use shared::dtos::project::ProjectTickets as ProjectTicketsDto;
@@ -19,6 +19,7 @@ use shared::dtos::ticket::Ticket as TicketDto;
 
 use crate::api::{
     error::{ApiError, JsonError},
+    query::{filters::pagination::Pagination, ordering::Ordering},
     validated_json::ValidatedJson,
 };
 
@@ -35,14 +36,31 @@ pub fn router() -> Router {
 
 async fn get_projects(
     db: Extension<DatabaseConnection>,
+    Query(pagination): Query<Pagination>,
+    Query(ordering): Query<Ordering>,
 ) -> Result<Json<Vec<ProjectDto>>, ApiError> {
-    let list = Project::find()
+    let mut select = Project::find();
+    if let Some(sort) = ordering.sort.and_then(|s| sort_to_column(s.as_str())) {
+        select = select.order_by::<projects::Column>(sort, ordering.order.0);
+    }
+    let list = select
+        .apply_if(pagination.limit, QuerySelect::limit)
+        .offset(pagination.offset)
         .all(&*db)
         .await?
         .iter()
         .map(|m| m.into())
         .collect::<Vec<ProjectDto>>();
     Ok(Json(list))
+}
+
+fn sort_to_column(s: &str) -> Option<projects::Column> {
+    match s {
+        "id" => Some(projects::Column::Id),
+        "summary" => Some(projects::Column::Summary),
+        "deadline" => Some(projects::Column::Deadline),
+        _ => None,
+    }
 }
 
 async fn get_project(

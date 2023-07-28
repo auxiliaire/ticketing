@@ -1,12 +1,33 @@
+use crate::{api::project::ProjectApi, Route};
+use shared::dtos::project::Project as ProjectDto;
 use yew::prelude::*;
+use yew_router::prelude::Link;
 
-pub struct Home;
+pub enum HomeMsg {
+    FetchedProjects(Vec<ProjectDto>),
+}
+
+pub struct Home {
+    list: Vec<ProjectDto>,
+}
 impl Component for Home {
-    type Message = ();
+    type Message = HomeMsg;
     type Properties = ();
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self
+    fn create(ctx: &Context<Self>) -> Self {
+        ProjectApi::fetch_latest(ctx.link().callback(HomeMsg::FetchedProjects));
+        Self {
+            list: Vec::with_capacity(3),
+        }
+    }
+
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            HomeMsg::FetchedProjects(projects) => {
+                self.list = projects;
+            }
+        }
+        true
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
@@ -28,39 +49,65 @@ impl Component for Home {
 }
 impl Home {
     fn view_info_tiles(&self) -> Html {
+        let projects = self.list.iter().map(|ProjectDto { id, summary, deadline: _, user_id: _, active: _ }| {
+            match id {
+                Some(id) => html! {
+                    <tr>
+                        <td>
+                            <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0")} to={Route::Project { id: *id }}>
+                                {summary.clone()}
+                            </Link<Route>>
+                        </td>
+                    </tr>
+                },
+                None => html! { <></> }
+            }
+        });
         html! {
             <>
                 <div class="tile is-parent">
                     <div class="tile is-child box">
-                        <p class="title">{ "What are yews?" }</p>
+                        <p class="title">{ "Start a New Project" }</p>
                         <p class="subtitle">{ "Everything you need to know!" }</p>
 
                         <div class="content">
-                            {r#"
-                            A yew is a small to medium-sized evergreen tree, growing 10 to 20 metres tall, with a trunk up to 2 metres in diameter.
-                            The bark is thin, scaly brown, coming off in small flakes aligned with the stem.
-                            The leaves are flat, dark green, 1 to 4 centimetres long and 2 to 3 millimetres broad, arranged spirally on the stem,
-                            but with the leaf bases twisted to align the leaves in two flat rows either side of the stem,
-                            except on erect leading shoots where the spiral arrangement is more obvious.
-                            The leaves are poisonous.
+                            <p>{r#"
+                            Creating a new project has never been easier. Just click the button below,
+                            fill out the details, and you can add new user stories right away.
                             "#}
+                            </p>
+                            <div class="columns is-mobile is-centered is-vcentered mt-5 mb-2">
+                                <Link<Route> classes={classes!("button", "is-info")} to={Route::ProjectNew}>
+                                    { "Create a New Project" }
+                                </Link<Route>>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="tile is-parent">
                     <div class="tile is-child box">
-                        <p class="title">{ "Who are we?" }</p>
+                        <p class="title">{ "Continue working on an existing one" }</p>
+                        <p class="subtitle">{ "The last couple of projects" }</p>
 
                         <div class="content">
-                            { "We're a small team of just 2" }
-                            <sup>{ 64 }</sup>
-                            { " members working tirelessly to bring you the low-effort yew content we all desperately crave." }
-                            <br />
-                            {r#"
-                                We put a ton of effort into fact-checking our posts.
-                                Some say they read like a Wikipedia article - what a compliment!
-                            "#}
+                            {
+                                if self.list.is_empty() {
+                                    html! {
+                                        <em>{ "No projects yet" }</em>
+                                    }
+                                }
+                                else
+                                {
+                                    html! {
+                                        <table class="table is-fullwidth is-hoverable">
+                                            <tbody>
+                                            { for projects }
+                                            </tbody>
+                                        </table>
+                                    }
+                                }
+                            }
                         </div>
                     </div>
                 </div>

@@ -40,6 +40,22 @@ impl ProjectApi {
         });
     }
 
+    pub fn fetch_latest(callback: Callback<Vec<Project>>) {
+        spawn_local(async move {
+            let list: Vec<Project> =
+                Request::get(format!("{}{}", get_api_url(), PROJECTS_ENDPOINT).as_str())
+                    .query([("limit", "3"), ("sort", "id"), ("order", "desc")])
+                    .send()
+                    .await
+                    .unwrap()
+                    .json()
+                    .await
+                    .unwrap();
+
+            callback.emit(list);
+        });
+    }
+
     pub fn fetch_assigned_tickets(project_id: u64, callback: Callback<Vec<Ticket>>) {
         spawn_local(async move {
             let list: Vec<Ticket> = Request::get(

@@ -1,3 +1,7 @@
+use crate::api::{
+    error::{ApiError, JsonError},
+    query::filters::ticket_filter::TicketFilter,
+};
 use axum::{
     extract::{Json, Path, Query},
     http::StatusCode,
@@ -12,11 +16,6 @@ use sea_orm::{
     QueryFilter, Set,
 };
 use shared::dtos::ticket::Ticket as TicketDto;
-
-use crate::api::{
-    error::{ApiError, JsonError},
-    filters::ticket_filter::TicketFilter,
-};
 
 pub fn router() -> Router {
     Router::new()

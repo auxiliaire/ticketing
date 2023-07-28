@@ -9,7 +9,6 @@ name = "frontend"
 path = "src/lib.rs"
 
 [dependencies]
-shared = { path = "../shared"}
 chrono = { version = "0.4", features = [ "serde" ] }
 gloo = "0.9"
 gloo-net = "0.3"
@@ -20,6 +19,7 @@ log = "0.4"
 serde = { version = "1", features = [ "derive" ] }
 serde_json = "1.0"
 serde_valid = "0.16"
+shared = { path = "../shared"}
 strum = "0.25"
 wasm-bindgen = { version = "0.2" }
 wasm-logger = "0.2"

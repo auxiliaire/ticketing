@@ -6,9 +6,8 @@ use shared::api::get_socket_address;
 use tower_http::cors::{Any, CorsLayer};
 
 pub mod error;
-pub mod filters;
+pub mod query;
 pub mod resources;
-pub mod search;
 pub mod validated_json;
 
 pub async fn serve(db: DatabaseConnection) -> anyhow::Result<()> {
