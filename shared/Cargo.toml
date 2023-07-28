@@ -9,7 +9,7 @@ name = "shared"
 path = "src/lib.rs"
 
 [dependencies]
-chrono = { version = "0.4", features = [ "serde" ] }
+chrono = { version = "0.4", default-features = false, features = [ "serde" ] }
 entity = { path = "../entity" }
 implicit-clone = "0.3"
 regex = "1.9"

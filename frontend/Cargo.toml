@@ -9,7 +9,7 @@ name = "frontend"
 path = "src/lib.rs"
 
 [dependencies]
-chrono = { version = "0.4", features = [ "serde" ] }
+chrono = { version = "0.4", default-features = false, features = [ "serde" ] }
 gloo = "0.9"
 gloo-net = "0.3"
 gloo-timers = "0.2"
