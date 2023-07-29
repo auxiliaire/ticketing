@@ -1,4 +1,4 @@
-use yew::{function_component, html, Html, Properties};
+use yew::{classes, function_component, html, Html, Properties};
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -7,24 +7,15 @@ pub struct Props {
 
 #[function_component]
 pub fn CheckTag(props: &Props) -> Html {
-    match props.checked {
-        true => {
-            html! {
-                <span class="button is-small is-static">
-                    <span class="icon is-small">
-                        <i class="fas fa-check"></i>
-                    </span>
-                </span>
-            }
-        }
-        false => {
-            html! {
-                <span class="button is-small is-static">
-                    <span class="icon is-small">
-                        <i class="fas fa-times"></i>
-                    </span>
-                </span>
-            }
-        }
+    let icon_class = match props.checked {
+        true => "fa-check",
+        false => "fa-times",
+    };
+    html! {
+        <span class="button is-small is-static">
+            <span class="icon is-small">
+                <i class={classes!("fas", icon_class)}></i>
+            </span>
+        </span>
     }
 }
