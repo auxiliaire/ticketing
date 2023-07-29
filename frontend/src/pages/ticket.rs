@@ -1,6 +1,6 @@
-use crate::api::project::ProjectApi;
-use crate::api::{ticket::TicketApi, user::UserApi};
 use crate::components::button_link::{ButtonLink, ButtonLinkData};
+use crate::interfaces::project::ProjectApi;
+use crate::interfaces::{ticket::TicketApi, user::UserApi};
 use crate::Route;
 use implicit_clone::sync::IString;
 use shared::dtos::project::Project as ProjectDto;

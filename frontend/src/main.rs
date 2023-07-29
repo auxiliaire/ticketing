@@ -13,8 +13,8 @@ use yew::html::Scope;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-mod api;
 mod components;
+mod interfaces;
 mod pages;
 
 #[derive(Routable, PartialEq, Eq, Clone, Debug)]

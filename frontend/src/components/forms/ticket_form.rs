@@ -2,7 +2,7 @@ use crate::components::bulma::field::Field;
 use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
-use frontend::api::user::UserApi;
+use frontend::interfaces::user::UserApi;
 use gloo_timers::callback::Timeout;
 use implicit_clone::unsync::{IArray, IString};
 use serde_valid::Validate;

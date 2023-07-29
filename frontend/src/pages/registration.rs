@@ -1,5 +1,5 @@
 use crate::{components::forms::registration_form::RegistrationForm, Route};
-use frontend::api::user::UserApi;
+use frontend::interfaces::user::UserApi;
 use shared::{api::error::error_response::ErrorResponse, dtos::user::User as UserDto};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;

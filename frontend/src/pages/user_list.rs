@@ -1,7 +1,6 @@
-use yew::prelude::*;
-
-use crate::{api::user::UserApi, components::user_card::UserCard};
+use crate::{components::user_card::UserCard, interfaces::user::UserApi};
 use shared::dtos::user::User as UserDto;
+use yew::prelude::*;
 
 pub enum Msg {
     FetchedUsers(Vec<UserDto>),

@@ -1,5 +1,5 @@
 use crate::{components::forms::ticket_form::TicketForm, Route};
-use frontend::api::ticket::TicketApi;
+use frontend::interfaces::ticket::TicketApi;
 use shared::{api::error::error_response::ErrorResponse, dtos::ticket::Ticket as TicketDto};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;

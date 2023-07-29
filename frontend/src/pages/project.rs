@@ -1,13 +1,13 @@
-use crate::api::project::ProjectApi;
-use crate::api::user::UserApi;
 use crate::components::button_link::{ButtonLink, ButtonLinkData};
 use crate::components::check_tag::CheckTag;
 use crate::components::dialogs::form_dialog::FormDialog;
 use crate::components::dialogs::select_dialog::SelectDialog;
 use crate::components::forms::ticket_form::TicketForm;
 use crate::components::option_data::OptionData;
+use crate::interfaces::project::ProjectApi;
+use crate::interfaces::user::UserApi;
 use crate::{AppState, Dialog, Route};
-use frontend::api::ticket::TicketApi;
+use frontend::interfaces::ticket::TicketApi;
 use implicit_clone::sync::{IArray, IString};
 use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::project::Project as ProjectDto;

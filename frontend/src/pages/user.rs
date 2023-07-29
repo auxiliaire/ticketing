@@ -1,7 +1,6 @@
-use yew::prelude::*;
-
-use crate::api::user::UserApi;
+use crate::interfaces::user::UserApi;
 use shared::dtos::user::User as UserDto;
+use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {

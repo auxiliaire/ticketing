@@ -1,4 +1,4 @@
-use crate::{api::project::ProjectApi, components::check_tag::CheckTag, Route};
+use crate::{components::check_tag::CheckTag, interfaces::project::ProjectApi, Route};
 use shared::dtos::project::Project as ProjectDto;
 use yew::prelude::*;
 use yew_router::prelude::Link;

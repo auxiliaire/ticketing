@@ -1,9 +1,8 @@
-use yew::prelude::*;
-use yew_router::prelude::*;
-
-use crate::api::user::UserApi;
+use crate::interfaces::user::UserApi;
 use crate::pages::user::Msg;
 use crate::Route;
+use yew::prelude::*;
+use yew_router::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
 pub struct Props {

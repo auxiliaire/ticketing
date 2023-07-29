@@ -3,7 +3,7 @@ use crate::components::html::checkbox::Checkbox;
 use crate::components::html::date_input::DateInput;
 use crate::components::html::text_input::TextInput;
 use chrono::{DateTime, NaiveDate, Utc};
-use frontend::api::user::UserApi;
+use frontend::interfaces::user::UserApi;
 use gloo_timers::callback::Timeout;
 use implicit_clone::sync::IArray;
 use implicit_clone::unsync::IString;
