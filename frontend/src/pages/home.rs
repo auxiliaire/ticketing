@@ -66,21 +66,19 @@ impl Home {
         html! {
             <>
                 <div class="tile is-parent">
-                    <div class="tile is-child box">
+                    <div class="tile is-child box" style="display: flex; flex-direction: column">
                         <p class="title">{ "Start a New Project" }</p>
                         <p class="subtitle">{ "Everything you need to know!" }</p>
 
-                        <div class="content">
-                            <p>{r#"
-                            Creating a new project has never been easier. Just click the button below,
-                            fill out the details, and you can add new user stories right away.
-                            "#}
-                            </p>
-                            <div class="columns is-mobile is-centered is-vcentered mt-5 mb-2">
-                                <Link<Route> classes={classes!("button", "is-info")} to={Route::ProjectNew}>
-                                    { "Create a New Project" }
-                                </Link<Route>>
-                            </div>
+                        <p>{r#"
+                        Creating a new project has never been easier. Just click the button below,
+                        fill out the details, and you can add new user stories right away.
+                        "#}
+                        </p>
+                        <div class="columns is-mobile is-centered is-vcentered mt-0 mb-0 ml-0 mr-0" style="flex-grow: 4">
+                            <Link<Route> classes={classes!("button", "is-info")} to={Route::ProjectNew}>
+                                { "Create a New Project" }
+                            </Link<Route>>
                         </div>
                     </div>
                 </div>
