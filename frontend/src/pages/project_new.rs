@@ -1,5 +1,5 @@
 use crate::{components::forms::project_form::ProjectForm, Route};
-use frontend::interfaces::project::ProjectApi;
+use frontend::services::project_service::ProjectService;
 use shared::{api::error::error_response::ErrorResponse, dtos::project::Project as ProjectDto};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -22,7 +22,7 @@ impl Component for ProjectNew {
         match msg {
             ProjectMsg::Submitted((project, callback_error)) => {
                 log::debug!("Submitted: {}", project);
-                ProjectApi::create(
+                ProjectService::create(
                     project,
                     ctx.link().callback(ProjectMsg::Created),
                     callback_error,

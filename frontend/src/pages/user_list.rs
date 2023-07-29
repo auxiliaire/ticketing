@@ -1,4 +1,4 @@
-use crate::{components::user_card::UserCard, interfaces::user::UserApi};
+use crate::{components::user_card::UserCard, services::user_service::UserService};
 use shared::dtos::user::User as UserDto;
 use yew::prelude::*;
 
@@ -14,7 +14,7 @@ impl Component for UserList {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        UserApi::fetch_all(None, ctx.link().callback(Msg::FetchedUsers));
+        UserService::fetch_all(None, ctx.link().callback(Msg::FetchedUsers));
         Self { list: Vec::new() }
     }
 

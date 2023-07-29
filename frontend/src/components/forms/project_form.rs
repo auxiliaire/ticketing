@@ -3,7 +3,7 @@ use crate::components::html::checkbox::Checkbox;
 use crate::components::html::date_input::DateInput;
 use crate::components::html::text_input::TextInput;
 use chrono::{DateTime, NaiveDate, Utc};
-use frontend::interfaces::user::UserApi;
+use frontend::services::user_service::UserService;
 use gloo_timers::callback::Timeout;
 use implicit_clone::sync::IArray;
 use implicit_clone::unsync::IString;
@@ -123,7 +123,7 @@ impl Component for ProjectForm {
                     timeout.cancel();
                 }
                 self.search_timeout = Some(Timeout::new(SEARCH_DELAY_MS, || {
-                    UserApi::fetch_all(Some(q), fetch_callback)
+                    UserService::fetch_all(Some(q), fetch_callback)
                 }));
             }
             ProjectMsg::ToggleSearchDropdownDelayed(value) => {

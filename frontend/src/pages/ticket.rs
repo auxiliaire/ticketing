@@ -1,6 +1,6 @@
 use crate::components::button_link::{ButtonLink, ButtonLinkData};
-use crate::interfaces::project::ProjectApi;
-use crate::interfaces::{ticket::TicketApi, user::UserApi};
+use crate::services::project_service::ProjectService;
+use crate::services::{ticket_service::TicketService, user_service::UserService};
 use crate::Route;
 use implicit_clone::sync::IString;
 use shared::dtos::project::Project as ProjectDto;
@@ -29,7 +29,7 @@ impl Component for Ticket {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        TicketApi::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedTicket));
+        TicketService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedTicket));
         Self {
             ticket: TicketDto::default(),
             project: None,
@@ -38,7 +38,7 @@ impl Component for Ticket {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        TicketApi::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedTicket));
+        TicketService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedTicket));
         true
     }
 
@@ -47,10 +47,10 @@ impl Component for Ticket {
             Msg::FetchedTicket(ticket) => {
                 self.ticket = ticket;
                 if let Some(project_id) = self.ticket.project_id {
-                    ProjectApi::fetch(project_id, ctx.link().callback(Msg::FetchedProject));
+                    ProjectService::fetch(project_id, ctx.link().callback(Msg::FetchedProject));
                 }
                 if let Some(user_id) = self.ticket.user_id {
-                    UserApi::fetch(user_id, ctx.link().callback(Msg::FetchedUser));
+                    UserService::fetch(user_id, ctx.link().callback(Msg::FetchedUser));
                 }
             }
             Msg::FetchedProject(project) => {

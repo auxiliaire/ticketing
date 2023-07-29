@@ -1,5 +1,5 @@
 use crate::{components::forms::registration_form::RegistrationForm, Route};
-use frontend::interfaces::user::UserApi;
+use frontend::services::user_service::UserService;
 use shared::{api::error::error_response::ErrorResponse, dtos::user::User as UserDto};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -22,7 +22,7 @@ impl Component for Registration {
         match msg {
             UserMsg::Submitted((user, callback_error)) => {
                 log::debug!("Submitted: {}", user);
-                UserApi::create(user, ctx.link().callback(UserMsg::Created), callback_error);
+                UserService::create(user, ctx.link().callback(UserMsg::Created), callback_error);
             }
             UserMsg::Created(user) => {
                 log::debug!("Created: {}", user);

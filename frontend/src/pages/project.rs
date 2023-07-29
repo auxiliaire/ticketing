@@ -4,10 +4,10 @@ use crate::components::dialogs::form_dialog::FormDialog;
 use crate::components::dialogs::select_dialog::SelectDialog;
 use crate::components::forms::ticket_form::TicketForm;
 use crate::components::option_data::OptionData;
-use crate::interfaces::project::ProjectApi;
-use crate::interfaces::user::UserApi;
+use crate::services::project_service::ProjectService;
+use crate::services::user_service::UserService;
 use crate::{AppState, Dialog, Route};
-use frontend::interfaces::ticket::TicketApi;
+use frontend::services::ticket_service::TicketService;
 use implicit_clone::sync::{IArray, IString};
 use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::project::Project as ProjectDto;
@@ -56,8 +56,8 @@ impl Component for Project {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        ProjectApi::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
-        ProjectApi::fetch_assigned_tickets(
+        ProjectService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
+        ProjectService::fetch_assigned_tickets(
             ctx.props().id,
             ctx.link().callback(Msg::FetchedTickets),
         );
@@ -75,7 +75,7 @@ impl Component for Project {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        ProjectApi::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
+        ProjectService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
         true
     }
 
@@ -83,7 +83,7 @@ impl Component for Project {
         match msg {
             Msg::FetchedProject(project) => {
                 self.project = project;
-                UserApi::fetch(self.project.user_id, ctx.link().callback(Msg::FetchedUser));
+                UserService::fetch(self.project.user_id, ctx.link().callback(Msg::FetchedUser));
             }
             Msg::FetchedUser(user) => {
                 self.user = Some(ButtonLinkData {
@@ -101,7 +101,7 @@ impl Component for Project {
             }
             Msg::OpenSelectDialog() => {
                 let optionsapi: Callback<Callback<Vec<TicketDto>>> =
-                    Callback::from(TicketApi::fetch_unassigned);
+                    Callback::from(TicketService::fetch_unassigned);
                 let onselect: Callback<IArray<u64>> = ctx.link().callback(Msg::SelectedTickets);
                 let dialog = Rc::new(Dialog {
                     active: true,
@@ -124,7 +124,7 @@ impl Component for Project {
             }
             Msg::SelectedTickets(tickets) => {
                 let callback = ctx.link().callback(Msg::FetchedTickets);
-                ProjectApi::assign_tickets(
+                ProjectService::assign_tickets(
                     ctx.props().id,
                     tickets.iter().collect::<Vec<u64>>(),
                     callback,
@@ -133,7 +133,7 @@ impl Component for Project {
             }
             Msg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
-                TicketApi::create(
+                TicketService::create(
                     ticket,
                     ctx.link().callback(Msg::TicketCreated),
                     callback_error,
@@ -142,7 +142,7 @@ impl Component for Project {
             Msg::TicketCreated(ticket) => {
                 log::debug!("Created: {}", ticket);
                 self.app_state.close_dialog.emit(());
-                ProjectApi::fetch_assigned_tickets(
+                ProjectService::fetch_assigned_tickets(
                     ctx.props().id,
                     ctx.link().callback(Msg::FetchedTickets),
                 );

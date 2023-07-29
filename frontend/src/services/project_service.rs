@@ -7,9 +7,9 @@ use yew::{platform::spawn_local, Callback};
 const PROJECTS_ENDPOINT: &str = "projects";
 const TICKETS_ENDPOINT: &str = "tickets";
 
-pub struct ProjectApi;
+pub struct ProjectService;
 
-impl ProjectApi {
+impl ProjectService {
     pub fn fetch(id: u64, callback: Callback<Project>) {
         spawn_local(async move {
             let project: Project =

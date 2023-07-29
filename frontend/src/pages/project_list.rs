@@ -1,4 +1,4 @@
-use crate::{components::check_tag::CheckTag, interfaces::project::ProjectApi, Route};
+use crate::{components::check_tag::CheckTag, services::project_service::ProjectService, Route};
 use shared::dtos::project::Project as ProjectDto;
 use yew::prelude::*;
 use yew_router::prelude::Link;
@@ -15,7 +15,7 @@ impl Component for ProjectList {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        ProjectApi::fetch_all(ctx.link().callback(Msg::FetchedProjects));
+        ProjectService::fetch_all(ctx.link().callback(Msg::FetchedProjects));
         Self { list: Vec::new() }
     }
 

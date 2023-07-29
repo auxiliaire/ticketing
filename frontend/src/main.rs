@@ -14,8 +14,8 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 mod components;
-mod interfaces;
 mod pages;
+mod services;
 
 #[derive(Routable, PartialEq, Eq, Clone, Debug)]
 pub enum Route {

@@ -6,9 +6,9 @@ use yew::{platform::spawn_local, Callback};
 
 const USERS_ENDPOINT: &str = "users";
 
-pub struct UserApi;
+pub struct UserService;
 
-impl UserApi {
+impl UserService {
     pub fn fetch(id: u64, callback: Callback<User>) {
         spawn_local(async move {
             let user: User =

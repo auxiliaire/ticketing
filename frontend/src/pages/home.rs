@@ -1,4 +1,4 @@
-use crate::{interfaces::project::ProjectApi, Route};
+use crate::{services::project_service::ProjectService, Route};
 use shared::dtos::project::Project as ProjectDto;
 use yew::prelude::*;
 use yew_router::prelude::Link;
@@ -15,7 +15,7 @@ impl Component for Home {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        ProjectApi::fetch_latest(ctx.link().callback(HomeMsg::FetchedProjects));
+        ProjectService::fetch_latest(ctx.link().callback(HomeMsg::FetchedProjects));
         Self {
             list: Vec::with_capacity(3),
         }

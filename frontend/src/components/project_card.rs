@@ -1,5 +1,5 @@
-use crate::interfaces::project::ProjectApi;
 use crate::pages::project::Msg;
+use crate::services::project_service::ProjectService;
 use crate::Route;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -27,7 +27,7 @@ impl Component for ProjectCard {
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         if let Some(id) = ctx.props().id {
-            ProjectApi::fetch(id, ctx.link().callback(Msg::FetchedProject));
+            ProjectService::fetch(id, ctx.link().callback(Msg::FetchedProject));
         }
         true
     }

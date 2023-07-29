@@ -1,4 +1,4 @@
-use crate::interfaces::user::UserApi;
+use crate::services::user_service::UserService;
 use shared::dtos::user::User as UserDto;
 use yew::prelude::*;
 
@@ -19,14 +19,14 @@ impl Component for User {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        UserApi::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedUser));
+        UserService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedUser));
         Self {
             user: UserDto::default(),
         }
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        UserApi::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedUser));
+        UserService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedUser));
         true
     }
 

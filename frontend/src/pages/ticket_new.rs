@@ -1,5 +1,5 @@
 use crate::{components::forms::ticket_form::TicketForm, Route};
-use frontend::interfaces::ticket::TicketApi;
+use frontend::services::ticket_service::TicketService;
 use shared::{api::error::error_response::ErrorResponse, dtos::ticket::Ticket as TicketDto};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -22,7 +22,7 @@ impl Component for TicketNew {
         match msg {
             TicketMsg::Submitted((ticket, callback_error)) => {
                 log::debug!("Submitted: {}", ticket);
-                TicketApi::create(
+                TicketService::create(
                     ticket,
                     ctx.link().callback(TicketMsg::Created),
                     callback_error,

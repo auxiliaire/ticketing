@@ -1,5 +1,5 @@
-use crate::interfaces::user::UserApi;
 use crate::pages::user::Msg;
+use crate::services::user_service::UserService;
 use crate::Route;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -27,7 +27,7 @@ impl Component for UserCard {
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         if let Some(id) = ctx.props().id {
-            UserApi::fetch(id, ctx.link().callback(Msg::FetchedUser));
+            UserService::fetch(id, ctx.link().callback(Msg::FetchedUser));
         }
         true
     }

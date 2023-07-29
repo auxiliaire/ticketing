@@ -2,7 +2,7 @@ use crate::components::bulma::field::Field;
 use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
-use frontend::interfaces::user::UserApi;
+use frontend::services::user_service::UserService;
 use gloo_timers::callback::Timeout;
 use implicit_clone::unsync::{IArray, IString};
 use serde_valid::Validate;
@@ -136,7 +136,7 @@ impl Component for TicketForm {
                     timeout.cancel();
                 }
                 self.search_timeout = Some(Timeout::new(SEARCH_DELAY_MS, || {
-                    UserApi::fetch_all(Some(q), fetch_callback)
+                    UserService::fetch_all(Some(q), fetch_callback)
                 }));
             }
             TicketMsg::ToggleSearchDropdownDelayed(value) => {

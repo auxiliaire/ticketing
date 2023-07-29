@@ -6,9 +6,9 @@ use yew::{platform::spawn_local, Callback};
 const TICKETS_ENDPOINT: &str = "tickets";
 const UNASSIGNED_MARKER: &str = "/unassigned";
 
-pub struct TicketApi;
+pub struct TicketService;
 
-impl TicketApi {
+impl TicketService {
     pub fn fetch(id: u64, callback: Callback<Ticket>) {
         spawn_local(async move {
             let ticket: Ticket =
