@@ -22,7 +22,7 @@ pub fn checkbox(props: &Props) -> Html {
         base_classes,
         error_classes,
     } = props.clone();
-    let value = use_state(|| checked);
+    let value = use_state_eq(|| checked);
 
     let get_classes = || match valid {
         true => base_classes.to_string(),
