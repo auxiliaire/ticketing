@@ -5,10 +5,10 @@ use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 use std::fmt::Display;
 
-use crate::validation::project::ProjectValidation;
+use crate::validation::project_validation::ProjectValidation;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
-pub struct Project {
+pub struct ProjectDto {
     pub id: Option<u64>,
     #[validate(min_length = 8)]
     #[validate(max_length = 160)]
@@ -26,7 +26,7 @@ pub struct ProjectTickets {
     pub tickets: Vec<u64>,
 }
 
-impl Display for Project {
+impl Display for ProjectDto {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -38,7 +38,7 @@ impl Display for Project {
     }
 }
 
-impl From<&Model> for Project {
+impl From<&Model> for ProjectDto {
     fn from(m: &Model) -> Self {
         Self {
             id: Some(m.id),
@@ -52,7 +52,7 @@ impl From<&Model> for Project {
     }
 }
 
-impl From<Model> for Project {
+impl From<Model> for ProjectDto {
     fn from(m: Model) -> Self {
         Self {
             id: Some(m.id),
@@ -66,4 +66,4 @@ impl From<Model> for Project {
     }
 }
 
-impl Project {}
+impl ProjectDto {}

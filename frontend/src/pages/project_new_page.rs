@@ -1,6 +1,6 @@
 use crate::{components::forms::project_form::ProjectForm, Route};
 use frontend::services::project_service::ProjectService;
-use shared::{api::error::error_response::ErrorResponse, dtos::project::Project as ProjectDto};
+use shared::{api::error::error_response::ErrorResponse, dtos::project_dto::ProjectDto};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 

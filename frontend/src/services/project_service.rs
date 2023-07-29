@@ -1,7 +1,7 @@
 use gloo_net::http::Request;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
-use shared::dtos::project::{Project, ProjectTickets};
-use shared::dtos::ticket::Ticket;
+use shared::dtos::project_dto::{ProjectDto, ProjectTickets};
+use shared::dtos::ticket_dto::TicketDto;
 use yew::{platform::spawn_local, Callback};
 
 const PROJECTS_ENDPOINT: &str = "projects";
@@ -10,9 +10,9 @@ const TICKETS_ENDPOINT: &str = "tickets";
 pub struct ProjectService;
 
 impl ProjectService {
-    pub fn fetch(id: u64, callback: Callback<Project>) {
+    pub fn fetch(id: u64, callback: Callback<ProjectDto>) {
         spawn_local(async move {
-            let project: Project =
+            let project: ProjectDto =
                 Request::get(format!("{}{}/{}", get_api_url(), PROJECTS_ENDPOINT, id).as_str())
                     .send()
                     .await
@@ -25,9 +25,9 @@ impl ProjectService {
         });
     }
 
-    pub fn fetch_all(callback: Callback<Vec<Project>>) {
+    pub fn fetch_all(callback: Callback<Vec<ProjectDto>>) {
         spawn_local(async move {
-            let list: Vec<Project> =
+            let list: Vec<ProjectDto> =
                 Request::get(format!("{}{}", get_api_url(), PROJECTS_ENDPOINT).as_str())
                     .send()
                     .await
@@ -40,9 +40,9 @@ impl ProjectService {
         });
     }
 
-    pub fn fetch_latest(callback: Callback<Vec<Project>>) {
+    pub fn fetch_latest(callback: Callback<Vec<ProjectDto>>) {
         spawn_local(async move {
-            let list: Vec<Project> =
+            let list: Vec<ProjectDto> =
                 Request::get(format!("{}{}", get_api_url(), PROJECTS_ENDPOINT).as_str())
                     .query([("limit", "3"), ("sort", "id"), ("order", "desc")])
                     .send()
@@ -56,9 +56,9 @@ impl ProjectService {
         });
     }
 
-    pub fn fetch_assigned_tickets(project_id: u64, callback: Callback<Vec<Ticket>>) {
+    pub fn fetch_assigned_tickets(project_id: u64, callback: Callback<Vec<TicketDto>>) {
         spawn_local(async move {
-            let list: Vec<Ticket> = Request::get(
+            let list: Vec<TicketDto> = Request::get(
                 format!(
                     "{}{}/{}/{}",
                     get_api_url(),
@@ -79,10 +79,10 @@ impl ProjectService {
         });
     }
 
-    pub fn assign_tickets(project_id: u64, tickets: Vec<u64>, callback: Callback<Vec<Ticket>>) {
+    pub fn assign_tickets(project_id: u64, tickets: Vec<u64>, callback: Callback<Vec<TicketDto>>) {
         spawn_local(async move {
             let project_tickets = ProjectTickets { tickets };
-            let list: Vec<Ticket> = Request::post(
+            let list: Vec<TicketDto> = Request::post(
                 format!(
                     "{}{}/{}/{}",
                     get_api_url(),
@@ -106,8 +106,8 @@ impl ProjectService {
     }
 
     pub fn create(
-        project: Project,
-        callback: Callback<Project>,
+        project: ProjectDto,
+        callback: Callback<ProjectDto>,
         callback_error: Callback<ErrorResponse>,
     ) {
         spawn_local(async move {
@@ -122,7 +122,7 @@ impl ProjectService {
                     let text_result = resp.text().await;
                     match text_result {
                         Ok(text) => {
-                            let returned_project_result: Result<Project, _> =
+                            let returned_project_result: Result<ProjectDto, _> =
                                 serde_json::from_str(text.as_str());
                             match returned_project_result {
                                 Ok(returned_project) => callback.emit(returned_project),

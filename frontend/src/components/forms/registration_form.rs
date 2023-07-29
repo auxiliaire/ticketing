@@ -5,9 +5,9 @@ use implicit_clone::unsync::{IArray, IString};
 use serde_valid::validation::{Error, Errors, ObjectErrors, PropertyErrorsMap};
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
-use shared::dtos::user::User as UserDto;
+use shared::dtos::user_dto::UserDto;
 use shared::validation::is_empty::IsEmpty;
-use shared::validation::user::{OptionUserRole, UserRole, UserValidation};
+use shared::validation::user_validation::{OptionUserRole, UserRole, UserValidation};
 use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
 };

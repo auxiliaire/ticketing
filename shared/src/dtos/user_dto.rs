@@ -1,4 +1,4 @@
-use crate::validation::user::{UserRole, UserValidation};
+use crate::validation::user_validation::{UserRole, UserValidation};
 use entity::users::Model;
 use implicit_clone::ImplicitClone;
 use serde::{Deserialize, Serialize};
@@ -8,7 +8,7 @@ use std::fmt::Display;
 
 #[skip_serializing_none]
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
-pub struct User {
+pub struct UserDto {
     pub id: Option<u64>,
     #[validate(min_length = 8)]
     #[validate(max_length = 20)]
@@ -19,7 +19,7 @@ pub struct User {
     pub role: Option<UserRole>,
 }
 
-impl Display for User {
+impl Display for UserDto {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -31,7 +31,7 @@ impl Display for User {
     }
 }
 
-impl From<&Model> for User {
+impl From<&Model> for UserDto {
     fn from(value: &Model) -> Self {
         Self {
             id: Some(value.id),
@@ -42,7 +42,7 @@ impl From<&Model> for User {
     }
 }
 
-impl From<Model> for User {
+impl From<Model> for UserDto {
     fn from(value: Model) -> Self {
         Self {
             id: Some(value.id),
@@ -53,6 +53,6 @@ impl From<Model> for User {
     }
 }
 
-impl User {}
+impl UserDto {}
 
-impl ImplicitClone for User {}
+impl ImplicitClone for UserDto {}

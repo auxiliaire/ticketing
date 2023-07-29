@@ -3,10 +3,10 @@ use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 use std::{fmt::Display, str::FromStr};
 
-use crate::validation::ticket::TicketStatus;
+use crate::validation::ticket_validation::TicketStatus;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
-pub struct Ticket {
+pub struct TicketDto {
     pub id: Option<u64>,
     #[validate(min_length = 8)]
     #[validate(max_length = 160)]
@@ -19,7 +19,7 @@ pub struct Ticket {
     pub user_id: Option<u64>,
 }
 
-impl Display for Ticket {
+impl Display for TicketDto {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -31,7 +31,7 @@ impl Display for Ticket {
     }
 }
 
-impl From<&Model> for Ticket {
+impl From<&Model> for TicketDto {
     fn from(m: &Model) -> Self {
         Self {
             id: Some(m.id),
@@ -44,7 +44,7 @@ impl From<&Model> for Ticket {
     }
 }
 
-impl From<Model> for Ticket {
+impl From<Model> for TicketDto {
     fn from(m: Model) -> Self {
         Self {
             id: Some(m.id),
@@ -57,4 +57,4 @@ impl From<Model> for Ticket {
     }
 }
 
-impl Ticket {}
+impl TicketDto {}

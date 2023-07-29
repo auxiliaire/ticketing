@@ -1,5 +1,5 @@
 use crate::services::user_service::UserService;
-use shared::dtos::user::User as UserDto;
+use shared::dtos::user_dto::UserDto;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]

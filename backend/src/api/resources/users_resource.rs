@@ -16,7 +16,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
     QueryFilter, Set,
 };
-use shared::{dtos::user::User as UserDto, validation::user::OptionUserRole};
+use shared::{dtos::user_dto::UserDto, validation::user_validation::OptionUserRole};
 
 pub fn router() -> Router {
     Router::new()

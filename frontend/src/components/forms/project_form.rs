@@ -9,8 +9,8 @@ use implicit_clone::sync::IArray;
 use implicit_clone::unsync::IString;
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
-use shared::dtos::project::Project as ProjectDto;
-use shared::dtos::user::User as UserDto;
+use shared::dtos::project_dto::ProjectDto;
+use shared::dtos::user_dto::UserDto;
 use shared::validation::is_empty::IsEmpty;
 use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,

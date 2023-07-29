@@ -15,7 +15,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
     QueryFilter, Set,
 };
-use shared::dtos::ticket::Ticket as TicketDto;
+use shared::dtos::ticket_dto::TicketDto;
 
 pub fn router() -> Router {
     Router::new()

@@ -1,7 +1,7 @@
 use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
-use shared::dtos::user::User;
+use shared::dtos::user_dto::UserDto;
 use yew::{platform::spawn_local, Callback};
 
 const USERS_ENDPOINT: &str = "users";
@@ -9,9 +9,9 @@ const USERS_ENDPOINT: &str = "users";
 pub struct UserService;
 
 impl UserService {
-    pub fn fetch(id: u64, callback: Callback<User>) {
+    pub fn fetch(id: u64, callback: Callback<UserDto>) {
         spawn_local(async move {
-            let user: User =
+            let user: UserDto =
                 Request::get(format!("{}{}/{}", get_api_url(), USERS_ENDPOINT, id).as_str())
                     .send()
                     .await
@@ -24,20 +24,24 @@ impl UserService {
         });
     }
 
-    pub fn fetch_all(search: Option<IString>, callback: Callback<Vec<User>>) {
+    pub fn fetch_all(search: Option<IString>, callback: Callback<Vec<UserDto>>) {
         spawn_local(async move {
             let mut request_builder =
                 Request::get(format!("{}{}", get_api_url(), USERS_ENDPOINT).as_str());
             if let Some(q) = search {
                 request_builder = request_builder.query([("q", q.as_str())]);
             }
-            let list: Vec<User> = request_builder.send().await.unwrap().json().await.unwrap();
+            let list: Vec<UserDto> = request_builder.send().await.unwrap().json().await.unwrap();
 
             callback.emit(list);
         });
     }
 
-    pub fn create(user: User, callback: Callback<User>, callback_error: Callback<ErrorResponse>) {
+    pub fn create(
+        user: UserDto,
+        callback: Callback<UserDto>,
+        callback_error: Callback<ErrorResponse>,
+    ) {
         spawn_local(async move {
             let res = Request::post(format!("{}{}", get_api_url(), USERS_ENDPOINT).as_str())
                 .json(&user)
@@ -50,7 +54,7 @@ impl UserService {
                     let text_result = resp.text().await;
                     match text_result {
                         Ok(text) => {
-                            let returned_user_result: Result<User, _> =
+                            let returned_user_result: Result<UserDto, _> =
                                 serde_json::from_str(text.as_str());
                             match returned_user_result {
                                 Ok(returned_user) => callback.emit(returned_user),

@@ -1,5 +1,5 @@
 use crate::{services::project_service::ProjectService, Route};
-use shared::dtos::project::Project as ProjectDto;
+use shared::dtos::project_dto::ProjectDto;
 use yew::prelude::*;
 use yew_router::prelude::Link;
 

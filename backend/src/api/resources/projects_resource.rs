@@ -13,9 +13,9 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
     QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
 };
-use shared::dtos::project::Project as ProjectDto;
-use shared::dtos::project::ProjectTickets as ProjectTicketsDto;
-use shared::dtos::ticket::Ticket as TicketDto;
+use shared::dtos::project_dto::ProjectDto;
+use shared::dtos::project_dto::ProjectTickets as ProjectTicketsDto;
+use shared::dtos::ticket_dto::TicketDto;
 
 use crate::api::{
     error::{ApiError, JsonError},

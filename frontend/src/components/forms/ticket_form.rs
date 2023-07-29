@@ -7,10 +7,10 @@ use gloo_timers::callback::Timeout;
 use implicit_clone::unsync::{IArray, IString};
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
-use shared::dtos::ticket::Ticket as TicketDto;
-use shared::dtos::user::User as UserDto;
+use shared::dtos::ticket_dto::TicketDto;
+use shared::dtos::user_dto::UserDto;
 use shared::validation::is_empty::IsEmpty;
-use shared::validation::ticket::TicketStatus;
+use shared::validation::ticket_validation::TicketStatus;
 use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
 };

@@ -3,9 +3,9 @@ use crate::services::project_service::ProjectService;
 use crate::services::{ticket_service::TicketService, user_service::UserService};
 use crate::Route;
 use implicit_clone::sync::IString;
-use shared::dtos::project::Project as ProjectDto;
-use shared::dtos::ticket::Ticket as TicketDto;
-use shared::dtos::user::User as UserDto;
+use shared::dtos::project_dto::ProjectDto;
+use shared::dtos::ticket_dto::TicketDto;
+use shared::dtos::user_dto::UserDto;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
