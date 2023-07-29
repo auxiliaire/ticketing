@@ -1,10 +1,10 @@
 pub mod home_page;
 pub mod page_not_found;
-pub mod project_page;
 pub mod project_list_page;
 pub mod project_new_page;
+pub mod project_page;
 pub mod registration_page;
-pub mod ticket_page;
 pub mod ticket_new_page;
-pub mod user_page;
+pub mod ticket_page;
 pub mod user_list_page;
+pub mod user_page;
