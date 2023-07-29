@@ -9,8 +9,8 @@ pub enum UserMsg {
     Created(UserDto),
 }
 
-pub struct Registration {}
-impl Component for Registration {
+pub struct RegistrationPage {}
+impl Component for RegistrationPage {
     type Message = UserMsg;
     type Properties = ();
 

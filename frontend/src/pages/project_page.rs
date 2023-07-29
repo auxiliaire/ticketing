@@ -44,14 +44,14 @@ pub enum Msg {
     TicketCreated(TicketDto),
 }
 
-pub struct Project {
+pub struct ProjectPage {
     project: ProjectDto,
     user: Option<ButtonLinkData<Route>>,
     ticket_list: Vec<TicketDto>,
     app_state: Rc<AppState>,
     _listener: ContextHandle<Rc<AppState>>,
 }
-impl Component for Project {
+impl Component for ProjectPage {
     type Message = Msg;
     type Properties = Props;
 

@@ -11,10 +11,10 @@ pub enum Msg {
     FetchedUser(UserDto),
 }
 
-pub struct User {
+pub struct UserPage {
     user: UserDto,
 }
-impl Component for User {
+impl Component for UserPage {
     type Message = Msg;
     type Properties = Props;
 

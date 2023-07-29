@@ -7,10 +7,10 @@ pub enum HomeMsg {
     FetchedProjects(Vec<ProjectDto>),
 }
 
-pub struct Home {
+pub struct HomePage {
     list: Vec<ProjectDto>,
 }
-impl Component for Home {
+impl Component for HomePage {
     type Message = HomeMsg;
     type Properties = ();
 
@@ -47,7 +47,7 @@ impl Component for Home {
         }
     }
 }
-impl Home {
+impl HomePage {
     fn view_info_tiles(&self) -> Html {
         let projects = self.list.iter().map(|ProjectDto { id, summary, deadline: _, user_id: _, active: _ }| {
             match id {

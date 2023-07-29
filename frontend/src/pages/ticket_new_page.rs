@@ -9,8 +9,8 @@ pub enum TicketMsg {
     Created(TicketDto),
 }
 
-pub struct TicketNew {}
-impl Component for TicketNew {
+pub struct TicketNewPage {}
+impl Component for TicketNewPage {
     type Message = TicketMsg;
     type Properties = ();
 

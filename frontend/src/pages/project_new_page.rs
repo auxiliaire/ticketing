@@ -9,8 +9,8 @@ pub enum ProjectMsg {
     Created(ProjectDto),
 }
 
-pub struct ProjectNew {}
-impl Component for ProjectNew {
+pub struct ProjectNewPage {}
+impl Component for ProjectNewPage {
     type Message = ProjectMsg;
     type Properties = ();
 

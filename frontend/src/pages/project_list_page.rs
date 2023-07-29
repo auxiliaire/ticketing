@@ -7,10 +7,10 @@ pub enum Msg {
     FetchedProjects(Vec<ProjectDto>),
 }
 
-pub struct ProjectList {
+pub struct ProjectListPage {
     list: Vec<ProjectDto>,
 }
-impl Component for ProjectList {
+impl Component for ProjectListPage {
     type Message = Msg;
     type Properties = ();
 

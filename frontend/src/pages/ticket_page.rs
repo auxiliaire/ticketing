@@ -19,12 +19,12 @@ pub enum Msg {
     FetchedUser(UserDto),
 }
 
-pub struct Ticket {
+pub struct TicketPage {
     ticket: TicketDto,
     project: Option<ButtonLinkData<Route>>,
     user: Option<ButtonLinkData<Route>>,
 }
-impl Component for Ticket {
+impl Component for TicketPage {
     type Message = Msg;
     type Properties = Props;
 

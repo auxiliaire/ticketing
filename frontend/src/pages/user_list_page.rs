@@ -6,10 +6,10 @@ pub enum Msg {
     FetchedUsers(Vec<UserDto>),
 }
 
-pub struct UserList {
+pub struct UserListPage {
     list: Vec<UserDto>,
 }
-impl Component for UserList {
+impl Component for UserListPage {
     type Message = Msg;
     type Properties = ();
 

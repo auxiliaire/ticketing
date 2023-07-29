@@ -1,13 +1,13 @@
-use crate::pages::project::Project;
-use crate::pages::project_list::ProjectList;
-use crate::pages::project_new::ProjectNew;
-use crate::pages::registration::Registration;
-use crate::pages::ticket::Ticket;
-use crate::pages::ticket_new::TicketNew;
-use pages::home::Home;
+use crate::pages::project_list_page::ProjectListPage;
+use crate::pages::project_new_page::ProjectNewPage;
+use crate::pages::project_page::ProjectPage;
+use crate::pages::registration_page::RegistrationPage;
+use crate::pages::ticket_new_page::TicketNewPage;
+use crate::pages::ticket_page::TicketPage;
+use pages::home_page::HomePage;
 use pages::page_not_found::PageNotFound;
-use pages::user::User;
-use pages::user_list::UserList;
+use pages::user_page::UserPage;
+use pages::user_list_page::UserListPage;
 use std::rc::Rc;
 use yew::html::Scope;
 use yew::prelude::*;
@@ -203,31 +203,31 @@ impl App {
 fn switch(routes: Route) -> Html {
     match routes {
         Route::ProjectNew => {
-            html! { <ProjectNew /> }
+            html! { <ProjectNewPage /> }
         }
         Route::Project { id } => {
-            html! { <Project id={id} /> }
+            html! { <ProjectPage id={id} /> }
         }
         Route::Projects => {
-            html! { <ProjectList /> }
+            html! { <ProjectListPage /> }
         }
         Route::Registration => {
-            html! { <Registration /> }
+            html! { <RegistrationPage /> }
         }
         Route::User { id } => {
-            html! { <User id={id} /> }
+            html! { <UserPage id={id} /> }
         }
         Route::Users => {
-            html! { <UserList /> }
+            html! { <UserListPage /> }
         }
         Route::TicketNew => {
-            html! { <TicketNew /> }
+            html! { <TicketNewPage /> }
         }
         Route::Ticket { id } => {
-            html! { <Ticket id={id} /> }
+            html! { <TicketPage id={id} /> }
         }
         Route::Home => {
-            html! { <Home /> }
+            html! { <HomePage /> }
         }
         Route::NotFound => {
             html! { <PageNotFound /> }
