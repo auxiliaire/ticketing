@@ -3,10 +3,14 @@ use entity::users::Model;
 use implicit_clone::ImplicitClone;
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
-use serde_with::skip_serializing_none;
+// use serde_with::skip_serializing_none;
 use std::fmt::Display;
 
-#[skip_serializing_none]
+// Unfortunately #[serde(skip_serializing_if = "Option::is_none")] changes the key in the error
+// from field name to "Option::is_none"
+// which makes the fields unrecognizable after serialization,
+// So this had to be commented out:
+// #[skip_serializing_none]
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
 pub struct UserDto {
     pub id: Option<u64>,
