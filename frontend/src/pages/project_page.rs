@@ -4,6 +4,7 @@ use crate::components::dialogs::form_dialog::FormDialog;
 use crate::components::dialogs::select_dialog::SelectDialog;
 use crate::components::forms::ticket_form::TicketForm;
 use crate::components::option_data::OptionData;
+use crate::components::priority_tag::PriorityTag;
 use crate::services::project_service::ProjectService;
 use crate::services::user_service::UserService;
 use crate::{AppState, Dialog, Route};
@@ -185,10 +186,10 @@ impl Component for ProjectPage {
                                 </Link<Route>>
                             </td>
                             <td>
-                                {priority}
+                                <PriorityTag priority={Rc::new(priority.clone())} />
                             </td>
                             <td>
-                                {status}
+                                <span class="tag">{status}</span>
                             </td>
                         </tr>
                     },

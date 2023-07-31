@@ -6,5 +6,6 @@ pub mod event_helper;
 pub mod forms;
 pub mod html;
 pub mod option_data;
+pub mod priority_tag;
 pub mod project_card;
 pub mod user_card;

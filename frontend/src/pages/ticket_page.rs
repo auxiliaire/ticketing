@@ -1,13 +1,13 @@
 use crate::components::button_link::{ButtonLink, ButtonLinkData};
+use crate::components::priority_tag::PriorityTag;
 use crate::services::project_service::ProjectService;
 use crate::services::{ticket_service::TicketService, user_service::UserService};
 use crate::Route;
-use entity::sea_orm_active_enums::Priority;
 use implicit_clone::sync::IString;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::TicketDto;
 use shared::dtos::user_dto::UserDto;
-use shared::validation::ticket_validation::TicketPriority;
+use std::rc::Rc;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
@@ -81,6 +81,7 @@ impl Component for TicketPage {
             project,
             user,
         } = self;
+        let priority = Rc::new(ticket.priority.clone());
 
         html! {
             <div class="section container">
@@ -107,7 +108,7 @@ impl Component for TicketPage {
                                     </div>
                                     <div class="columns">
                                         <div class="column is-one-quarter"><h5 class="title is-5">{ "Priority" }</h5></div>
-                                        <div class="column"><span class={classes!("tag", "is-light", self.get_priority_class(&ticket.priority))}>{ &ticket.priority.to_string() }</span></div>
+                                        <div class="column"><PriorityTag {priority} /></div>
                                     </div>
                                     <div class="columns">
                                         <div class="column is-one-quarter"><h5 class="title is-5">{ "Status" }</h5></div>
@@ -126,17 +127,5 @@ impl Component for TicketPage {
                 </div>
             </div>
         }
-    }
-}
-
-impl TicketPage {
-    fn get_priority_class(&self, priority: &TicketPriority) -> String {
-        match priority.0 {
-            Priority::Low => "is-info",
-            Priority::Normal => "is-success",
-            Priority::High => "is-warning",
-            Priority::Critical => "is-danger",
-        }
-        .to_owned()
     }
 }
