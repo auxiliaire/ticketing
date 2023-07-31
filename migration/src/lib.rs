@@ -9,6 +9,8 @@ mod m20230629_000001_alter_ticket_table;
 mod m20230629_000002_alter_ticket_update_table;
 mod m20230629_000003_alter_ticket_table;
 mod m20230629_000004_alter_comment_table;
+mod m20230731_083101_alter_ticket_table;
+mod m20230731_155437_alter_ticket_table;
 
 pub struct Migrator;
 
@@ -25,6 +27,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20230629_000002_alter_ticket_update_table::Migration),
             Box::new(m20230629_000003_alter_ticket_table::Migration),
             Box::new(m20230629_000004_alter_comment_table::Migration),
+            Box::new(m20230731_083101_alter_ticket_table::Migration),
+            Box::new(m20230731_155437_alter_ticket_table::Migration),
         ]
     }
 }

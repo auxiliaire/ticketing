@@ -1,11 +1,10 @@
-use entity::tickets::Model;
+use crate::validation::ticket_validation::{TicketPriority, TicketStatus};
+use entity::{sea_orm_active_enums::Priority, tickets::Model};
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 use std::{fmt::Display, str::FromStr};
 
-use crate::validation::ticket_validation::TicketStatus;
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Validate)]
 pub struct TicketDto {
     pub id: Option<u64>,
     #[validate(min_length = 8)]
@@ -17,6 +16,21 @@ pub struct TicketDto {
     pub project_id: Option<u64>,
     pub status: TicketStatus,
     pub user_id: Option<u64>,
+    pub priority: TicketPriority,
+}
+
+impl Default for TicketDto {
+    fn default() -> Self {
+        Self {
+            id: Default::default(),
+            title: Default::default(),
+            description: Default::default(),
+            project_id: Default::default(),
+            status: Default::default(),
+            user_id: Default::default(),
+            priority: TicketPriority(Priority::Normal),
+        }
+    }
 }
 
 impl Display for TicketDto {
@@ -40,6 +54,7 @@ impl From<&Model> for TicketDto {
             project_id: m.project_id,
             status: TicketStatus::from_str(m.status.as_str()).unwrap(),
             user_id: m.user_id,
+            priority: TicketPriority(m.priority.as_ref().unwrap().to_owned()),
         }
     }
 }
@@ -53,6 +68,7 @@ impl From<Model> for TicketDto {
             project_id: m.project_id,
             status: TicketStatus::from_str(m.status.as_str()).unwrap(),
             user_id: m.user_id,
+            priority: TicketPriority(m.priority.unwrap()),
         }
     }
 }

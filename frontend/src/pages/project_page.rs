@@ -171,6 +171,7 @@ impl Component for ProjectPage {
                  project_id: _,
                  status,
                  user_id: _,
+                 priority
              }| {
                 match id {
                     Some(id) => html! {
@@ -182,6 +183,9 @@ impl Component for ProjectPage {
                                 <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0", "pb-0")} to={Route::Ticket { id: *id }}>
                                     {title.clone()}
                                 </Link<Route>>
+                            </td>
+                            <td>
+                                {priority}
                             </td>
                             <td>
                                 {status}
@@ -241,6 +245,7 @@ impl Component for ProjectPage {
                                                         <tr>
                                                             <th>{ "Id" }</th>
                                                             <th>{ "Title" }</th>
+                                                            <th>{ "Priority" }</th>
                                                             <th>{ "Status" }</th>
                                                         </tr>
                                                     </thead>

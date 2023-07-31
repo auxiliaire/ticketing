@@ -10,6 +10,7 @@ path = "src/lib.rs"
 
 [dependencies]
 sea-orm = { version = "0.12" }
+strum = "0.25"
 
 [dependencies.serde]
 version = "1"

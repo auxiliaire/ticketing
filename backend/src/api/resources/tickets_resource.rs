@@ -85,6 +85,7 @@ async fn post_ticket(
         project_id: Set(model.project_id.to_owned()),
         status: Set(model.status.to_owned()),
         user_id: Set(model.user_id.to_owned()),
+        priority: Set(model.priority),
         ..Default::default()
     }
     .insert(&*db)
@@ -107,6 +108,8 @@ async fn put_ticket(
                 status: Set(update.status.to_owned()),
                 project_id: Set(update.project_id),
                 user_id: Set(update.user_id),
+                priority: Set(update.priority),
+                ..Default::default()
             }
             .update(&*db)
             .await?;

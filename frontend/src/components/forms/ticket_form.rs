@@ -2,6 +2,7 @@ use crate::components::bulma::field::Field;
 use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
+use entity::sea_orm_active_enums::Priority;
 use frontend::services::user_service::UserService;
 use gloo_timers::callback::Timeout;
 use implicit_clone::unsync::{IArray, IString};
@@ -10,7 +11,7 @@ use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::ticket_dto::TicketDto;
 use shared::dtos::user_dto::UserDto;
 use shared::validation::is_empty::IsEmpty;
-use shared::validation::ticket_validation::TicketStatus;
+use shared::validation::ticket_validation::{TicketPriority, TicketStatus};
 use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
 };
@@ -34,6 +35,7 @@ pub enum TicketMsg {
     UpdateTitle(AttrValue),
     UpdateDescription(AttrValue),
     UpdateProjectId(AttrValue),
+    UpdatePriority(AttrValue),
     UpdateStatus(AttrValue),
     UpdateOwner(AttrValue),
     UpdateUserId((u64, IString)),
@@ -61,6 +63,7 @@ pub struct TicketForm {
     description_error: IValidationMessages,
     project_error: IValidationMessages,
     owner_error: IValidationMessages,
+    priority_error: IValidationMessages,
     status_error: IValidationMessages,
 }
 impl Component for TicketForm {
@@ -91,6 +94,7 @@ impl Component for TicketForm {
             description_error: None,
             project_error: None,
             owner_error: None,
+            priority_error: None,
             status_error: None,
         }
     }
@@ -112,6 +116,11 @@ impl Component for TicketForm {
             }
             TicketMsg::UpdateProjectId(value) => {
                 self.ticket.project_id = value.as_str().parse::<u64>().ok();
+            }
+            TicketMsg::UpdatePriority(value) => {
+                if let Ok(priority) = TicketPriority::try_from(value.as_str()) {
+                    self.ticket.priority = priority;
+                }
             }
             TicketMsg::UpdateStatus(value) => {
                 if let Ok(status) = TicketStatus::from_str(value.as_str()) {
@@ -263,6 +272,9 @@ impl TicketForm {
                 <Field label="Project" help={&self.project_error}>
                     <TextInput value={self.get_project_id()} on_change={ctx.link().callback(TicketMsg::UpdateProjectId)} valid={self.project_error.is_empty()} />
                 </Field>
+                <Field label="Priority" help={&self.status_error}>
+                    <Select value={self.ticket.priority.to_string()} options={self.get_priorities()} on_change={ctx.link().callback(TicketMsg::UpdatePriority)} valid={self.priority_error.is_empty()} />
+                </Field>
                 <Field label="Status" help={&self.status_error}>
                     <Select value={self.ticket.status.to_string()} options={self.get_statuses()} on_change={ctx.link().callback(TicketMsg::UpdateStatus)} valid={self.status_error.is_empty()} />
                 </Field>
@@ -305,6 +317,12 @@ impl TicketForm {
             .map_or(IString::from(""), |id| IString::from(format!("{}", id)))
     }
 
+    fn get_priorities(&self) -> IArray<IString> {
+        Priority::iter()
+            .map(|v| IString::from(TicketPriority(v).to_string()))
+            .collect::<IArray<IString>>()
+    }
+
     fn get_statuses(&self) -> IArray<IString> {
         TicketStatus::iter()
             .map(|v| IString::from(v.to_string()))
@@ -327,6 +345,7 @@ impl TicketForm {
         self.title_error = errors.get_property_messages("title");
         self.description_error = errors.get_property_messages("description");
         self.project_error = errors.get_property_messages("project_id");
+        self.priority_error = errors.get_property_messages("priority");
         self.status_error = errors.get_property_messages("status");
         self.owner_error = errors.get_property_messages("user_id");
     }

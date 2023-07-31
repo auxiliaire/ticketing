@@ -855,6 +855,7 @@ version = "0.1.0"
 dependencies = [
  "sea-orm",
  "serde",
+ "strum",
 ]
 
 [[package]]
@@ -948,6 +949,7 @@ name = "frontend"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "entity",
  "gloo 0.9.0",
  "gloo-net",
  "gloo-timers",
@@ -1735,6 +1737,9 @@ dependencies = [
  "chrono",
  "sea-orm",
  "sea-orm-migration",
+ "serde",
+ "strum",
+ "strum_macros",
 ]
 
 [[package]]
