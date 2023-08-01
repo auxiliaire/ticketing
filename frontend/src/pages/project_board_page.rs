@@ -1,7 +1,7 @@
 use crate::components::button_link::ButtonLinkData;
 use crate::components::dialogs::form_dialog::FormDialog;
 use crate::components::dialogs::select_dialog::SelectDialog;
-use crate::components::event_helper::{set_transfer_data, get_transfer_data};
+use crate::components::event_helper::{get_transfer_data, set_transfer_data};
 use crate::components::forms::ticket_form::TicketForm;
 use crate::services::project_service::ProjectService;
 use crate::services::user_service::UserService;
@@ -13,8 +13,8 @@ use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::TicketDto;
 use shared::dtos::user_dto::UserDto;
 use shared::validation::ticket_validation::TicketStatus;
-use strum::IntoEnumIterator;
 use std::rc::Rc;
+use strum::IntoEnumIterator;
 use web_sys::DragEvent;
 use yew::prelude::*;
 use yew_router::prelude::Link;
@@ -185,7 +185,7 @@ impl Component for ProjectBoardPage {
                         <div class="tile notification is-light is-vertical pt-3 pr-3 pb-3 pl-3" {ondrop} ondragover={|e: DragEvent| e.prevent_default()}>
                             { Self::ticket_view(ctx, &status, ticket_list) }
                         </div>
-                    </div>            
+                    </div>
                 }
             }
         );
@@ -273,7 +273,17 @@ impl ProjectBoardPage {
     }
 
     fn ticket_classes(status: TicketStatus, column: TicketStatus) -> Vec<&'static str> {
-        let mut cls = vec!["tile", "notification", "ticket", "is-white", "pt-3", "pr-3", "pb-3", "pl-3", "is-clickable"];
+        let mut cls = vec![
+            "tile",
+            "notification",
+            "ticket",
+            "is-white",
+            "pt-3",
+            "pr-3",
+            "pb-3",
+            "pl-3",
+            "is-clickable",
+        ];
         if !Self::is_ticket_visible(&status, &column) {
             cls.push("is-invisible");
         }
