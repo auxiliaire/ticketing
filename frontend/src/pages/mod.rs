@@ -1,5 +1,6 @@
 pub mod home_page;
 pub mod page_not_found;
+pub mod project_board_page;
 pub mod project_list_page;
 pub mod project_new_page;
 pub mod project_page;

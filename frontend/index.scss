@@ -25,3 +25,11 @@
   .navbar-brand {
     align-items: center;
   }
+
+.col:not(:last-child) {
+  margin-right: 0.75rem;
+}
+
+.ticket:not(:last-child) {
+  margin-bottom: 0.75rem;
+}

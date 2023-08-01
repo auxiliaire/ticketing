@@ -75,11 +75,16 @@ impl Component for TicketForm {
             .link()
             .context::<Rc<DialogContext>>(ctx.link().callback(TicketMsg::DialogContextChanged));
         let dialog_context = option_dialog_context.map(|(context, _listener)| context);
+        let status: TicketStatus = match ctx.props().projectid.is_some() {
+            true => TicketStatus::Selected,
+            false => TicketStatus::Created,
+        };
 
         Self {
             dialog_context,
             ticket: TicketDto {
                 project_id: ctx.props().projectid,
+                status,
                 ..Default::default()
             },
             project_id: ctx.props().projectid,

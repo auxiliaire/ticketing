@@ -1,7 +1,7 @@
 use implicit_clone::sync::IArray;
 use std::sync::Arc;
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use web_sys::{Event, HtmlInputElement, HtmlSelectElement};
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use web_sys::{DragEvent, Event, HtmlInputElement, HtmlSelectElement};
 use yew::AttrValue;
 
 pub fn get_value_from_input_event(e: Event) -> AttrValue {
@@ -34,4 +34,20 @@ where
         }
     }
     IArray::Rc(Arc::from(selected.as_slice()))
+}
+
+pub fn set_transfer_data(e: DragEvent, data: &str) -> Result<(), JsValue> {
+    let event_data_transfer = e.data_transfer();
+    match event_data_transfer {
+        Some(data_transfer) => data_transfer.set_data("text", data),
+        None => Err(JsValue::undefined()),
+    }
+}
+
+pub fn get_transfer_data(e: DragEvent) -> Result<String, JsValue> {
+    let event_data_transfer = e.data_transfer();
+    match event_data_transfer {
+        Some(data_transfer) => data_transfer.get_data("text"),
+        None => Err(JsValue::undefined()),
+    }
 }

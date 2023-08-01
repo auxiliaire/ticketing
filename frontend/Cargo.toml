@@ -24,9 +24,12 @@ shared = { path = "../shared" }
 strum = "0.25"
 wasm-bindgen = { version = "0.2" }
 wasm-logger = "0.2"
-web-sys = { version = "0.3", features = [ "DomStringMap", "Element", "Event", "EventTarget", "HtmlCollection", "HtmlSelectElement", "InputEvent", "MouseEvent" ] }
 yew-router = "0.17"
 
 [dependencies.yew]
 version = "0.20"
 features = ["csr"]
+
+[dependencies.web-sys]
+version = "0.3"
+features = [ "DataTransfer", "DomStringMap", "DragEvent", "Element", "Event", "EventTarget", "HtmlCollection", "HtmlDivElement", "HtmlSelectElement", "InputEvent", "MouseEvent" ]

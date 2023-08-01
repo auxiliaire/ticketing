@@ -1,3 +1,4 @@
+use crate::pages::project_board_page::ProjectBoardPage;
 use crate::pages::project_list_page::ProjectListPage;
 use crate::pages::project_new_page::ProjectNewPage;
 use crate::pages::project_page::ProjectPage;
@@ -19,6 +20,8 @@ mod services;
 
 #[derive(Routable, PartialEq, Eq, Clone, Debug)]
 pub enum Route {
+    #[at("/projects/:id/board")]
+    ProjectBoard { id: u64 },
     #[at("/projects/new")]
     ProjectNew,
     #[at("/projects/:id")]
@@ -202,6 +205,9 @@ impl App {
 
 fn switch(routes: Route) -> Html {
     match routes {
+        Route::ProjectBoard { id } => {
+            html! { <ProjectBoardPage id={id} /> }
+        }
         Route::ProjectNew => {
             html! { <ProjectNewPage /> }
         }
