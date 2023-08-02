@@ -28,6 +28,7 @@ shared = { path = "../shared" }
 thiserror = "1.0"
 tokio = { version = "1.28", features = [ "full" ] }
 tower-http = { version = "0.4", features = [ "cors" ] }
+tower = "0.4"
 
 [dependencies.sea-orm]
 version = "0.12"

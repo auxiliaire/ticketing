@@ -96,8 +96,8 @@ async fn post_ticket(
 async fn put_ticket(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-    WithRejection(Json(update), _): WithRejection<Json<tickets::Model>, ApiError>,
-) -> Result<Json<tickets::Model>, ApiError> {
+    WithRejection(Json(update), _): WithRejection<Json<TicketDto>, ApiError>,
+) -> Result<Json<TicketDto>, ApiError> {
     let original_result = Ticket::find_by_id(id).one(&*db).await?;
     match original_result {
         Some(original) => {
@@ -105,15 +105,15 @@ async fn put_ticket(
                 id: Set(original.id),
                 title: Set(update.title.to_owned()),
                 description: Set(update.description.to_owned()),
-                status: Set(update.status.to_owned()),
+                status: Set(update.status.to_owned().to_string()),
                 project_id: Set(update.project_id),
                 user_id: Set(update.user_id),
-                priority: Set(update.priority),
+                priority: Set(Some(update.priority.0)),
                 ..Default::default()
             }
             .update(&*db)
             .await?;
-            Ok(Json(updated))
+            Ok(Json(updated.into()))
         }
         None => Err(ApiError::new(
             StatusCode::NOT_FOUND,

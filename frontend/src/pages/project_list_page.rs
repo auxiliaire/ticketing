@@ -37,7 +37,7 @@ impl Component for ProjectListPage {
                             {id}
                         </th>
                         <td>
-                            <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0")} to={Route::Project { id: *id }}>
+                            <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0")} to={Route::ProjectBoard { id: *id }}>
                                 {summary.clone()}
                             </Link<Route>>
                         </td>

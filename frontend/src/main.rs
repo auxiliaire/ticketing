@@ -149,7 +149,7 @@ impl App {
         };
 
         html! {
-            <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+            <nav class="navbar is-link" role="navigation" aria-label="main navigation">
                 <div class="navbar-brand">
                     <h1 class="navbar-item is-size-3">{ "Ticketing in Rust" }</h1>
 

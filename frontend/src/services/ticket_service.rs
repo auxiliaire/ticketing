@@ -94,4 +94,54 @@ impl TicketService {
             }
         });
     }
+
+    pub fn update(
+        ticket: TicketDto,
+        callback: Callback<TicketDto>,
+        callback_error: Callback<ErrorResponse>,
+    ) {
+        spawn_local(async move {
+            let res = Request::put(
+                format!(
+                    "{}{}/{}",
+                    get_api_url(),
+                    TICKETS_ENDPOINT,
+                    ticket.id.unwrap()
+                )
+                .as_str(),
+            )
+            .json(&ticket)
+            .unwrap()
+            .send()
+            .await;
+
+            match res {
+                Ok(resp) => {
+                    let text_result = resp.text().await;
+                    match text_result {
+                        Ok(text) => {
+                            let returned_ticket_result: Result<TicketDto, _> =
+                                serde_json::from_str(text.as_str());
+                            match returned_ticket_result {
+                                Ok(returned_ticket) => callback.emit(returned_ticket),
+                                Err(e) => {
+                                    log::debug!("Serde result error: {}", e.to_string());
+                                    let returned_error_result: Result<ErrorResponse, _> =
+                                        serde_json::from_str(text.as_str());
+                                    match returned_error_result {
+                                        Ok(error_response) => callback_error.emit(error_response),
+                                        Err(e) => {
+                                            callback_error.emit(ErrorResponse::from(e.to_string()))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
+                    }
+                }
+                Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
+            }
+        });
+    }
 }

@@ -209,7 +209,12 @@ impl Component for TicketForm {
             true => html! {
                 <>
                     <section class="modal-card-body">
-                        { self.form_body(ctx) }
+                        {
+                            match self.ticket.id.is_some() {
+                                true => self.soft_body(ctx),
+                                false => self.hard_body(ctx),
+                            }
+                        }
                     </section>
                     <footer class="modal-card-foot">
                         { self.submit_button(ctx) }
@@ -220,7 +225,7 @@ impl Component for TicketForm {
             false => html! {
                 <div class="card">
                     <div class="card-content">
-                        { self.form_body(ctx) }
+                        { self.hard_body(ctx) }
                     </div>
                     <footer class="card-footer">
                         <div class="card-content">
@@ -241,7 +246,68 @@ impl Component for TicketForm {
 }
 
 impl TicketForm {
-    fn form_body(&self, ctx: &Context<Self>) -> Html {
+    fn soft_body(&self, ctx: &Context<Self>) -> Html {
+        let users = self.user_list.iter().map(|t| {
+            let select_user = ctx.link().callback(TicketMsg::UpdateUserId);
+            let name = t.1.clone();
+            html! {
+                <a class="dropdown-item" onclick={move |_| {
+                    select_user.emit((t.0, t.1.clone()));
+                }}>{name}</a>
+            }
+        });
+
+        let on_search_focus = ctx.link().callback(TicketMsg::ToggleSearchDropdown);
+        let on_search_blur = ctx.link().callback(TicketMsg::ToggleSearchDropdownDelayed);
+
+        html! {
+            <div class="content">
+                if let Some(common_error) = &self.common_error {
+                    <p class="help is-danger">
+                        <ul>
+                        {
+                            common_error.iter().map(|message| {
+                                html!{<li>{ message }</li>}
+                            }).collect::<Html>()
+                        }
+                        </ul>
+                    </p>
+                }
+                <div class="columns">
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ "Title" }</h6></div>
+                    <div class="column"><span>{ self.ticket.title.clone() }</span><TextInput base_classes={classes!("is-hidden")} value={self.ticket.title.clone()} on_change={ctx.link().callback(TicketMsg::UpdateTitle)} valid={self.title_error.is_empty()} /></div>
+                </div>
+                <Field label="Description" help={&self.description_error}>
+                    <TextInput value={self.ticket.description.clone()} on_change={ctx.link().callback(TicketMsg::UpdateDescription)} valid={self.description_error.is_empty()} />
+                </Field>
+                <Field label="Project" help={&self.project_error}>
+                    <TextInput value={self.get_project_id()} on_change={ctx.link().callback(TicketMsg::UpdateProjectId)} valid={self.project_error.is_empty()} />
+                </Field>
+                <Field label="Priority" help={&self.status_error}>
+                    <Select value={self.ticket.priority.to_string()} options={self.get_priorities()} on_change={ctx.link().callback(TicketMsg::UpdatePriority)} valid={self.priority_error.is_empty()} />
+                </Field>
+                <Field label="Status" help={&self.status_error}>
+                    <Select value={self.ticket.status.to_string()} options={self.get_statuses()} on_change={ctx.link().callback(TicketMsg::UpdateStatus)} valid={self.status_error.is_empty()} />
+                </Field>
+                <Field label="Owner" help={&self.owner_error}>
+                    <TextInput value={self.owner.clone()} on_change={ctx.link().callback(TicketMsg::UpdateOwner)} valid={self.owner_error.is_empty()} base_classes="input is-hidden" />
+                    <div class={classes!(self.get_dropdown_classes())}>
+                        <div class="dropdown-trigger">
+                            <TextInput value={self.user_search.clone()} on_change={ctx.link().callback(TicketMsg::SearchUser)} valid={self.owner_error.is_empty()}
+                                on_focus={move |_| on_search_focus.emit(true)} on_blur={move |_| on_search_blur.emit(false)} />
+                        </div>
+                        <div class="dropdown-menu" role="menu">
+                            <div class="dropdown-content">
+                                { for users }
+                            </div>
+                        </div>
+                    </div>
+                </Field>
+            </div>
+        }
+    }
+
+    fn hard_body(&self, ctx: &Context<Self>) -> Html {
         let users = self.user_list.iter().map(|t| {
             let select_user = ctx.link().callback(TicketMsg::UpdateUserId);
             let name = t.1.clone();

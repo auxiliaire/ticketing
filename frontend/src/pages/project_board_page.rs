@@ -1,8 +1,10 @@
-use crate::components::button_link::ButtonLinkData;
+use crate::components::button_link::{ButtonLink, ButtonLinkData};
+use crate::components::check_tag::CheckTag;
 use crate::components::dialogs::form_dialog::FormDialog;
 use crate::components::dialogs::select_dialog::SelectDialog;
 use crate::components::event_helper::{get_transfer_data, set_transfer_data};
 use crate::components::forms::ticket_form::TicketForm;
+use crate::components::priority_tag::PriorityTag;
 use crate::services::project_service::ProjectService;
 use crate::services::user_service::UserService;
 use crate::{AppState, Dialog, Route};
@@ -17,7 +19,6 @@ use std::rc::Rc;
 use strum::IntoEnumIterator;
 use web_sys::DragEvent;
 use yew::prelude::*;
-use yew_router::prelude::Link;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
@@ -31,9 +32,11 @@ pub enum Msg {
     ContextChanged(Rc<AppState>),
     OpenSelectDialog(),
     OpenFormDialog(),
+    OpenTicketDialog(u64),
     SelectedTickets(IArray<u64>),
     SubmittedForm((TicketDto, Callback<ErrorResponse>)),
     TicketCreated(TicketDto),
+    TicketUpdated(TicketDto),
     DragStart(DragEvent, u64),
     Drop(DragEvent, TicketStatus),
 }
@@ -116,6 +119,57 @@ impl Component for ProjectBoardPage {
                 });
                 self.app_state.update_dialog.emit(dialog);
             }
+            Msg::OpenTicketDialog(id) => {
+                if let Some(ticket) = self
+                    .ticket_list
+                    .iter()
+                    .filter(|t| t.id == Some(id))
+                    .collect::<Vec<&TicketDto>>()
+                    .first()
+                {
+                    let priority = Rc::new(ticket.priority.clone());
+                    let dialog = Rc::new(Dialog {
+                        active: true,
+                        content: html! {
+                            <FormDialog title={ticket.title.clone()}>
+                                <section class="modal-card-body">
+                                    <div class="content">
+                                        <div class="columns">
+                                            <div class="column is-one-quarter"><h6 class="title is-6">{ "Description" }</h6></div>
+                                            <div class="column">{ &ticket.description }</div>
+                                        </div>
+                                        <div class="columns">
+                                            <div class="column is-one-quarter"><h6 class="title is-6">{ "Project" }</h6></div>
+                                            <div class="column">
+                                                <em>{ "This" }</em>
+                                            </div>
+                                        </div>
+                                        <div class="columns">
+                                            <div class="column is-one-quarter"><h6 class="title is-6">{ "Priority" }</h6></div>
+                                            <div class="column"><PriorityTag {priority} /></div>
+                                        </div>
+                                        <div class="columns">
+                                            <div class="column is-one-quarter"><h6 class="title is-6">{ "Status" }</h6></div>
+                                            <div class="column"><span class="tag is-light">{ &ticket.status.to_string() }</span></div>
+                                        </div>
+                                        <div class="columns">
+                                            <div class="column is-one-quarter"><h6 class="title is-6">{ "Assigned to" }</h6></div>
+                                            <div class="column">
+                                                <ButtonLink<Route> data={self.user.clone()} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                                <footer class="modal-card-foot">
+                                    <button class="button is-info">{ "Edit" }</button>
+                                    <button class="button">{ "Close" }</button>
+                                </footer>
+                            </FormDialog>
+                        },
+                    });
+                    self.app_state.update_dialog.emit(dialog);
+                }
+            }
             Msg::SelectedTickets(tickets) => {
                 let callback = ctx.link().callback(Msg::FetchedTickets);
                 ProjectService::assign_tickets(
@@ -141,6 +195,9 @@ impl Component for ProjectBoardPage {
                     ctx.link().callback(Msg::FetchedTickets),
                 );
             }
+            Msg::TicketUpdated(ticket) => {
+                log::debug!("Updated: {}", ticket);
+            }
             Msg::DragStart(e, id) => {
                 log::debug!("Drag started. Id: {}", id);
                 let _ = set_transfer_data(e, format!("{}", id).as_str());
@@ -150,6 +207,29 @@ impl Component for ProjectBoardPage {
                 if let Ok(id_s) = get_transfer_data(e) {
                     if let Ok(id) = id_s.as_str().parse::<u64>() {
                         log::debug!("Dropped. Status: id({}) -> {}", id, status);
+                        if let Some(ticket) = self
+                            .ticket_list
+                            .iter()
+                            .filter(|t| t.id == Some(id))
+                            .collect::<Vec<&TicketDto>>()
+                            .first()
+                        {
+                            if ticket.status != status {
+                                TicketService::update(
+                                    TicketDto {
+                                        id: Some(id),
+                                        title: ticket.title.clone(),
+                                        status,
+                                        description: ticket.description.clone(),
+                                        project_id: ticket.project_id,
+                                        user_id: ticket.user_id,
+                                        priority: ticket.priority.clone(),
+                                    },
+                                    ctx.link().callback(Msg::TicketCreated),
+                                    Callback::noop(),
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -160,7 +240,7 @@ impl Component for ProjectBoardPage {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let Self {
             project,
-            user: _,
+            user,
             ticket_list,
             app_state: _,
             _listener,
@@ -195,24 +275,49 @@ impl Component for ProjectBoardPage {
                 <div class="tile is-ancestor is-vertical">
                     <div class="tile is-parent">
                         <article class="tile is-child notification is-light">
-                            <p class="title">{ &project.summary }</p>
-                            <div class="field is-grouped mt-6">
-                                <p class="control">
-                                    <button class="button" onclick={ctx.link().callback(on_assign_click)}>
-                                        <span class="icon is-small">
-                                            <i class="fas fa-arrow-up"></i>
-                                        </span>
-                                        <span>{ "Assign a ticket" }</span>
-                                    </button>
-                                </p>
-                                <p class="control">
-                                    <button class="button" onclick={ctx.link().callback(on_add_click)}>
-                                        <span class="icon is-small">
-                                            <i class="fas fa-plus"></i>
-                                        </span>
-                                        <span>{ "Create a new one" }</span>
-                                    </button>
-                                </p>
+                            <div class="columns">
+                                <div class="column is-two-thirds">
+                                    <p class="title">{ &project.summary }</p>
+                                    <div class="field is-grouped mt-6">
+                                        <p class="control">
+                                            <button class="button" onclick={ctx.link().callback(on_assign_click)}>
+                                                <span class="icon is-small">
+                                                    <i class="fas fa-arrow-up"></i>
+                                                </span>
+                                                <span>{ "Assign a ticket" }</span>
+                                            </button>
+                                        </p>
+                                        <p class="control">
+                                            <button class="button" onclick={ctx.link().callback(on_add_click)}>
+                                                <span class="icon is-small">
+                                                    <i class="fas fa-plus"></i>
+                                                </span>
+                                                <span>{ "Create a new one" }</span>
+                                            </button>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <div class="content">
+                                        <p class="title is-5">{ "Details" }</p>
+                                        <div class="columns mb-0">
+                                            <div class="column"><h6 class="title is-6">{ "Deadline" }</h6></div>
+                                            <div class="column">{ &project.deadline.map_or(String::from("-"), |d| d.format("%F").to_string()) }</div>
+                                        </div>
+                                        <div class="columns mb-0">
+                                            <div class="column"><h6 class="title is-6">{ "Created by" }</h6></div>
+                                            <div class="column">
+                                                <ButtonLink<Route> data={user.clone()} />
+                                            </div>
+                                        </div>
+                                        <div class="columns mb-0">
+                                            <div class="column"><h6 class="title is-6">{ "Active" }</h6></div>
+                                            <div class="column">
+                                                <CheckTag checked={project.active == 1} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </article>
                     </div>
@@ -247,11 +352,12 @@ impl ProjectBoardPage {
                 match id {
                     Some(id) => {
                         let ondragstart = Self::dragstart_callback(ctx, *id);
+                        let onclick = Self::ticket_click_callback(ctx, *id);
                         html! {
                             <div class={classes!(Self::ticket_classes(*status, *column))} draggable="true" {ondragstart}>
-                                <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0", "pb-0")} to={Route::Ticket { id: *id }}>
+                                <a draggable="true" ondragstart={|e: DragEvent| e.prevent_default()} {onclick}>
                                     {title.clone()}
-                                </Link<Route>>
+                                </a>
                             </div>
                         }
                     },
@@ -292,5 +398,10 @@ impl ProjectBoardPage {
 
     fn is_ticket_visible(status: &TicketStatus, column: &TicketStatus) -> bool {
         status == column
+    }
+
+    fn ticket_click_callback(ctx: &Context<Self>, id: u64) -> Callback<MouseEvent> {
+        let function = move |_: MouseEvent| Msg::OpenTicketDialog(id);
+        ctx.link().callback(function)
     }
 }

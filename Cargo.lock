@@ -417,6 +417,7 @@ dependencies = [
  "shared",
  "thiserror",
  "tokio",
+ "tower",
  "tower-http",
 ]
 

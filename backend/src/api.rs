@@ -3,6 +3,7 @@ use axum::{Extension, Router};
 use http::Method;
 use sea_orm::DatabaseConnection;
 use shared::api::get_socket_address;
+use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 
 pub mod error;
@@ -35,6 +36,5 @@ pub fn router(db: DatabaseConnection) -> Router {
         .merge(resources::ticket_updates_resource::router())
         .merge(resources::comments_resource::router())
         .merge(resources::projects_resource::router())
-        .layer(Extension(db))
-        .layer(cors)
+        .layer(ServiceBuilder::new().layer(cors).layer(Extension(db)))
 }
