@@ -1,14 +1,15 @@
+use crate::components::component_helper::get_icon_classes;
 use implicit_clone::sync::{IArray, IString};
 use yew::{classes, html, AttrValue, Children, Component, Html, Properties};
-
-const ICON_CLASS: &str = "fas";
 
 pub struct Field;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
-    pub label: AttrValue,
+    pub label: Option<AttrValue>,
     pub children: Children,
+    #[prop_or_default]
+    pub class: Option<AttrValue>,
     #[prop_or_default]
     pub has_addons: bool,
     pub help: Option<IArray<IString>>,
@@ -30,17 +31,17 @@ impl Component for Field {
     fn view(&self, ctx: &yew::Context<Self>) -> yew::Html {
         html!(
             <div class={classes!(self.get_field_classes(ctx))}>
-                <label class="label">{ ctx.props().label.as_str() }</label>
+                { self.label(ctx) }
                 <div class={classes!(self.get_control_classes(ctx))}>
                     { for ctx.props().children.iter() }
-                    if ctx.props().icon_left.is_some() {
+                    if let Some(icon_left) = ctx.props().icon_left.clone() {
                         <span class="icon is-small is-left">
-                            <i class={classes!(self.get_icon_classes(&ctx.props().icon_left))}></i>
+                            <i class={classes!(get_icon_classes(icon_left))}></i>
                         </span>
                     }
-                    if ctx.props().icon_right.is_some() {
+                    if let Some(icon_right) = ctx.props().icon_right.clone() {
                         <span class="icon is-small is-right">
-                            <i class={classes!(self.get_icon_classes(&ctx.props().icon_right))}></i>
+                            <i class={classes!(get_icon_classes(icon_right))}></i>
                         </span>
                     }
                 </div>
@@ -61,8 +62,21 @@ impl Component for Field {
 }
 
 impl Field {
+    fn label(&self, ctx: &yew::Context<Self>) -> Html {
+        match &ctx.props().label {
+            Some(label) => html! {
+                <label class="label">{ label.as_str() }</label>
+            },
+            None => html! {},
+        }
+    }
+
     fn get_field_classes(&self, ctx: &yew::Context<Self>) -> String {
         let mut classes = vec!["field"];
+        if let Some(base_classes) = &ctx.props().class {
+            let class = base_classes.as_str();
+            classes.push(class);
+        }
         if ctx.props().has_addons {
             classes.push("has-addons");
         }
@@ -78,12 +92,5 @@ impl Field {
             classes.push(icon_right.as_str());
         }
         classes.join(" ")
-    }
-
-    fn get_icon_classes(&self, icon: &Option<AttrValue>) -> String {
-        match icon {
-            Some(icon_class) => [ICON_CLASS, icon_class.as_str()].join(" "),
-            None => String::from(ICON_CLASS),
-        }
     }
 }

@@ -1,10 +1,13 @@
 pub mod bulma;
 pub mod button_link;
 pub mod check_tag;
+pub mod component_helper;
+pub mod consts;
 pub mod dialogs;
 pub mod event_helper;
 pub mod forms;
 pub mod html;
+pub mod icon_link;
 pub mod option_data;
 pub mod priority_tag;
 pub mod project_card;

@@ -3,6 +3,23 @@ use entity::{sea_orm_active_enums::Priority, tickets::Model};
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 use std::{fmt::Display, str::FromStr};
+use strum::{Display, EnumString};
+
+#[derive(Copy, Clone, Display, EnumString)]
+pub enum TicketField {
+    Title,
+    Description,
+    Project,
+    Status,
+    User,
+    Priority,
+}
+
+impl TicketField {
+    pub fn index(&self) -> usize {
+        *self as usize
+    }
+}
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Validate)]
 pub struct TicketDto {

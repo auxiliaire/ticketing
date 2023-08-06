@@ -13,9 +13,9 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
     QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
 };
-use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::project_dto::ProjectTickets as ProjectTicketsDto;
 use shared::dtos::ticket_dto::TicketDto;
+use shared::{dtos::project_dto::ProjectDto, validation::ticket_validation::TicketStatus};
 
 use crate::api::{
     error::{ApiError, JsonError},
@@ -104,6 +104,10 @@ async fn post_project_tickets(
         .col_expr(
             <entity::prelude::Tickets as EntityTrait>::Column::ProjectId,
             Expr::value(id),
+        )
+        .col_expr(
+            <entity::prelude::Tickets as EntityTrait>::Column::Status,
+            Expr::value(TicketStatus::Selected.to_string()),
         )
         .filter(<entity::prelude::Tickets as EntityTrait>::Column::Id.is_in(tickets_dto.tickets))
         .exec(&*db)

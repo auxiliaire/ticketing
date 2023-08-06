@@ -96,8 +96,7 @@ impl Component for App {
                 self.dialog = dialog;
             }
             AppMsg::CloseDialog => {
-                let dialog = Rc::make_mut(&mut self.dialog);
-                dialog.active = false;
+                self.dialog = Rc::new(Dialog::default());
             }
         }
         true

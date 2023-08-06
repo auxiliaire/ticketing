@@ -1,14 +1,23 @@
-use crate::components::bulma::field::Field;
+use crate::components::button_link::ButtonLinkData;
 use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
+use crate::components::icon_link::{IconLink, IconLinkData};
+use crate::components::priority_tag::PriorityTag;
+use crate::services::project_service::ProjectService;
+use crate::Route;
+use crate::{components::bulma::field::Field, services::ticket_service::TicketService};
 use entity::sea_orm_active_enums::Priority;
 use frontend::services::user_service::UserService;
 use gloo_timers::callback::Timeout;
-use implicit_clone::unsync::{IArray, IString};
+use implicit_clone::{
+    sync,
+    unsync::{IArray, IString},
+};
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
-use shared::dtos::ticket_dto::TicketDto;
+use shared::dtos::project_dto::ProjectDto;
+use shared::dtos::ticket_dto::{TicketDto, TicketField};
 use shared::dtos::user_dto::UserDto;
 use shared::validation::is_empty::IsEmpty;
 use shared::validation::ticket_validation::{TicketPriority, TicketStatus};
@@ -27,11 +36,18 @@ const DROPDOWN_CLOSE_MS: u32 = 200;
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
     pub onsubmit: Callback<(TicketDto, Callback<ErrorResponse>)>,
+    #[prop_or_default]
+    pub ticketid: Option<u64>,
+    #[prop_or_default]
     pub projectid: Option<u64>,
 }
 
 pub enum TicketMsg {
     DialogContextChanged(Rc<DialogContext>),
+    FetchedTicket(TicketDto),
+    FetchedProject(ProjectDto),
+    FetchedUser(UserDto),
+    FetchedUsers(Vec<UserDto>),
     UpdateTitle(AttrValue),
     UpdateDescription(AttrValue),
     UpdateProjectId(AttrValue),
@@ -42,7 +58,7 @@ pub enum TicketMsg {
     SearchUser(AttrValue),
     ToggleSearchDropdownDelayed(bool),
     ToggleSearchDropdown(bool),
-    FetchedUsers(Vec<UserDto>),
+    ToggleField(TicketField),
     Submit(),
     UpdateErrors(ErrorResponse),
     Cancel(),
@@ -51,6 +67,8 @@ pub enum TicketMsg {
 pub struct TicketForm {
     dialog_context: Option<Rc<DialogContext>>,
     ticket: TicketDto,
+    project: Option<ButtonLinkData<Route>>,
+    user: Option<ButtonLinkData<Route>>,
     project_id: Option<u64>,
     owner: IString,
     user_search: IString,
@@ -65,6 +83,7 @@ pub struct TicketForm {
     owner_error: IValidationMessages,
     priority_error: IValidationMessages,
     status_error: IValidationMessages,
+    field_visibility_flags: Vec<bool>,
 }
 impl Component for TicketForm {
     type Message = TicketMsg;
@@ -80,6 +99,9 @@ impl Component for TicketForm {
             false => TicketStatus::Created,
         };
 
+        if let Some(ticket_id) = ctx.props().ticketid {
+            TicketService::fetch(ticket_id, ctx.link().callback(TicketMsg::FetchedTicket));
+        }
         Self {
             dialog_context,
             ticket: TicketDto {
@@ -87,6 +109,8 @@ impl Component for TicketForm {
                 status,
                 ..Default::default()
             },
+            project: None,
+            user: None,
             project_id: ctx.props().projectid,
             owner: IString::from(""),
             user_search: IString::from(""),
@@ -101,17 +125,52 @@ impl Component for TicketForm {
             owner_error: None,
             priority_error: None,
             status_error: None,
+            field_visibility_flags: vec![false, false, false, false, false, false],
         }
-    }
-
-    fn changed(&mut self, _ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        true
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             TicketMsg::DialogContextChanged(context) => {
                 self.dialog_context = Some(context);
+            }
+            TicketMsg::FetchedTicket(ticket) => {
+                self.ticket = ticket;
+                if let Some(project_id) = self.ticket.project_id {
+                    ProjectService::fetch(
+                        project_id,
+                        ctx.link().callback(TicketMsg::FetchedProject),
+                    );
+                }
+                if let Some(user_id) = self.ticket.user_id {
+                    UserService::fetch(user_id, ctx.link().callback(TicketMsg::FetchedUser));
+                }
+            }
+            TicketMsg::FetchedProject(project) => {
+                self.project = Some(ButtonLinkData {
+                    label: sync::IString::from(project.summary),
+                    to: Route::Project {
+                        id: project.id.unwrap(),
+                    },
+                });
+            }
+            TicketMsg::FetchedUser(user) => {
+                let user_name = user.name.clone();
+                let label = sync::IString::from(user.name);
+                self.user = Some(ButtonLinkData {
+                    label,
+                    to: Route::User {
+                        id: user.id.unwrap(),
+                    },
+                });
+                self.user_search = IString::from(user_name);
+            }
+            TicketMsg::FetchedUsers(list) => {
+                let mut v = vec![];
+                for u in list {
+                    v.push((u.id.unwrap(), IString::from(u.name.clone())));
+                }
+                self.user_list = IArray::from(v);
             }
             TicketMsg::UpdateTitle(title) => {
                 self.ticket.title = String::from(title.as_str());
@@ -168,12 +227,9 @@ impl Component for TicketForm {
             TicketMsg::ToggleSearchDropdown(value) => {
                 self.dropdown_enabled = value;
             }
-            TicketMsg::FetchedUsers(list) => {
-                let mut v = vec![];
-                for u in list {
-                    v.push((u.id.unwrap(), IString::from(u.name.clone())));
-                }
-                self.user_list = IArray::from(v);
+            TicketMsg::ToggleField(field) => {
+                let slice = &mut self.field_visibility_flags;
+                slice[field.index()] = !slice[field.index()];
             }
             TicketMsg::Submit() => {
                 let result = self.ticket.validate();
@@ -256,6 +312,7 @@ impl TicketForm {
                 }}>{name}</a>
             }
         });
+        let priority = Rc::new(self.ticket.priority.clone());
 
         let on_search_focus = ctx.link().callback(TicketMsg::ToggleSearchDropdown);
         let on_search_blur = ctx.link().callback(TicketMsg::ToggleSearchDropdownDelayed);
@@ -263,46 +320,101 @@ impl TicketForm {
         html! {
             <div class="content">
                 if let Some(common_error) = &self.common_error {
-                    <p class="help is-danger">
-                        <ul>
-                        {
-                            common_error.iter().map(|message| {
-                                html!{<li>{ message }</li>}
-                            }).collect::<Html>()
-                        }
-                        </ul>
-                    </p>
-                }
-                <div class="columns">
-                    <div class="column is-one-quarter"><h6 class="title is-6">{ "Title" }</h6></div>
-                    <div class="column"><span>{ self.ticket.title.clone() }</span><TextInput base_classes={classes!("is-hidden")} value={self.ticket.title.clone()} on_change={ctx.link().callback(TicketMsg::UpdateTitle)} valid={self.title_error.is_empty()} /></div>
-                </div>
-                <Field label="Description" help={&self.description_error}>
-                    <TextInput value={self.ticket.description.clone()} on_change={ctx.link().callback(TicketMsg::UpdateDescription)} valid={self.description_error.is_empty()} />
-                </Field>
-                <Field label="Project" help={&self.project_error}>
-                    <TextInput value={self.get_project_id()} on_change={ctx.link().callback(TicketMsg::UpdateProjectId)} valid={self.project_error.is_empty()} />
-                </Field>
-                <Field label="Priority" help={&self.status_error}>
-                    <Select value={self.ticket.priority.to_string()} options={self.get_priorities()} on_change={ctx.link().callback(TicketMsg::UpdatePriority)} valid={self.priority_error.is_empty()} />
-                </Field>
-                <Field label="Status" help={&self.status_error}>
-                    <Select value={self.ticket.status.to_string()} options={self.get_statuses()} on_change={ctx.link().callback(TicketMsg::UpdateStatus)} valid={self.status_error.is_empty()} />
-                </Field>
-                <Field label="Owner" help={&self.owner_error}>
-                    <TextInput value={self.owner.clone()} on_change={ctx.link().callback(TicketMsg::UpdateOwner)} valid={self.owner_error.is_empty()} base_classes="input is-hidden" />
-                    <div class={classes!(self.get_dropdown_classes())}>
-                        <div class="dropdown-trigger">
-                            <TextInput value={self.user_search.clone()} on_change={ctx.link().callback(TicketMsg::SearchUser)} valid={self.owner_error.is_empty()}
-                                on_focus={move |_| on_search_focus.emit(true)} on_blur={move |_| on_search_blur.emit(false)} />
-                        </div>
-                        <div class="dropdown-menu" role="menu">
-                            <div class="dropdown-content">
-                                { for users }
-                            </div>
+                    <div class="columns">
+                        <div class="column">
+                            <p class="help is-danger">
+                                <ul>
+                                {
+                                    common_error.iter().map(|message| {
+                                        html!{<li>{ message }</li>}
+                                    }).collect::<Html>()
+                                }
+                                </ul>
+                            </p>
                         </div>
                     </div>
-                </Field>
+                }
+                <div class="columns">
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::Title }</h6></div>
+                    <div class="column">
+                        <span class={classes!(self.span_class(TicketField::Title))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Title))}>{ self.ticket.title.clone() }</span>
+                        <Field class={classes!(self.field_class(TicketField::Title))} help={&self.title_error}>
+                            <TextInput value={self.ticket.title.clone()} on_change={ctx.link().callback(TicketMsg::UpdateTitle)} valid={self.title_error.is_empty()} />
+                        </Field>
+                    </div>
+                </div>
+                <div class="columns">
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::Description }</h6></div>
+                    <div class="column">
+                        <span class={classes!(self.span_class(TicketField::Description))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Description))}>{ self.ticket.description.clone() }</span>
+                        <Field class={classes!(self.field_class(TicketField::Description))} help={&self.description_error}>
+                            <TextInput value={self.ticket.description.clone()} on_change={ctx.link().callback(TicketMsg::UpdateDescription)} valid={self.description_error.is_empty()} />
+                        </Field>
+                    </div>
+                </div>
+                <div class="columns">
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::Project }</h6></div>
+                    <div class="column">
+                        <span class={classes!(self.span_class(TicketField::Project))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Project))}>
+                            if let Some(ButtonLinkData { label, to: _ }) = self.project.clone() {
+                                <span class="icon-text">
+                                    <span>{ label }{" "}</span>
+                                    <IconLink<Route> data={self.project.clone().map(|ButtonLinkData {label: _, to}| IconLinkData {icon: IString::from("fa-square-arrow-up-right"), to})} />
+                                </span>
+                            }
+                        </span>
+                        <Field class={classes!(self.field_class(TicketField::Project))} help={&self.project_error}>
+                            <TextInput value={self.get_project_id()} on_change={ctx.link().callback(TicketMsg::UpdateProjectId)} valid={self.project_error.is_empty()} />
+                        </Field>
+                    </div>
+                </div>
+                <div class="columns">
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::Priority }</h6></div>
+                    <div class="column">
+                        <span class={classes!(self.span_class(TicketField::Priority))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Priority))}><PriorityTag {priority} /></span>
+                        <Field class={classes!(self.field_class(TicketField::Priority))} help={&self.status_error}>
+                            <Select value={self.ticket.priority.to_string()} options={self.get_priorities()} on_change={ctx.link().callback(TicketMsg::UpdatePriority)} valid={self.priority_error.is_empty()} />
+                        </Field>
+                    </div>
+                </div>
+                <div class="columns">
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::Status }</h6></div>
+                    <div class="column">
+                        <span class={classes!(self.span_class(TicketField::Status))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Status))}><span class="tag is-light">{ self.ticket.status.to_string() }</span></span>
+                        <Field class={classes!(self.field_class(TicketField::Status))} help={&self.status_error}>
+                            <Select value={self.ticket.status.to_string()} options={self.get_statuses()} on_change={ctx.link().callback(TicketMsg::UpdateStatus)} valid={self.status_error.is_empty()} />
+                        </Field>
+                    </div>
+                </div>
+                <div class="columns">
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::User }</h6></div>
+                    <div class="column">
+                        <span class={classes!(self.span_class(TicketField::User))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::User))}>
+                            if let Some(ButtonLinkData { label, to: _ }) = self.user.clone() {
+                                <span class="icon-text">
+                                    <span>{ label }{" "}</span>
+                                    <IconLink<Route> data={self.user.clone().map(|ButtonLinkData {label: _, to}| IconLinkData {icon: IString::from("fa-square-arrow-up-right"), to})} />
+                                </span>
+                            } else {
+                                <em>{ "None" }</em>
+                            }
+                        </span>
+                        <Field class={classes!(self.field_class(TicketField::User))} help={&self.owner_error}>
+                            <TextInput value={self.owner.clone()} on_change={ctx.link().callback(TicketMsg::UpdateOwner)} valid={self.owner_error.is_empty()} base_classes="input is-hidden" />
+                            <div class={classes!(self.get_dropdown_classes())}>
+                                <div class="dropdown-trigger">
+                                    <TextInput value={self.user_search.clone()} on_change={ctx.link().callback(TicketMsg::SearchUser)} valid={self.owner_error.is_empty()}
+                                        on_focus={move |_| on_search_focus.emit(true)} on_blur={move |_| on_search_blur.emit(false)} />
+                                </div>
+                                <div class="dropdown-menu" role="menu">
+                                    <div class="dropdown-content">
+                                        { for users }
+                                    </div>
+                                </div>
+                            </div>
+                        </Field>
+                    </div>
+                </div>
             </div>
         }
     }
@@ -419,5 +531,26 @@ impl TicketForm {
         self.priority_error = errors.get_property_messages("priority");
         self.status_error = errors.get_property_messages("status");
         self.owner_error = errors.get_property_messages("user_id");
+    }
+
+    fn span_class(&self, field: TicketField) -> &'static str {
+        match !self.is_shown(field) {
+            true => "",
+            false => "is-hidden",
+        }
+    }
+
+    fn field_class(&self, field: TicketField) -> &'static str {
+        match self.is_shown(field) {
+            true => "",
+            false => "is-hidden",
+        }
+    }
+
+    fn is_shown(&self, field: TicketField) -> bool {
+        match self.field_visibility_flags.get(field.index()) {
+            Some(flag) => *flag,
+            None => false,
+        }
     }
 }

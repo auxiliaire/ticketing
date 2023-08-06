@@ -76,21 +76,21 @@ async fn get_ticket(
 
 async fn post_ticket(
     db: Extension<DatabaseConnection>,
-    WithRejection(Json(model), _): WithRejection<Json<tickets::Model>, ApiError>,
-) -> Result<Json<tickets::Model>, ApiError> {
+    WithRejection(Json(model), _): WithRejection<Json<TicketDto>, ApiError>,
+) -> Result<Json<TicketDto>, ApiError> {
     println!("Ticket(): '{}'", model.title);
     let ticket = tickets::ActiveModel {
         title: Set(model.title.to_owned()),
         description: Set(model.description.to_owned()),
         project_id: Set(model.project_id.to_owned()),
-        status: Set(model.status.to_owned()),
+        status: Set(model.status.to_string()),
         user_id: Set(model.user_id.to_owned()),
-        priority: Set(model.priority),
+        priority: Set(Some(model.priority.0)),
         ..Default::default()
     }
     .insert(&*db)
     .await?;
-    Ok(Json(ticket))
+    Ok(Json(ticket.into()))
 }
 
 async fn put_ticket(

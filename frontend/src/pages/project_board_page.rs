@@ -4,7 +4,6 @@ use crate::components::dialogs::form_dialog::FormDialog;
 use crate::components::dialogs::select_dialog::SelectDialog;
 use crate::components::event_helper::{get_transfer_data, set_transfer_data};
 use crate::components::forms::ticket_form::TicketForm;
-use crate::components::priority_tag::PriorityTag;
 use crate::services::project_service::ProjectService;
 use crate::services::user_service::UserService;
 use crate::{AppState, Dialog, Route};
@@ -119,51 +118,19 @@ impl Component for ProjectBoardPage {
                 });
                 self.app_state.update_dialog.emit(dialog);
             }
-            Msg::OpenTicketDialog(id) => {
+            Msg::OpenTicketDialog(ticketid) => {
                 if let Some(ticket) = self
                     .ticket_list
                     .iter()
-                    .filter(|t| t.id == Some(id))
+                    .filter(|t| t.id == Some(ticketid))
                     .collect::<Vec<&TicketDto>>()
                     .first()
                 {
-                    let priority = Rc::new(ticket.priority.clone());
                     let dialog = Rc::new(Dialog {
                         active: true,
                         content: html! {
                             <FormDialog title={ticket.title.clone()}>
-                                <section class="modal-card-body">
-                                    <div class="content">
-                                        <div class="columns">
-                                            <div class="column is-one-quarter"><h6 class="title is-6">{ "Description" }</h6></div>
-                                            <div class="column">{ &ticket.description }</div>
-                                        </div>
-                                        <div class="columns">
-                                            <div class="column is-one-quarter"><h6 class="title is-6">{ "Project" }</h6></div>
-                                            <div class="column">
-                                                <em>{ "This" }</em>
-                                            </div>
-                                        </div>
-                                        <div class="columns">
-                                            <div class="column is-one-quarter"><h6 class="title is-6">{ "Priority" }</h6></div>
-                                            <div class="column"><PriorityTag {priority} /></div>
-                                        </div>
-                                        <div class="columns">
-                                            <div class="column is-one-quarter"><h6 class="title is-6">{ "Status" }</h6></div>
-                                            <div class="column"><span class="tag is-light">{ &ticket.status.to_string() }</span></div>
-                                        </div>
-                                        <div class="columns">
-                                            <div class="column is-one-quarter"><h6 class="title is-6">{ "Assigned to" }</h6></div>
-                                            <div class="column">
-                                                <ButtonLink<Route> data={self.user.clone()} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-                                <footer class="modal-card-foot">
-                                    <button class="button is-info">{ "Edit" }</button>
-                                    <button class="button">{ "Close" }</button>
-                                </footer>
+                                <TicketForm {ticketid} projectid={ctx.props().id} onsubmit={ctx.link().callback(Msg::SubmittedForm)} />
                             </FormDialog>
                         },
                     });
@@ -181,11 +148,19 @@ impl Component for ProjectBoardPage {
             }
             Msg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
-                TicketService::create(
-                    ticket,
-                    ctx.link().callback(Msg::TicketCreated),
-                    callback_error,
-                );
+                if ticket.id.is_some() {
+                    TicketService::update(
+                        ticket,
+                        ctx.link().callback(Msg::TicketCreated),
+                        callback_error,
+                    );    
+                } else {
+                    TicketService::create(
+                        ticket,
+                        ctx.link().callback(Msg::TicketCreated),
+                        callback_error,
+                    );    
+                }
             }
             Msg::TicketCreated(ticket) => {
                 log::debug!("Created: {}", ticket);
