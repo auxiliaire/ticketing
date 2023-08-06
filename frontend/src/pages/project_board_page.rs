@@ -153,13 +153,13 @@ impl Component for ProjectBoardPage {
                         ticket,
                         ctx.link().callback(Msg::TicketCreated),
                         callback_error,
-                    );    
+                    );
                 } else {
                     TicketService::create(
                         ticket,
                         ctx.link().callback(Msg::TicketCreated),
                         callback_error,
-                    );    
+                    );
                 }
             }
             Msg::TicketCreated(ticket) => {
