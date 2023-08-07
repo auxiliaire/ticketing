@@ -16,6 +16,7 @@ use implicit_clone::{
 };
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
+use shared::dtos::field_index_trait::FieldIndex;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::{TicketDto, TicketField};
 use shared::dtos::user_dto::UserDto;
@@ -26,7 +27,7 @@ use shared::validation::validation_messages::{
 };
 use std::rc::Rc;
 use std::str::FromStr;
-use strum::IntoEnumIterator;
+use strum::{EnumCount, IntoEnumIterator};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -125,7 +126,7 @@ impl Component for TicketForm {
             owner_error: None,
             priority_error: None,
             status_error: None,
-            field_visibility_flags: vec![false, false, false, false, false, false],
+            field_visibility_flags: vec![false; TicketField::COUNT],
         }
     }
 

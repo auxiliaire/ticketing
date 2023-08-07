@@ -1,11 +1,10 @@
+use crate::validation::project_validation::ProjectValidation;
 use chrono::serde::ts_seconds_option;
 use chrono::{DateTime, NaiveDateTime, NaiveTime, Utc};
 use entity::projects::Model;
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 use std::fmt::Display;
-
-use crate::validation::project_validation::ProjectValidation;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
 pub struct ProjectDto {

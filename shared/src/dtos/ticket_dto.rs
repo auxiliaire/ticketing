@@ -1,12 +1,16 @@
 use crate::validation::ticket_validation::{TicketPriority, TicketStatus};
 use entity::{sea_orm_active_enums::Priority, tickets::Model};
+use implicit_clone::ImplicitClone;
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
-use std::{fmt::Display, str::FromStr};
-use strum::{Display, EnumString};
+use std::{fmt::Display, rc::Rc, str::FromStr};
+use strum::{Display, EnumCount, EnumIter, EnumString};
 
-#[derive(Copy, Clone, Display, EnumString)]
+use super::field_index_trait::FieldIndex;
+
+#[derive(Copy, Clone, Display, EnumCount, EnumIter, EnumString, PartialEq)]
 pub enum TicketField {
+    Id,
     Title,
     Description,
     Project,
@@ -15,11 +19,15 @@ pub enum TicketField {
     Priority,
 }
 
-impl TicketField {
-    pub fn index(&self) -> usize {
+impl ImplicitClone for TicketField {}
+
+impl FieldIndex for TicketField {
+    fn index(&self) -> usize {
         *self as usize
     }
 }
+
+pub type ITicketDto = Rc<TicketDto>;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Validate)]
 pub struct TicketDto {
