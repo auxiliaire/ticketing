@@ -1,26 +1,24 @@
-use crate::components::bulma::table::{ITableDataSource, Table, TableDataSource, TableHeader};
+use crate::components::bulma::tables::data_sources::data_source_creator::DataSourceCreator;
+use crate::components::bulma::tables::data_sources::ticket_data_source::TicketDataSource;
+use crate::components::bulma::tables::table::Table;
+use crate::components::bulma::tables::table_data_source::ITableDataSource;
 use crate::components::button_link::{ButtonLink, ButtonLinkData};
 use crate::components::check_tag::CheckTag;
 use crate::components::dialogs::form_dialog::FormDialog;
 use crate::components::dialogs::select_dialog::SelectDialog;
 use crate::components::forms::ticket_form::TicketForm;
 use crate::components::option_data::OptionData;
-use crate::components::priority_tag::PriorityTag;
 use crate::services::project_service::ProjectService;
 use crate::services::user_service::UserService;
 use crate::{AppState, Dialog, Route};
 use frontend::services::ticket_service::TicketService;
-use implicit_clone::{
-    sync::{IArray, IString},
-    unsync,
-};
+use implicit_clone::sync::{IArray, IString};
 use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::{ITicketDto, TicketDto, TicketField};
 use shared::dtos::user_dto::UserDto;
 use std::rc::Rc;
 use yew::prelude::*;
-use yew_router::prelude::Link;
 
 impl OptionData for TicketDto {
     fn get_key(&self) -> implicit_clone::unsync::IString {
@@ -168,51 +166,8 @@ impl Component for ProjectPage {
         let on_assign_click = |_| Msg::OpenSelectDialog();
         let on_add_click = |_| Msg::OpenFormDialog();
 
-        let datasource: ITableDataSource<TicketField, ITicketDto> = Rc::new(TableDataSource {
-            empty_label: unsync::IString::from("No tickets selected for this project"),
-            fieldset: unsync::IArray::from(vec![
-                TicketField::Id,
-                TicketField::Title,
-                TicketField::Priority,
-                TicketField::Status,
-            ]),
-            data: unsync::IArray::from(
-                ticket_list
-                    .iter()
-                    .map(|ticket| Rc::new(ticket.clone()))
-                    .collect::<Vec<ITicketDto>>(),
-            ),
-            has_row_head: true,
-            headprovider: Some(Callback::from(|field: TicketField| match field {
-                TicketField::Id => Some(Self::table_header(field)),
-                TicketField::Title => Some(Self::table_header(field)),
-                TicketField::Priority => Some(Self::table_header(field)),
-                TicketField::Status => Some(Self::table_header(field)),
-                _ => None,
-            })),
-            cellrenderer: Callback::from(|(field, ticket): (TicketField, ITicketDto)| match ticket
-                .id
-            {
-                Some(id) => match field {
-                    TicketField::Id => Some(html! {
-                        {id}
-                    }),
-                    TicketField::Title => Some(html! {
-                        <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0", "pb-0")} to={Route::Ticket { id }}>
-                            {ticket.title.clone()}
-                        </Link<Route>>
-                    }),
-                    TicketField::Priority => Some(html! {
-                        <PriorityTag priority={Rc::new(ticket.priority.clone())} />
-                    }),
-                    TicketField::Status => Some(html! {
-                        <span class="tag">{ticket.status}</span>
-                    }),
-                    _ => None,
-                },
-                None => None,
-            }),
-        });
+        let datasource: ITableDataSource<TicketField, ITicketDto> =
+            TicketDataSource::create(ticket_list);
 
         html! {
             <div class="section container">
@@ -277,15 +232,6 @@ impl Component for ProjectPage {
                     </div>
                 </div>
             </div>
-        }
-    }
-}
-
-impl ProjectPage {
-    fn table_header(field: TicketField) -> TableHeader {
-        TableHeader {
-            label: unsync::IString::from(field.to_string()),
-            sort: None,
         }
     }
 }

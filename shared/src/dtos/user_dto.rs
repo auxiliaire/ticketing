@@ -1,10 +1,29 @@
+use super::field_index_trait::FieldIndex;
 use crate::validation::user_validation::{UserRole, UserValidation};
 use entity::users::Model;
 use implicit_clone::ImplicitClone;
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
+use std::{fmt::Display, rc::Rc};
+use strum::{EnumCount, EnumIter, EnumString};
 // use serde_with::skip_serializing_none;
-use std::fmt::Display;
+
+#[derive(Copy, Clone, strum::Display, EnumCount, EnumIter, EnumString, PartialEq)]
+pub enum UserField {
+    Id,
+    Name,
+    Role,
+}
+
+impl ImplicitClone for UserField {}
+
+impl FieldIndex for UserField {
+    fn index(&self) -> usize {
+        *self as usize
+    }
+}
+
+pub type IUserDto = Rc<UserDto>;
 
 // Unfortunately #[serde(skip_serializing_if = "Option::is_none")] changes the key in the error
 // from field name to "Option::is_none"

@@ -1,3 +1,4 @@
+use super::field_index_trait::FieldIndex;
 use crate::validation::ticket_validation::{TicketPriority, TicketStatus};
 use entity::{sea_orm_active_enums::Priority, tickets::Model};
 use implicit_clone::ImplicitClone;
@@ -5,8 +6,6 @@ use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 use std::{fmt::Display, rc::Rc, str::FromStr};
 use strum::{Display, EnumCount, EnumIter, EnumString};
-
-use super::field_index_trait::FieldIndex;
 
 #[derive(Copy, Clone, Display, EnumCount, EnumIter, EnumString, PartialEq)]
 pub enum TicketField {

@@ -1,5 +1,12 @@
-use crate::{components::user_card::UserCard, services::user_service::UserService};
-use shared::dtos::user_dto::UserDto;
+use crate::{
+    components::bulma::tables::{
+        data_sources::{data_source_creator::DataSourceCreator, user_data_source::UserDataSource},
+        table::Table,
+        table_data_source::ITableDataSource,
+    },
+    services::user_service::UserService,
+};
+use shared::dtos::user_dto::{IUserDto, UserDto, UserField};
 use yew::prelude::*;
 
 pub enum Msg {
@@ -28,15 +35,7 @@ impl Component for UserListPage {
     }
 
     fn view(&self, _: &Context<Self>) -> Html {
-        let users = self.list.iter().map(|user| {
-            html! {
-                <div class="tile is-parent">
-                    <div class="tile is-child">
-                        <UserCard name={user.name.clone()} id={user.id} />
-                    </div>
-                </div>
-            }
-        });
+        let datasource: ITableDataSource<UserField, IUserDto> = UserDataSource::create(&self.list);
 
         html! {
             <div class="container">
@@ -55,7 +54,7 @@ impl Component for UserListPage {
                 </p>
                 <div class="section">
                     <div class="tile is-ancestor">
-                        { for users }
+                        <Table<UserField, IUserDto> {datasource} />
                     </div>
                 </div>
             </div>

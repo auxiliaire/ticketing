@@ -1,86 +1,11 @@
-use implicit_clone::{
-    unsync::{self, IArray, IString},
-    ImplicitClone,
+use super::table_data_source::ITableDataSource;
+use crate::components::bulma::tables::{
+    table_cell_renderer_trait::TableCellRenderer, table_header_renderer::TableHeaderRenderer, composite_cell_data::CompositeCellData,
 };
+use implicit_clone::ImplicitClone;
 use shared::dtos::field_index_trait::FieldIndex;
-use std::{rc::Rc, str::FromStr};
-use strum::{Display, EnumString};
-use yew::{classes, html, AttrValue, Callback, Component, Html, Properties};
-
-pub trait TableCellRenderer<T> {
-    fn render(column: T) -> Html;
-}
-
-pub struct TableHeaderRenderer {}
-impl TableCellRenderer<Option<TableHeader>> for TableHeaderRenderer {
-    fn render(header: Option<TableHeader>) -> Html {
-        match header {
-            Some(column) => html! {
-                <th>{ column.label }</th>
-            },
-            None => html!(),
-        }
-    }
-}
-
-#[derive(Clone, Debug, Display, EnumString, PartialEq)]
-pub enum TableHeadSortOrder {
-    #[strum(serialize = "asc")]
-    Asc,
-    #[strum(serialize = "desc")]
-    Desc,
-}
-
-impl ImplicitClone for TableHeadSortOrder {}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct TableHeadSort {
-    pub sort: IString,
-    pub order: TableHeadSortOrder,
-}
-
-impl ImplicitClone for TableHeadSort {}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct TableHeader {
-    pub label: IString,
-    pub sort: Option<TableHeadSort>,
-}
-
-impl ImplicitClone for TableHeader {}
-
-#[derive(Debug, PartialEq)]
-pub struct TableDataSource<F, T>
-where
-    F: Clone + FieldIndex + FromStr + ImplicitClone + PartialEq + 'static,
-    T: ImplicitClone + PartialEq + 'static,
-{
-    pub empty_label: unsync::IString,
-    pub fieldset: IArray<F>,
-    pub data: IArray<T>,
-    pub has_row_head: bool,
-    pub headprovider: Option<Callback<F, Option<TableHeader>>>,
-    pub cellrenderer: Callback<(F, T), Option<Html>>,
-}
-
-impl<F, T> Default for TableDataSource<F, T>
-where
-    F: Clone + FieldIndex + FromStr + ImplicitClone + PartialEq + 'static,
-    T: ImplicitClone + PartialEq + 'static,
-{
-    fn default() -> Self {
-        Self {
-            empty_label: unsync::IString::from("No entries"),
-            fieldset: Default::default(),
-            data: Default::default(),
-            has_row_head: Default::default(),
-            headprovider: Default::default(),
-            cellrenderer: Callback::from(|_| None),
-        }
-    }
-}
-
-pub type ITableDataSource<F, T> = Rc<TableDataSource<F, T>>;
+use std::str::FromStr;
+use yew::{classes, html, AttrValue, Component, Properties};
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props<F, T>
@@ -129,7 +54,7 @@ where
                     .datasource
                     .fieldset
                     .iter()
-                    .map(|field| TableHeaderRenderer::render(headprovider.emit(field)));
+                    .filter_map(|field| TableHeaderRenderer::render(headprovider.emit(field)));
                 html! {
                     <thead>
                         <tr>
@@ -146,7 +71,7 @@ where
                 let render = self
                     .datasource
                     .cellrenderer
-                    .emit((field.clone(), entry.clone()));
+                    .emit(CompositeCellData { column: field.clone(), data: entry.clone() });
                 if let Some(cell) = render {
                     match self.datasource.has_row_head && field.index() == 0 {
                         true => html! {
