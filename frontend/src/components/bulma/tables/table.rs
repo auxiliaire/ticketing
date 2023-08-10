@@ -1,6 +1,7 @@
 use super::table_data_source::ITableDataSource;
 use crate::components::bulma::tables::{
-    table_cell_renderer_trait::TableCellRenderer, table_header_renderer::TableHeaderRenderer, composite_cell_data::CompositeCellData,
+    composite_cell_data::CompositeCellData, table_cell_renderer_trait::TableCellRenderer,
+    table_header_renderer::TableHeaderRenderer,
 };
 use implicit_clone::ImplicitClone;
 use shared::dtos::field_index_trait::FieldIndex;
@@ -68,10 +69,10 @@ where
 
         let rows = self.datasource.data.iter().map(|entry| {
             let cols = self.datasource.fieldset.iter().map(|field| {
-                let render = self
-                    .datasource
-                    .cellrenderer
-                    .emit(CompositeCellData { column: field.clone(), data: entry.clone() });
+                let render = self.datasource.cellrenderer.emit(CompositeCellData {
+                    column: field.clone(),
+                    data: entry.clone(),
+                });
                 if let Some(cell) = render {
                     match self.datasource.has_row_head && field.index() == 0 {
                         true => html! {
