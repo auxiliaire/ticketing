@@ -1,16 +1,16 @@
 use crate::{
     components::bulma::tables::{
-        data_sources::{data_source_creator::DataSourceCreator, user_data_source::UserDataSource},
-        table::Table,
-        table_data_source::ITableDataSource,
+        data_sources::user_data_source::UserDataSource, table::Table,
+        table_data_source::ITableDataSource, table_header::TableHeader,
     },
     services::user_service::UserService,
 };
-use shared::dtos::user_dto::{IUserDto, UserDto, UserField};
+use shared::dtos::user_dto::{IUserDto, UserDto, UserField, UserValue};
 use yew::prelude::*;
 
 pub enum Msg {
     FetchedUsers(Vec<UserDto>),
+    SortUsers(TableHeader),
 }
 
 pub struct UserListPage {
@@ -30,12 +30,18 @@ impl Component for UserListPage {
             Msg::FetchedUsers(users) => {
                 self.list = users;
             }
+            Msg::SortUsers(sortdata) => {
+                log::debug!("{:?}", sortdata);
+            }
         }
         true
     }
 
-    fn view(&self, _: &Context<Self>) -> Html {
-        let datasource: ITableDataSource<UserField, IUserDto> = UserDataSource::create(&self.list);
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let datasource: ITableDataSource<UserField, IUserDto, UserValue> =
+            UserDataSource::from(&self.list).into();
+
+        let sorthandler = Some(ctx.link().callback(Msg::SortUsers));
 
         html! {
             <div class="container">
@@ -54,7 +60,7 @@ impl Component for UserListPage {
                 </p>
                 <div class="section">
                     <div class="tile is-ancestor">
-                        <Table<UserField, IUserDto> {datasource} />
+                        <Table<UserField, IUserDto, UserValue> {datasource} {sorthandler} />
                     </div>
                 </div>
             </div>

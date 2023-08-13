@@ -1,4 +1,4 @@
-use super::field_index_trait::FieldIndex;
+use super::getter::Getter;
 use crate::validation::ticket_validation::{TicketPriority, TicketStatus};
 use entity::{sea_orm_active_enums::Priority, tickets::Model};
 use implicit_clone::ImplicitClone;
@@ -20,9 +20,43 @@ pub enum TicketField {
 
 impl ImplicitClone for TicketField {}
 
-impl FieldIndex for TicketField {
-    fn index(&self) -> usize {
-        *self as usize
+impl From<TicketField> for usize {
+    fn from(val: TicketField) -> Self {
+        val as usize
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum TicketValue {
+    Id(Rc<Option<u64>>),
+    Title(Rc<String>),
+    Description(Rc<String>),
+    Project(Rc<Option<u64>>),
+    Status(Rc<TicketStatus>),
+    User(Rc<Option<u64>>),
+    Priority(Rc<TicketPriority>),
+}
+
+impl Display for TicketValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TicketValue::Id(id_ref) => match id_ref.as_ref() {
+                Some(id) => write!(f, "{}", id),
+                None => write!(f, ""),
+            },
+            TicketValue::Title(title) => write!(f, "{}", title),
+            TicketValue::Description(desc) => write!(f, "{}", desc),
+            TicketValue::Project(project) => match project.as_ref() {
+                Some(id) => write!(f, "{}", id),
+                None => write!(f, ""),
+            },
+            TicketValue::Status(status) => write!(f, "{}", status),
+            TicketValue::User(user) => match user.as_ref() {
+                Some(id) => write!(f, "{}", id),
+                None => write!(f, ""),
+            },
+            TicketValue::Priority(prio) => write!(f, "{}", prio),
+        }
     }
 }
 
@@ -41,6 +75,20 @@ pub struct TicketDto {
     pub status: TicketStatus,
     pub user_id: Option<u64>,
     pub priority: TicketPriority,
+}
+
+impl Getter<TicketField, TicketValue> for ITicketDto {
+    fn get(&self, field: TicketField) -> TicketValue {
+        match field {
+            TicketField::Id => TicketValue::Id(Rc::new(self.id)),
+            TicketField::Title => TicketValue::Title(Rc::new(self.title.clone())),
+            TicketField::Description => TicketValue::Description(Rc::new(self.description.clone())),
+            TicketField::Project => TicketValue::Project(Rc::new(self.project_id)),
+            TicketField::Status => TicketValue::Status(Rc::new(self.status)),
+            TicketField::User => TicketValue::User(Rc::new(self.user_id)),
+            TicketField::Priority => TicketValue::Priority(Rc::new(self.priority.clone())),
+        }
+    }
 }
 
 impl Default for TicketDto {

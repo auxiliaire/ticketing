@@ -1,4 +1,3 @@
-use crate::components::bulma::tables::data_sources::data_source_creator::DataSourceCreator;
 use crate::components::bulma::tables::data_sources::ticket_data_source::TicketDataSource;
 use crate::components::bulma::tables::table::Table;
 use crate::components::bulma::tables::table_data_source::ITableDataSource;
@@ -15,7 +14,7 @@ use frontend::services::ticket_service::TicketService;
 use implicit_clone::sync::{IArray, IString};
 use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::project_dto::ProjectDto;
-use shared::dtos::ticket_dto::{ITicketDto, TicketDto, TicketField};
+use shared::dtos::ticket_dto::{ITicketDto, TicketDto, TicketField, TicketValue};
 use shared::dtos::user_dto::UserDto;
 use std::rc::Rc;
 use yew::prelude::*;
@@ -166,8 +165,8 @@ impl Component for ProjectPage {
         let on_assign_click = |_| Msg::OpenSelectDialog();
         let on_add_click = |_| Msg::OpenFormDialog();
 
-        let datasource: ITableDataSource<TicketField, ITicketDto> =
-            TicketDataSource::create(ticket_list);
+        let datasource: ITableDataSource<TicketField, ITicketDto, TicketValue> =
+            TicketDataSource::from(ticket_list).into();
 
         html! {
             <div class="section container">
@@ -207,7 +206,7 @@ impl Component for ProjectPage {
                             <article class="tile is-child notification is-light">
                                 <div class="content">
                                     <p class="title">{ "Tickets" }</p>
-                                    <Table<TicketField, ITicketDto> {datasource} />
+                                    <Table<TicketField, ITicketDto, TicketValue> {datasource} />
                                     <div class="field is-grouped mt-6">
                                         <p class="control">
                                             <button class="button" onclick={ctx.link().callback(on_assign_click)}>

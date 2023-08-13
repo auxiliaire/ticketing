@@ -1,21 +1,21 @@
-use super::data_source_creator::DataSourceCreator;
 use crate::{
     components::bulma::tables::{
-        composite_cell_data::CompositeCellData, table_data_source::TableDataSource,
+        composite_cell_data::CompositeCellData,
+        table_data_source::{ITableDataSource, TableDataSource},
     },
     Route,
 };
 use implicit_clone::unsync::{IArray, IString};
-use shared::dtos::user_dto::{IUserDto, UserDto, UserField};
+use shared::dtos::user_dto::{IUserDto, UserDto, UserField, UserValue};
 use std::rc::Rc;
 use yew::{classes, html, Callback};
 use yew_router::prelude::Link;
 
-pub struct UserDataSource {}
+pub struct UserDataSource(ITableDataSource<UserField, IUserDto, UserValue>);
 
-impl DataSourceCreator<&Vec<UserDto>, UserField, IUserDto> for UserDataSource {
-    fn create(source: &Vec<UserDto>) -> Rc<TableDataSource<UserField, IUserDto>> {
-        Rc::new(TableDataSource {
+impl From<&Vec<UserDto>> for UserDataSource {
+    fn from(source: &Vec<UserDto>) -> Self {
+        Self(Rc::new(TableDataSource {
             empty_label: IString::from("There are no users yet"),
             fieldset: IArray::from(vec![UserField::Id, UserField::Name, UserField::Role]),
             data: IArray::from(
@@ -48,6 +48,13 @@ impl DataSourceCreator<&Vec<UserDto>, UserField, IUserDto> for UserDataSource {
                     None => None,
                 }
             }),
-        })
+            ..Default::default()
+        }))
+    }
+}
+
+impl From<UserDataSource> for ITableDataSource<UserField, IUserDto, UserValue> {
+    fn from(val: UserDataSource) -> Self {
+        val.0
     }
 }

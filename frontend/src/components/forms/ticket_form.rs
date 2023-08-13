@@ -16,7 +16,6 @@ use implicit_clone::{
 };
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
-use shared::dtos::field_index_trait::FieldIndex;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::{TicketDto, TicketField};
 use shared::dtos::user_dto::UserDto;
@@ -230,7 +229,8 @@ impl Component for TicketForm {
             }
             TicketMsg::ToggleField(field) => {
                 let slice = &mut self.field_visibility_flags;
-                slice[field.index()] = !slice[field.index()];
+                let i: usize = field.into();
+                slice[i] = !slice[i];
             }
             TicketMsg::Submit() => {
                 let result = self.ticket.validate();
@@ -549,7 +549,7 @@ impl TicketForm {
     }
 
     fn is_shown(&self, field: TicketField) -> bool {
-        match self.field_visibility_flags.get(field.index()) {
+        match self.field_visibility_flags.get::<usize>(field.into()) {
             Some(flag) => *flag,
             None => false,
         }

@@ -1,4 +1,4 @@
-use super::field_index_trait::FieldIndex;
+use super::getter::Getter;
 use crate::validation::user_validation::{UserRole, UserValidation};
 use entity::users::Model;
 use implicit_clone::ImplicitClone;
@@ -17,9 +17,32 @@ pub enum UserField {
 
 impl ImplicitClone for UserField {}
 
-impl FieldIndex for UserField {
-    fn index(&self) -> usize {
-        *self as usize
+impl From<UserField> for usize {
+    fn from(val: UserField) -> Self {
+        val as usize
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum UserValue {
+    Id(Rc<Option<u64>>),
+    Name(Rc<String>),
+    Role(Rc<Option<UserRole>>),
+}
+
+impl Display for UserValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UserValue::Id(id_ref) => match id_ref.as_ref() {
+                Some(id) => write!(f, "{}", id),
+                None => write!(f, ""),
+            },
+            UserValue::Name(name) => write!(f, "{}", name),
+            UserValue::Role(role_ref) => match role_ref.as_ref() {
+                Some(role) => write!(f, "{}", role),
+                None => write!(f, ""),
+            },
+        }
     }
 }
 
@@ -40,6 +63,16 @@ pub struct UserDto {
     pub password: Option<String>,
     #[validate(custom(UserValidation::role_validation))]
     pub role: Option<UserRole>,
+}
+
+impl Getter<UserField, UserValue> for IUserDto {
+    fn get(&self, field: UserField) -> UserValue {
+        match field {
+            UserField::Id => UserValue::Id(Rc::new(self.id)),
+            UserField::Name => UserValue::Name(Rc::new(self.name.clone())),
+            UserField::Role => UserValue::Role(Rc::new(self.role)),
+        }
+    }
 }
 
 impl Display for UserDto {

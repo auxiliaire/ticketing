@@ -1,3 +1,4 @@
+pub mod cell_renderers;
 pub mod composite_cell_data;
 pub mod data_sources;
 pub mod table;

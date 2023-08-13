@@ -1,61 +1,67 @@
-use super::table_data_source::ITableDataSource;
+use super::{table_data_source::ITableDataSource, table_header::TableHeader};
 use crate::components::bulma::tables::{
     composite_cell_data::CompositeCellData, table_cell_renderer_trait::TableCellRenderer,
     table_header_renderer::TableHeaderRenderer,
 };
 use implicit_clone::ImplicitClone;
-use shared::dtos::field_index_trait::FieldIndex;
+use shared::dtos::getter::Getter;
 use std::str::FromStr;
-use yew::{classes, html, AttrValue, Component, Properties};
+use yew::{classes, html, AttrValue, Callback, Component, Properties};
 
 #[derive(Clone, Debug, PartialEq, Properties)]
-pub struct Props<F, T>
+pub struct Props<F, T, V>
 where
-    F: Clone + FieldIndex + FromStr + ImplicitClone + PartialEq + 'static,
-    T: ImplicitClone + PartialEq + 'static,
+    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + 'static,
+    T: Getter<F, V> + ImplicitClone + PartialEq + 'static,
+    V: ToString + PartialEq + 'static,
 {
-    pub datasource: ITableDataSource<F, T>,
+    pub datasource: ITableDataSource<F, T, V>,
+    #[prop_or_default]
+    pub sorthandler: Option<Callback<TableHeader>>,
     #[prop_or_default]
     pub class: Option<AttrValue>,
 }
 
 pub enum Msg {}
 
-pub struct Table<F, T>
+pub struct Table<F, T, V>
 where
-    F: Clone + FieldIndex + FromStr + ImplicitClone + PartialEq + 'static,
-    T: ImplicitClone + PartialEq + 'static,
+    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + 'static,
+    T: Getter<F, V> + ImplicitClone + PartialEq + 'static,
+    V: ToString + PartialEq + 'static,
 {
-    datasource: ITableDataSource<F, T>,
+    datasource: ITableDataSource<F, T, V>,
+    sorthandler: Option<Callback<TableHeader>>,
 }
-impl<F, T> Component for Table<F, T>
+impl<F, T, V> Component for Table<F, T, V>
 where
-    F: Clone + FieldIndex + FromStr + ImplicitClone + PartialEq + 'static,
-    T: ImplicitClone + PartialEq + 'static,
+    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + 'static,
+    T: Getter<F, V> + ImplicitClone + PartialEq + 'static,
+    V: ToString + PartialEq + 'static,
 {
     type Message = Msg;
 
-    type Properties = Props<F, T>;
+    type Properties = Props<F, T, V>;
 
     fn create(ctx: &yew::Context<Self>) -> Self {
         Self {
             datasource: ctx.props().datasource.clone(),
+            sorthandler: ctx.props().sorthandler.clone(),
         }
     }
 
     fn changed(&mut self, ctx: &yew::Context<Self>, _old_props: &Self::Properties) -> bool {
         self.datasource = ctx.props().datasource.clone();
+        self.sorthandler = ctx.props().sorthandler.clone();
         true
     }
 
     fn view(&self, ctx: &yew::Context<Self>) -> yew::Html {
         let head = match self.datasource.headprovider.clone() {
             Some(headprovider) => {
-                let headers = self
-                    .datasource
-                    .fieldset
-                    .iter()
-                    .filter_map(|field| TableHeaderRenderer::render(headprovider.emit(field)));
+                let headers = self.datasource.fieldset.iter().filter_map(|field| {
+                    TableHeaderRenderer::render(headprovider.emit(field), self.sorthandler.clone())
+                });
                 html! {
                     <thead>
                         <tr>
@@ -74,7 +80,7 @@ where
                     data: entry.clone(),
                 });
                 if let Some(cell) = render {
-                    match self.datasource.has_row_head && field.index() == 0 {
+                    match self.datasource.has_row_head && field.into() == 0 {
                         true => html! {
                             <th>{ cell }</th>
                         },
@@ -105,10 +111,11 @@ where
     }
 }
 
-impl<F, T> Table<F, T>
+impl<F, T, V> Table<F, T, V>
 where
-    F: Clone + FieldIndex + FromStr + ImplicitClone + PartialEq + 'static,
-    T: ImplicitClone + PartialEq + 'static,
+    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + 'static,
+    T: Getter<F, V> + ImplicitClone + PartialEq + 'static,
+    V: ToString + PartialEq + 'static,
 {
     fn get_table_classes(&self, ctx: &yew::Context<Self>) -> String {
         let mut classes = vec!["table", "is-fullwidth", "is-hoverable"];
