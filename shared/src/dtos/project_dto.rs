@@ -1,10 +1,57 @@
+use super::getter::Getter;
 use crate::validation::project_validation::ProjectValidation;
 use chrono::serde::ts_seconds_option;
 use chrono::{DateTime, NaiveDateTime, NaiveTime, Utc};
 use entity::projects::Model;
+use implicit_clone::ImplicitClone;
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 use std::fmt::Display;
+use std::rc::Rc;
+use strum::{EnumCount, EnumIter, EnumString};
+
+#[derive(Copy, Clone, strum::Display, EnumCount, EnumIter, EnumString, PartialEq)]
+pub enum ProjectField {
+    Id,
+    Summary,
+    Deadline,
+    Active,
+}
+
+impl ImplicitClone for ProjectField {}
+
+impl From<ProjectField> for usize {
+    fn from(val: ProjectField) -> Self {
+        val as usize
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ProjectValue {
+    Id(Rc<Option<u64>>),
+    Summary(Rc<String>),
+    Deadline(Rc<Option<DateTime<Utc>>>),
+    Active(i8),
+}
+
+impl Display for ProjectValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ProjectValue::Id(id_ref) => match id_ref.as_ref() {
+                Some(id) => write!(f, "{}", id),
+                None => write!(f, ""),
+            },
+            ProjectValue::Summary(summary) => write!(f, "{}", summary),
+            ProjectValue::Deadline(deadline_ref) => match deadline_ref.as_ref() {
+                Some(deadline) => write!(f, "{}", deadline),
+                None => write!(f, ""),
+            },
+            ProjectValue::Active(active) => write!(f, "{}", active),
+        }
+    }
+}
+
+pub type IProjectDto = Rc<ProjectDto>;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
 pub struct ProjectDto {
@@ -23,6 +70,17 @@ pub struct ProjectDto {
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
 pub struct ProjectTickets {
     pub tickets: Vec<u64>,
+}
+
+impl Getter<ProjectField, ProjectValue> for IProjectDto {
+    fn get(&self, field: ProjectField) -> ProjectValue {
+        match field {
+            ProjectField::Id => ProjectValue::Id(Rc::new(self.id)),
+            ProjectField::Summary => ProjectValue::Summary(Rc::new(self.summary.clone())),
+            ProjectField::Deadline => ProjectValue::Deadline(Rc::new(self.deadline)),
+            ProjectField::Active => ProjectValue::Active(self.active),
+        }
+    }
 }
 
 impl Display for ProjectDto {
@@ -66,3 +124,5 @@ impl From<Model> for ProjectDto {
 }
 
 impl ProjectDto {}
+
+impl ImplicitClone for ProjectDto {}

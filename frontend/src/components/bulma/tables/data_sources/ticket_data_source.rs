@@ -32,14 +32,8 @@ impl From<&Vec<TicketDto>> for TicketDataSource {
                     .map(|ticket| Rc::new(ticket.clone()))
                     .collect::<Vec<ITicketDto>>(),
             ),
+            has_column_head: true,
             has_row_head: true,
-            headprovider: Some(Callback::from(|field: TicketField| match field {
-                TicketField::Id => Some(field.into()),
-                TicketField::Title => Some(field.into()),
-                TicketField::Priority => Some(field.into()),
-                TicketField::Status => Some(field.into()),
-                _ => None,
-            })),
             cellrenderer: Callback::from(|celldata: CompositeCellData<TicketField, ITicketDto>| {
                 match celldata.data.id {
                     Some(id) => match celldata.column {

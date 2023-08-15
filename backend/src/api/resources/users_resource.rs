@@ -1,6 +1,9 @@
 use crate::api::{
     error::{ApiError, JsonError},
-    query::filters::search::Search,
+    query::{
+        filters::{pagination::Pagination, search::Search},
+        ordering::Ordering,
+    },
     validated_json::ValidatedJson,
 };
 use axum::{
@@ -13,8 +16,8 @@ use axum::{
 use axum_extra::extract::WithRejection;
 use entity::{users, users::Entity as User};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
-    QueryFilter, Set,
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait, Order,
+    QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
 };
 use shared::{dtos::user_dto::UserDto, validation::user_validation::OptionUserRole};
 
@@ -30,18 +33,35 @@ pub fn router() -> Router {
 async fn get_users(
     db: Extension<DatabaseConnection>,
     Query(search): Query<Search>,
+    Query(pagination): Query<Pagination>,
+    Query(ordering): Query<Ordering>,
 ) -> Result<Json<Vec<UserDto>>, ApiError> {
-    let list = match search.q {
-        Some(q) => User::find()
-            .filter(Condition::all().add(users::Column::Name.contains(q)))
-            .all(&*db),
-        None => User::find().all(&*db),
-    }
-    .await?
-    .iter()
-    .map(|u| u.into())
-    .collect::<Vec<UserDto>>();
+    let mut select = match ordering.sort.and_then(|s| sort_to_column(s.as_str())) {
+        Some(sort) => User::find().order_by::<users::Column>(sort, ordering.order.0),
+        None => User::find().order_by(users::Column::Id, Order::Asc),
+    };
+    select = match search.q {
+        Some(q) => select.filter(Condition::all().add(users::Column::Name.contains(q))),
+        None => select,
+    };
+    let list = select
+        .apply_if(pagination.limit, QuerySelect::limit)
+        .offset(pagination.offset)
+        .all(&*db)
+        .await?
+        .iter()
+        .map(|u| u.into())
+        .collect::<Vec<UserDto>>();
     Ok(Json(list))
+}
+
+fn sort_to_column(s: &str) -> Option<users::Column> {
+    match s {
+        "id" => Some(users::Column::Id),
+        "name" => Some(users::Column::Name),
+        "role" => Some(users::Column::Role),
+        _ => None,
+    }
 }
 
 async fn get_user(

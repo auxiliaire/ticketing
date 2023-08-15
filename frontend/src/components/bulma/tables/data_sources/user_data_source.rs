@@ -17,19 +17,14 @@ impl From<&Vec<UserDto>> for UserDataSource {
     fn from(source: &Vec<UserDto>) -> Self {
         Self(Rc::new(TableDataSource {
             empty_label: IString::from("There are no users yet"),
-            fieldset: IArray::from(vec![UserField::Id, UserField::Name, UserField::Role]),
             data: IArray::from(
                 source
                     .iter()
                     .map(|ticket| Rc::new(ticket.clone()))
                     .collect::<Vec<IUserDto>>(),
             ),
+            has_column_head: true,
             has_row_head: true,
-            headprovider: Some(Callback::from(|field: UserField| match field {
-                UserField::Id => Some(field.into()),
-                UserField::Name => Some(field.into()),
-                UserField::Role => Some(field.into()),
-            })),
             cellrenderer: Callback::from(|celldata: CompositeCellData<UserField, IUserDto>| {
                 match celldata.data.id {
                     Some(id) => match celldata.column {

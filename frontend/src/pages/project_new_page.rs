@@ -21,7 +21,6 @@ impl Component for ProjectNewPage {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             ProjectMsg::Submitted((project, callback_error)) => {
-                log::debug!("Submitted: {}", project);
                 ProjectService::create(
                     project,
                     ctx.link().callback(ProjectMsg::Created),
@@ -29,7 +28,6 @@ impl Component for ProjectNewPage {
                 );
             }
             ProjectMsg::Created(project) => {
-                log::debug!("Created: {}", project);
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.replace(&Route::Project {
                     id: project.id.unwrap(),

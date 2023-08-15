@@ -59,6 +59,7 @@ fn sort_to_column(s: &str) -> Option<projects::Column> {
         "id" => Some(projects::Column::Id),
         "summary" => Some(projects::Column::Summary),
         "deadline" => Some(projects::Column::Deadline),
+        "active" => Some(projects::Column::Active),
         _ => None,
     }
 }

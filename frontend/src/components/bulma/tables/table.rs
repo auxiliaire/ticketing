@@ -1,76 +1,105 @@
-use super::{table_data_source::ITableDataSource, table_header::TableHeader};
+use super::{
+    table_data_source::ITableDataSource, table_head_data::TableHeadData,
+    table_head_sort_manager::TableHeadSortManager,
+};
 use crate::components::bulma::tables::{
-    composite_cell_data::CompositeCellData, table_cell_renderer_trait::TableCellRenderer,
-    table_header_renderer::TableHeaderRenderer,
+    composite_cell_data::CompositeCellData, table_head::TableHead,
 };
 use implicit_clone::ImplicitClone;
 use shared::dtos::getter::Getter;
 use std::str::FromStr;
-use yew::{classes, html, AttrValue, Callback, Component, Properties};
+use yew::{classes, html, AttrValue, Callback, Component, Context, Properties};
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props<F, T, V>
 where
-    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + 'static,
+    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + ToString + 'static,
     T: Getter<F, V> + ImplicitClone + PartialEq + 'static,
     V: ToString + PartialEq + 'static,
 {
     pub datasource: ITableDataSource<F, T, V>,
     #[prop_or_default]
-    pub sorthandler: Option<Callback<TableHeader>>,
+    pub sort: Option<TableHeadData>,
+    #[prop_or_default]
+    pub sorthandler: Option<Callback<TableHeadData>>,
     #[prop_or_default]
     pub class: Option<AttrValue>,
 }
 
-pub enum Msg {}
+pub enum TableMsg {
+    SortClicked(TableHeadData),
+}
 
 pub struct Table<F, T, V>
 where
-    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + 'static,
+    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + ToString + 'static,
     T: Getter<F, V> + ImplicitClone + PartialEq + 'static,
     V: ToString + PartialEq + 'static,
 {
     datasource: ITableDataSource<F, T, V>,
-    sorthandler: Option<Callback<TableHeader>>,
+    sortmanager: TableHeadSortManager,
+    sorthandler: Option<Callback<TableHeadData>>,
 }
 impl<F, T, V> Component for Table<F, T, V>
 where
-    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + 'static,
+    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + ToString + 'static,
     T: Getter<F, V> + ImplicitClone + PartialEq + 'static,
     V: ToString + PartialEq + 'static,
 {
-    type Message = Msg;
+    type Message = TableMsg;
 
     type Properties = Props<F, T, V>;
 
-    fn create(ctx: &yew::Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let mut sortmanager = TableHeadSortManager::from(ctx.props().datasource.fieldset.clone());
+        if let Some(data) = ctx.props().sort.clone() {
+            sortmanager.update(data);
+        }
         Self {
             datasource: ctx.props().datasource.clone(),
+            sortmanager,
             sorthandler: ctx.props().sorthandler.clone(),
         }
     }
 
-    fn changed(&mut self, ctx: &yew::Context<Self>, _old_props: &Self::Properties) -> bool {
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         self.datasource = ctx.props().datasource.clone();
+        if let Some(data) = ctx.props().sort.clone() {
+            self.sortmanager.update(data);
+        }
         self.sorthandler = ctx.props().sorthandler.clone();
         true
     }
 
-    fn view(&self, ctx: &yew::Context<Self>) -> yew::Html {
-        let head = match self.datasource.headprovider.clone() {
-            Some(headprovider) => {
-                let headers = self.datasource.fieldset.iter().filter_map(|field| {
-                    TableHeaderRenderer::render(headprovider.emit(field), self.sorthandler.clone())
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            TableMsg::SortClicked(data) => {
+                self.sortmanager.update(data.clone());
+                if let Some(h) = self.sorthandler.as_ref() {
+                    h.emit(data)
+                }
+            }
+        }
+        true
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> yew::Html {
+        let header = match self.datasource.has_column_head {
+            true => {
+                let heads = self.sortmanager.header.iter().map(|data| {
+                    html! {
+                        <TableHead {data} sorthandler={ctx.link().callback(TableMsg::SortClicked)} />
+                    }
                 });
                 html! {
                     <thead>
                         <tr>
-                            { for headers }
+                            { for heads }
                         </tr>
                     </thead>
                 }
             }
-            None => html!(),
+            false => html!(),
         };
 
         let rows = self.datasource.data.iter().map(|entry| {
@@ -101,7 +130,7 @@ where
             true => html! { <em>{ self.datasource.empty_label.clone() }</em> },
             false => html! {
                 <table class={classes!(self.get_table_classes(ctx))}>
-                    { head }
+                    { header }
                     <tbody>
                         { for rows }
                     </tbody>
@@ -113,11 +142,11 @@ where
 
 impl<F, T, V> Table<F, T, V>
 where
-    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + 'static,
+    F: Clone + Into<usize> + FromStr + ImplicitClone + PartialEq + ToString + 'static,
     T: Getter<F, V> + ImplicitClone + PartialEq + 'static,
     V: ToString + PartialEq + 'static,
 {
-    fn get_table_classes(&self, ctx: &yew::Context<Self>) -> String {
+    fn get_table_classes(&self, ctx: &Context<Self>) -> String {
         let mut classes = vec!["table", "is-fullwidth", "is-hoverable"];
         if let Some(base_classes) = &ctx.props().class {
             let class = base_classes.as_str();

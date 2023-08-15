@@ -1,16 +1,17 @@
 use crate::{
     components::bulma::tables::{
         data_sources::user_data_source::UserDataSource, table::Table,
-        table_data_source::ITableDataSource, table_header::TableHeader,
+        table_data_source::ITableDataSource, table_head_data::TableHeadData,
     },
     services::user_service::UserService,
 };
+use implicit_clone::unsync::IString;
 use shared::dtos::user_dto::{IUserDto, UserDto, UserField, UserValue};
 use yew::prelude::*;
 
 pub enum Msg {
     FetchedUsers(Vec<UserDto>),
-    SortUsers(TableHeader),
+    SortUsers(TableHeadData),
 }
 
 pub struct UserListPage {
@@ -21,18 +22,24 @@ impl Component for UserListPage {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        UserService::fetch_all(None, ctx.link().callback(Msg::FetchedUsers));
+        UserService::fetch_all(None, None, None, ctx.link().callback(Msg::FetchedUsers));
         Self { list: Vec::new() }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::FetchedUsers(users) => {
                 self.list = users;
             }
-            Msg::SortUsers(sortdata) => {
-                log::debug!("{:?}", sortdata);
-            }
+            Msg::SortUsers(sortdata) => UserService::fetch_all(
+                None,
+                sortdata.sort.as_ref().map(|s| s.sort.clone()),
+                sortdata
+                    .sort
+                    .as_ref()
+                    .map(|s| IString::from(s.order.to_string())),
+                ctx.link().callback(Msg::FetchedUsers),
+            ),
         }
         true
     }

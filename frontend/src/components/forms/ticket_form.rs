@@ -209,7 +209,7 @@ impl Component for TicketForm {
                     timeout.cancel();
                 }
                 self.search_timeout = Some(Timeout::new(SEARCH_DELAY_MS, || {
-                    UserService::fetch_all(Some(q), fetch_callback)
+                    UserService::fetch_all(Some(q), None, None, fetch_callback)
                 }));
             }
             TicketMsg::ToggleSearchDropdownDelayed(value) => {

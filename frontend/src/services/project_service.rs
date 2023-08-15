@@ -1,4 +1,5 @@
 use gloo_net::http::Request;
+use implicit_clone::unsync::IString;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
 use shared::dtos::project_dto::{ProjectDto, ProjectTickets};
 use shared::dtos::ticket_dto::TicketDto;
@@ -25,16 +26,21 @@ impl ProjectService {
         });
     }
 
-    pub fn fetch_all(callback: Callback<Vec<ProjectDto>>) {
+    pub fn fetch_all(
+        sort: Option<IString>,
+        order: Option<IString>,
+        callback: Callback<Vec<ProjectDto>>,
+    ) {
         spawn_local(async move {
-            let list: Vec<ProjectDto> =
-                Request::get(format!("{}{}", get_api_url(), PROJECTS_ENDPOINT).as_str())
-                    .send()
-                    .await
-                    .unwrap()
-                    .json()
-                    .await
-                    .unwrap();
+            let mut request_builder =
+                Request::get(format!("{}{}", get_api_url(), PROJECTS_ENDPOINT).as_str());
+            if let Some(s) = sort {
+                request_builder = request_builder.query([("sort", s.as_str())]);
+            }
+            if let Some(o) = order {
+                request_builder = request_builder.query([("order", o.as_str())]);
+            }
+            let list: Vec<ProjectDto> = request_builder.send().await.unwrap().json().await.unwrap();
 
             callback.emit(list);
         });

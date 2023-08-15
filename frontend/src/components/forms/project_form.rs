@@ -123,7 +123,7 @@ impl Component for ProjectForm {
                     timeout.cancel();
                 }
                 self.search_timeout = Some(Timeout::new(SEARCH_DELAY_MS, || {
-                    UserService::fetch_all(Some(q), fetch_callback)
+                    UserService::fetch_all(Some(q), None, None, fetch_callback)
                 }));
             }
             ProjectMsg::ToggleSearchDropdownDelayed(value) => {
@@ -149,7 +149,8 @@ impl Component for ProjectForm {
                 self.user_list = IArray::from(v);
             }
             ProjectMsg::Submit() => {
-                let result = self.project.validate();
+                // Server validation only due to time panic in Wasm:
+                let result = Ok(true); // self.project.validate();
                 match result {
                     Ok(_) => self.on_submit.emit((
                         self.project.clone(),

@@ -24,12 +24,23 @@ impl UserService {
         });
     }
 
-    pub fn fetch_all(search: Option<IString>, callback: Callback<Vec<UserDto>>) {
+    pub fn fetch_all(
+        search: Option<IString>,
+        sort: Option<IString>,
+        order: Option<IString>,
+        callback: Callback<Vec<UserDto>>,
+    ) {
         spawn_local(async move {
             let mut request_builder =
                 Request::get(format!("{}{}", get_api_url(), USERS_ENDPOINT).as_str());
             if let Some(q) = search {
                 request_builder = request_builder.query([("q", q.as_str())]);
+            }
+            if let Some(s) = sort {
+                request_builder = request_builder.query([("sort", s.as_str())]);
+            }
+            if let Some(o) = order {
+                request_builder = request_builder.query([("order", o.as_str())]);
             }
             let list: Vec<UserDto> = request_builder.send().await.unwrap().json().await.unwrap();
 

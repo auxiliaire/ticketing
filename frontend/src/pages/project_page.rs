@@ -18,6 +18,7 @@ use shared::dtos::ticket_dto::{ITicketDto, TicketDto, TicketField, TicketValue};
 use shared::dtos::user_dto::UserDto;
 use std::rc::Rc;
 use yew::prelude::*;
+use yew_router::prelude::Link;
 
 impl OptionData for TicketDto {
     fn get_key(&self) -> implicit_clone::unsync::IString {
@@ -205,7 +206,12 @@ impl Component for ProjectPage {
                         <div class="tile is-parent">
                             <article class="tile is-child notification is-light">
                                 <div class="content">
-                                    <p class="title">{ "Tickets" }</p>
+                                    <p class="title">
+                                        { "Tickets" }
+                                        <Link<Route> classes={classes!("button", "is-pulled-right")} to={Route::ProjectBoard { id: project.id.unwrap_or(0) }}>
+                                            { "Board view" }
+                                        </Link<Route>>
+                                    </p>
                                     <Table<TicketField, ITicketDto, TicketValue> {datasource} />
                                     <div class="field is-grouped mt-6">
                                         <p class="control">
