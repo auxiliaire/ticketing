@@ -209,7 +209,10 @@ impl Component for ProjectPage {
                                     <p class="title">
                                         { "Tickets" }
                                         <Link<Route> classes={classes!("button", "is-pulled-right")} to={Route::ProjectBoard { id: project.id.unwrap_or(0) }}>
-                                            { "Board view" }
+                                            <span class="icon">
+                                                <i class="fa-solid fa-table-columns"></i>
+                                            </span>
+                                            <span>{ "Board view" }</span>
                                         </Link<Route>>
                                     </p>
                                     <Table<TicketField, ITicketDto, TicketValue> {datasource} />
