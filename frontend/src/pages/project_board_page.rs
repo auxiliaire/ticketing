@@ -18,6 +18,7 @@ use std::rc::Rc;
 use strum::IntoEnumIterator;
 use web_sys::DragEvent;
 use yew::prelude::*;
+use yew_router::prelude::Link;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
@@ -254,22 +255,34 @@ impl Component for ProjectBoardPage {
                                 <div class="column is-two-thirds">
                                     <p class="title">{ &project.summary }</p>
                                     <div class="field is-grouped mt-6">
-                                        <p class="control">
-                                            <button class="button" onclick={ctx.link().callback(on_assign_click)}>
-                                                <span class="icon is-small">
-                                                    <i class="fas fa-arrow-up"></i>
-                                                </span>
-                                                <span>{ "Assign a ticket" }</span>
-                                            </button>
-                                        </p>
-                                        <p class="control">
-                                            <button class="button" onclick={ctx.link().callback(on_add_click)}>
-                                                <span class="icon is-small">
-                                                    <i class="fas fa-plus"></i>
-                                                </span>
-                                                <span>{ "Create a new one" }</span>
-                                            </button>
-                                        </p>
+                                        <div class="field has-addons">
+                                            <p class="control">
+                                                <button class="button" onclick={ctx.link().callback(on_assign_click)}>
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    </span>
+                                                    <span>{ "Assign a ticket" }</span>
+                                                </button>
+                                            </p>
+                                            <p class="control">
+                                                <button class="button" onclick={ctx.link().callback(on_add_click)}>
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-plus"></i>
+                                                    </span>
+                                                    <span>{ "Create a new one" }</span>
+                                                </button>
+                                            </p>
+                                        </div>
+                                        <div class="field ml-3">
+                                            <p class="control">
+                                                <Link<Route> classes={classes!("button")} to={Route::Project { id: project.id.unwrap_or(0) }}>
+                                                    <span class="icon">
+                                                        <i class="fa-solid fa-list-ul"></i>
+                                                    </span>
+                                                    <span>{ "List view" }</span>
+                                                </Link<Route>>
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="column">

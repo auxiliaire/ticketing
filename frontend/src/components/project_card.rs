@@ -1,4 +1,4 @@
-use crate::pages::project_page::Msg;
+use crate::pages::project_page::ProjectPageMsg;
 use crate::services::project_service::ProjectService;
 use crate::Route;
 use yew::prelude::*;
@@ -15,7 +15,7 @@ pub struct ProjectCard {
     id: Option<u64>,
 }
 impl Component for ProjectCard {
-    type Message = Msg;
+    type Message = ProjectPageMsg;
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
@@ -27,7 +27,7 @@ impl Component for ProjectCard {
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         if let Some(id) = ctx.props().id {
-            ProjectService::fetch(id, ctx.link().callback(Msg::FetchedProject));
+            ProjectService::fetch(id, ctx.link().callback(ProjectPageMsg::FetchedProject));
         }
         true
     }

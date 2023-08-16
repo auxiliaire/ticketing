@@ -1,6 +1,7 @@
 use crate::components::bulma::tables::data_sources::ticket_data_source::TicketDataSource;
 use crate::components::bulma::tables::table::Table;
 use crate::components::bulma::tables::table_data_source::ITableDataSource;
+use crate::components::bulma::tables::table_head_data::TableHeadData;
 use crate::components::button_link::{ButtonLink, ButtonLinkData};
 use crate::components::check_tag::CheckTag;
 use crate::components::dialogs::form_dialog::FormDialog;
@@ -11,7 +12,10 @@ use crate::services::project_service::ProjectService;
 use crate::services::user_service::UserService;
 use crate::{AppState, Dialog, Route};
 use frontend::services::ticket_service::TicketService;
-use implicit_clone::sync::{IArray, IString};
+use implicit_clone::{
+    sync::{IArray, IString},
+    unsync,
+};
 use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::{ITicketDto, TicketDto, TicketField, TicketValue};
@@ -35,7 +39,7 @@ pub struct Props {
     pub id: u64,
 }
 
-pub enum Msg {
+pub enum ProjectPageMsg {
     FetchedProject(ProjectDto),
     FetchedUser(UserDto),
     FetchedTickets(Vec<TicketDto>),
@@ -44,6 +48,7 @@ pub enum Msg {
     OpenFormDialog(),
     SelectedTickets(IArray<u64>),
     SubmittedForm((TicketDto, Callback<ErrorResponse>)),
+    SortTickets(TableHeadData),
     TicketCreated(TicketDto),
 }
 
@@ -55,18 +60,21 @@ pub struct ProjectPage {
     _listener: ContextHandle<Rc<AppState>>,
 }
 impl Component for ProjectPage {
-    type Message = Msg;
+    type Message = ProjectPageMsg;
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        ProjectService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
+        ProjectService::fetch(
+            ctx.props().id,
+            ctx.link().callback(ProjectPageMsg::FetchedProject),
+        );
         ProjectService::fetch_assigned_tickets(
             ctx.props().id,
-            ctx.link().callback(Msg::FetchedTickets),
+            ctx.link().callback(ProjectPageMsg::FetchedTickets),
         );
         let (app_state, _listener) = ctx
             .link()
-            .context::<Rc<AppState>>(ctx.link().callback(Msg::ContextChanged))
+            .context::<Rc<AppState>>(ctx.link().callback(ProjectPageMsg::ContextChanged))
             .expect("context to be set");
         Self {
             project: ProjectDto::default(),
@@ -78,17 +86,23 @@ impl Component for ProjectPage {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        ProjectService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
+        ProjectService::fetch(
+            ctx.props().id,
+            ctx.link().callback(ProjectPageMsg::FetchedProject),
+        );
         true
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::FetchedProject(project) => {
+            ProjectPageMsg::FetchedProject(project) => {
                 self.project = project;
-                UserService::fetch(self.project.user_id, ctx.link().callback(Msg::FetchedUser));
+                UserService::fetch(
+                    self.project.user_id,
+                    ctx.link().callback(ProjectPageMsg::FetchedUser),
+                );
             }
-            Msg::FetchedUser(user) => {
+            ProjectPageMsg::FetchedUser(user) => {
                 self.user = Some(ButtonLinkData {
                     label: IString::from(user.name),
                     to: Route::User {
@@ -96,16 +110,17 @@ impl Component for ProjectPage {
                     },
                 });
             }
-            Msg::FetchedTickets(tickets) => {
+            ProjectPageMsg::FetchedTickets(tickets) => {
                 self.ticket_list = tickets;
             }
-            Msg::ContextChanged(state) => {
+            ProjectPageMsg::ContextChanged(state) => {
                 self.app_state = state;
             }
-            Msg::OpenSelectDialog() => {
+            ProjectPageMsg::OpenSelectDialog() => {
                 let optionsapi: Callback<Callback<Vec<TicketDto>>> =
                     Callback::from(TicketService::fetch_unassigned);
-                let onselect: Callback<IArray<u64>> = ctx.link().callback(Msg::SelectedTickets);
+                let onselect: Callback<IArray<u64>> =
+                    ctx.link().callback(ProjectPageMsg::SelectedTickets);
                 let dialog = Rc::new(Dialog {
                     active: true,
                     content: html! {
@@ -114,19 +129,19 @@ impl Component for ProjectPage {
                 });
                 self.app_state.update_dialog.emit(dialog);
             }
-            Msg::OpenFormDialog() => {
+            ProjectPageMsg::OpenFormDialog() => {
                 let dialog = Rc::new(Dialog {
                     active: true,
                     content: html! {
                         <FormDialog title="Create a new Ticket">
-                            <TicketForm projectid={ctx.props().id} onsubmit={ctx.link().callback(Msg::SubmittedForm)} />
+                            <TicketForm projectid={ctx.props().id} onsubmit={ctx.link().callback(ProjectPageMsg::SubmittedForm)} />
                         </FormDialog>
                     },
                 });
                 self.app_state.update_dialog.emit(dialog);
             }
-            Msg::SelectedTickets(tickets) => {
-                let callback = ctx.link().callback(Msg::FetchedTickets);
+            ProjectPageMsg::SelectedTickets(tickets) => {
+                let callback = ctx.link().callback(ProjectPageMsg::FetchedTickets);
                 ProjectService::assign_tickets(
                     ctx.props().id,
                     tickets.iter().collect::<Vec<u64>>(),
@@ -134,20 +149,30 @@ impl Component for ProjectPage {
                 );
                 self.app_state.close_dialog.emit(());
             }
-            Msg::SubmittedForm((ticket, callback_error)) => {
+            ProjectPageMsg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
                 TicketService::create(
                     ticket,
-                    ctx.link().callback(Msg::TicketCreated),
+                    ctx.link().callback(ProjectPageMsg::TicketCreated),
                     callback_error,
                 );
             }
-            Msg::TicketCreated(ticket) => {
+            ProjectPageMsg::SortTickets(sortdata) => TicketService::fetch_all(
+                Some(ctx.props().id),
+                None,
+                sortdata.sort.as_ref().map(|s| s.sort.clone()),
+                sortdata
+                    .sort
+                    .as_ref()
+                    .map(|s| unsync::IString::from(s.order.to_string())),
+                ctx.link().callback(ProjectPageMsg::FetchedTickets),
+            ),
+            ProjectPageMsg::TicketCreated(ticket) => {
                 log::debug!("Created: {}", ticket);
                 self.app_state.close_dialog.emit(());
                 ProjectService::fetch_assigned_tickets(
                     ctx.props().id,
-                    ctx.link().callback(Msg::FetchedTickets),
+                    ctx.link().callback(ProjectPageMsg::FetchedTickets),
                 );
             }
         }
@@ -163,77 +188,83 @@ impl Component for ProjectPage {
             _listener,
         } = self;
 
-        let on_assign_click = |_| Msg::OpenSelectDialog();
-        let on_add_click = |_| Msg::OpenFormDialog();
+        let on_assign_click = |_| ProjectPageMsg::OpenSelectDialog();
+        let on_add_click = |_| ProjectPageMsg::OpenFormDialog();
 
         let datasource: ITableDataSource<TicketField, ITicketDto, TicketValue> =
             TicketDataSource::from(ticket_list).into();
+
+        let sorthandler = Some(ctx.link().callback(ProjectPageMsg::SortTickets));
 
         html! {
             <div class="section container">
                 <div class="tile is-ancestor is-vertical">
                     <div class="tile is-parent">
                         <article class="tile is-child notification is-light">
-                            <p class="title">{ &project.summary }</p>
+                            <div class="columns">
+                                <div class="column is-two-thirds">
+                                    <p class="title">{ &project.summary }</p>
+                                    <div class="field is-grouped mt-6">
+                                        <div class="field has-addons">
+                                            <p class="control">
+                                                <button class="button" onclick={ctx.link().callback(on_assign_click)}>
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    </span>
+                                                    <span>{ "Assign a ticket" }</span>
+                                                </button>
+                                            </p>
+                                            <p class="control">
+                                                <button class="button" onclick={ctx.link().callback(on_add_click)}>
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-plus"></i>
+                                                    </span>
+                                                    <span>{ "Create a new one" }</span>
+                                                </button>
+                                            </p>
+                                        </div>
+                                        <div class="field ml-3">
+                                            <p class="control">
+                                                <Link<Route> classes={classes!("button")} to={Route::ProjectBoard { id: project.id.unwrap_or(0) }}>
+                                                    <span class="icon">
+                                                        <i class="fa-solid fa-table-columns"></i>
+                                                    </span>
+                                                    <span>{ "Board view" }</span>
+                                                </Link<Route>>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <div class="content">
+                                        <p class="title is-5">{ "Details" }</p>
+                                        <div class="columns mb-0">
+                                            <div class="column"><h6 class="title is-6">{ "Deadline" }</h6></div>
+                                            <div class="column">{ &project.deadline.map_or(String::from("-"), |d| d.format("%F").to_string()) }</div>
+                                        </div>
+                                        <div class="columns mb-0">
+                                            <div class="column"><h6 class="title is-6">{ "Created by" }</h6></div>
+                                            <div class="column">
+                                                <ButtonLink<Route> data={user.clone()} />
+                                            </div>
+                                        </div>
+                                        <div class="columns mb-0">
+                                            <div class="column"><h6 class="title is-6">{ "Active" }</h6></div>
+                                            <div class="column">
+                                                <CheckTag checked={project.active == 1} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </article>
                     </div>
                     <div class="tile">
                         <div class="tile is-parent">
                             <article class="tile is-child notification is-light">
                                 <div class="content">
-                                    <p class="title">{ "Details" }</p>
-                                    <div class="columns">
-                                        <div class="column is-one-quarter"><h5 class="title is-5">{ "Deadline" }</h5></div>
-                                        <div class="column">{ &project.deadline.map_or(String::from("-"), |d| d.format("%F").to_string()) }</div>
-                                    </div>
-                                    <div class="columns">
-                                        <div class="column is-one-quarter"><h5 class="title is-5">{ "Created by" }</h5></div>
-                                        <div class="column">
-                                            <ButtonLink<Route> data={user.clone()} />
-                                        </div>
-                                    </div>
-                                    <div class="columns">
-                                        <div class="column is-one-quarter"><h5 class="title is-5">{ "Active" }</h5></div>
-                                        <div class="column">
-                                            <CheckTag checked={project.active == 1} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </article>
-                        </div>
-                    </div>
-                    <div class="tile">
-                        <div class="tile is-parent">
-                            <article class="tile is-child notification is-light">
-                                <div class="content">
-                                    <p class="title">
-                                        { "Tickets" }
-                                        <Link<Route> classes={classes!("button", "is-pulled-right")} to={Route::ProjectBoard { id: project.id.unwrap_or(0) }}>
-                                            <span class="icon">
-                                                <i class="fa-solid fa-table-columns"></i>
-                                            </span>
-                                            <span>{ "Board view" }</span>
-                                        </Link<Route>>
-                                    </p>
-                                    <Table<TicketField, ITicketDto, TicketValue> {datasource} />
-                                    <div class="field is-grouped mt-6">
-                                        <p class="control">
-                                            <button class="button" onclick={ctx.link().callback(on_assign_click)}>
-                                                <span class="icon is-small">
-                                                    <i class="fas fa-arrow-up"></i>
-                                                </span>
-                                                <span>{ "Assign a ticket" }</span>
-                                            </button>
-                                        </p>
-                                        <p class="control">
-                                            <button class="button" onclick={ctx.link().callback(on_add_click)}>
-                                                <span class="icon is-small">
-                                                    <i class="fas fa-plus"></i>
-                                                </span>
-                                                <span>{ "Create a new one" }</span>
-                                            </button>
-                                        </p>
-                                    </div>
+                                    <p class="title">{ "Tickets" }</p>
+                                    <Table<TicketField, ITicketDto, TicketValue> {datasource} {sorthandler} />
                                 </div>
                             </article>
                         </div>

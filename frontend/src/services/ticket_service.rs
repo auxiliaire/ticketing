@@ -1,4 +1,5 @@
 use gloo_net::http::Request;
+use implicit_clone::unsync::IString;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
 use shared::dtos::ticket_dto::TicketDto;
 use yew::{platform::spawn_local, Callback};
@@ -24,12 +25,27 @@ impl TicketService {
         });
     }
 
-    pub fn fetch_all(project_id: Option<u64>, callback: Callback<Vec<TicketDto>>) {
+    pub fn fetch_all(
+        project_id: Option<u64>,
+        search: Option<IString>,
+        sort: Option<IString>,
+        order: Option<IString>,
+        callback: Callback<Vec<TicketDto>>,
+    ) {
         spawn_local(async move {
             let mut request_builder =
                 Request::get(format!("{}{}", get_api_url(), TICKETS_ENDPOINT).as_str());
             if let Some(p_id) = project_id {
                 request_builder = request_builder.query([("project_id", format!("{}", p_id))]);
+            }
+            if let Some(q) = search {
+                request_builder = request_builder.query([("q", q.as_str())]);
+            }
+            if let Some(s) = sort {
+                request_builder = request_builder.query([("sort", s.as_str())]);
+            }
+            if let Some(o) = order {
+                request_builder = request_builder.query([("order", o.as_str())]);
             }
             let list: Vec<TicketDto> = request_builder.send().await.unwrap().json().await.unwrap();
 

@@ -1,6 +1,9 @@
 use crate::api::{
     error::{ApiError, JsonError},
-    query::filters::ticket_filter::TicketFilter,
+    query::{
+        filters::{pagination::Pagination, search::Search, ticket_filter::TicketFilter},
+        ordering::Ordering,
+    },
 };
 use axum::{
     extract::{Json, Path, Query},
@@ -12,8 +15,8 @@ use axum::{
 use axum_extra::extract::WithRejection;
 use entity::{tickets, tickets::Entity as Ticket};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
-    QueryFilter, Set,
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait, Order,
+    QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
 };
 use shared::dtos::ticket_dto::TicketDto;
 
@@ -30,20 +33,44 @@ pub fn router() -> Router {
 async fn get_tickets(
     db: Extension<DatabaseConnection>,
     Query(filter): Query<TicketFilter>,
+    Query(search): Query<Search>,
+    Query(pagination): Query<Pagination>,
+    Query(ordering): Query<Ordering>,
 ) -> Result<Json<Vec<TicketDto>>, ApiError> {
-    let list = match filter.project_id {
-        Some(id) => Ticket::find()
-            .filter(
-                Condition::all()
-                    .add(<entity::prelude::Tickets as EntityTrait>::Column::ProjectId.eq(id)),
-            )
-            .all(&*db),
-        None => Ticket::find().all(&*db),
-    }
-    .await?;
+    let mut select = match ordering.sort.and_then(|s| sort_to_column(s.as_str())) {
+        Some(sort) => Ticket::find().order_by::<tickets::Column>(sort, ordering.order.0),
+        None => Ticket::find().order_by(tickets::Column::Id, Order::Asc),
+    };
+    select = match search.q {
+        Some(q) => select.filter(Condition::all().add(tickets::Column::Title.contains(q))),
+        None => select,
+    };
+    select = match filter.project_id {
+        Some(id) => select.filter(
+            Condition::all()
+                .add(<entity::prelude::Tickets as EntityTrait>::Column::ProjectId.eq(id)),
+        ),
+        None => select,
+    };
+    let list = select
+        .apply_if(pagination.limit, QuerySelect::limit)
+        .offset(pagination.offset)
+        .all(&*db)
+        .await?;
     Ok(Json(
         list.iter().map(|m| m.into()).collect::<Vec<TicketDto>>(),
     ))
+}
+
+fn sort_to_column(s: &str) -> Option<tickets::Column> {
+    match s {
+        "id" => Some(tickets::Column::Id),
+        "title" => Some(tickets::Column::Title),
+        "description" => Some(tickets::Column::Description),
+        "priority" => Some(tickets::Column::Priority),
+        "status" => Some(tickets::Column::Status),
+        _ => None,
+    }
 }
 
 async fn get_unassigned_tickets(
