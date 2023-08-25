@@ -1,7 +1,10 @@
 use crate::{
-    components::bulma::tables::{
-        data_sources::project_data_source::ProjectDataSource, table::Table,
-        table_data_source::ITableDataSource, table_head_data::TableHeadData,
+    components::bulma::{
+        pagination::Pagination,
+        tables::{
+            data_sources::project_data_source::ProjectDataSource, table::Table,
+            table_data_source::ITableDataSource, table_head_data::TableHeadData,
+        },
     },
     services::project_service::ProjectService,
     Route,
@@ -68,6 +71,7 @@ impl Component for ProjectListPage {
                 </p>
                 <div class="section">
                     <Table<ProjectField, IProjectDto, ProjectValue> {datasource} {sorthandler} />
+                    <Pagination total={23} offset={5} limit={5} />
                 </div>
                 <div class="section pt-0">
                     <div class="field is-grouped">

@@ -1,7 +1,11 @@
 use crate::api::{
     error::{ApiError, JsonError},
     query::{
-        filters::{pagination::Pagination, search::Search, ticket_filter::TicketFilter},
+        filters::{
+            pagination::{Pagination, TotalCount},
+            search::Search,
+            ticket_filter::TicketFilter,
+        },
         ordering::Ordering,
     },
 };
@@ -18,7 +22,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait, Order,
     QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
 };
-use shared::dtos::ticket_dto::TicketDto;
+use shared::dtos::{page::Page, ticket_dto::TicketDto};
 
 pub fn router() -> Router {
     Router::new()
@@ -36,7 +40,15 @@ async fn get_tickets(
     Query(search): Query<Search>,
     Query(pagination): Query<Pagination>,
     Query(ordering): Query<Ordering>,
-) -> Result<Json<Vec<TicketDto>>, ApiError> {
+) -> Result<Json<Page<TicketDto>>, ApiError> {
+    let total = Ticket::find()
+        .select_only()
+        .column_as(tickets::Column::Id.count(), "count")
+        .into_model::<TotalCount>()
+        .one(&*db)
+        .await?
+        .unwrap()
+        .count;
     let mut select = match ordering.sort.and_then(|s| sort_to_column(s.as_str())) {
         Some(sort) => Ticket::find().order_by::<tickets::Column>(sort, ordering.order.0),
         None => Ticket::find().order_by(tickets::Column::Id, Order::Asc),
@@ -57,9 +69,12 @@ async fn get_tickets(
         .offset(pagination.offset)
         .all(&*db)
         .await?;
-    Ok(Json(
-        list.iter().map(|m| m.into()).collect::<Vec<TicketDto>>(),
-    ))
+    Ok(Json(Page::<TicketDto> {
+        list: list.iter().map(|m| m.into()).collect::<Vec<TicketDto>>(),
+        total,
+        offset: pagination.offset.unwrap(),
+        limit: pagination.limit.unwrap(),
+    }))
 }
 
 fn sort_to_column(s: &str) -> Option<tickets::Column> {

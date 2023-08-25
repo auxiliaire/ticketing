@@ -6,6 +6,7 @@ use shared::api::get_socket_address;
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 
+pub mod consts;
 pub mod error;
 pub mod query;
 pub mod resources;
