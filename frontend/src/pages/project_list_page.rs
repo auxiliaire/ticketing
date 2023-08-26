@@ -14,21 +14,45 @@ use shared::dtos::project_dto::{IProjectDto, ProjectDto, ProjectField, ProjectVa
 use yew::prelude::*;
 use yew_router::prelude::Link;
 
+const DEFAULT_LIMIT: u64 = 5;
+const DEFAULT_OFFSET: u64 = 0;
+
 pub enum Msg {
     FetchedProjects(Vec<ProjectDto>),
     SortProjects(TableHeadData),
+    UpdateOffset(u64),
 }
 
 pub struct ProjectListPage {
     list: Vec<ProjectDto>,
+    sort: Option<IString>,
+    order: Option<IString>,
+    limit: u64,
+    offset: u64,
 }
 impl Component for ProjectListPage {
     type Message = Msg;
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        ProjectService::fetch_all(None, None, ctx.link().callback(Msg::FetchedProjects));
-        Self { list: Vec::new() }
+        let sort = None;
+        let order = None;
+        let limit = DEFAULT_LIMIT;
+        let offset = DEFAULT_OFFSET;
+        ProjectService::fetch_all(
+            sort.clone(),
+            order.clone(),
+            Some(limit),
+            Some(offset),
+            ctx.link().callback(Msg::FetchedProjects),
+        );
+        Self {
+            list: Vec::new(),
+            sort,
+            order,
+            limit,
+            offset,
+        }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -36,14 +60,30 @@ impl Component for ProjectListPage {
             Msg::FetchedProjects(projects) => {
                 self.list = projects;
             }
-            Msg::SortProjects(sortdata) => ProjectService::fetch_all(
-                sortdata.sort.as_ref().map(|s| s.sort.clone()),
-                sortdata
+            Msg::SortProjects(sortdata) => {
+                self.sort = sortdata.sort.as_ref().map(|s| s.sort.clone());
+                self.order = sortdata
                     .sort
                     .as_ref()
-                    .map(|s| IString::from(s.order.to_string())),
-                ctx.link().callback(Msg::FetchedProjects),
-            ),
+                    .map(|s| IString::from(s.order.to_string()));
+                ProjectService::fetch_all(
+                    self.sort.clone(),
+                    self.order.clone(),
+                    Some(self.limit),
+                    Some(self.offset),
+                    ctx.link().callback(Msg::FetchedProjects),
+                )
+            }
+            Msg::UpdateOffset(offset) => {
+                self.offset = offset;
+                ProjectService::fetch_all(
+                    self.sort.clone(),
+                    self.order.clone(),
+                    Some(self.limit),
+                    Some(self.offset),
+                    ctx.link().callback(Msg::FetchedProjects),
+                )
+            }
         }
         true
     }
@@ -53,6 +93,7 @@ impl Component for ProjectListPage {
             ProjectDataSource::from(&self.list).into();
 
         let sorthandler = Some(ctx.link().callback(Msg::SortProjects));
+        let paginghandler = ctx.link().callback(Msg::UpdateOffset);
 
         html! {
             <div class="container">
@@ -71,7 +112,7 @@ impl Component for ProjectListPage {
                 </p>
                 <div class="section">
                     <Table<ProjectField, IProjectDto, ProjectValue> {datasource} {sorthandler} />
-                    <Pagination total={23} offset={20} limit={5} />
+                    <Pagination total={8} offset={self.offset} limit={self.limit} {paginghandler} />
                 </div>
                 <div class="section pt-0">
                     <div class="field is-grouped">

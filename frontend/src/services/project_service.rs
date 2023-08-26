@@ -29,6 +29,8 @@ impl ProjectService {
     pub fn fetch_all(
         sort: Option<IString>,
         order: Option<IString>,
+        limit: Option<u64>,
+        offset: Option<u64>,
         callback: Callback<Vec<ProjectDto>>,
     ) {
         spawn_local(async move {
@@ -39,6 +41,12 @@ impl ProjectService {
             }
             if let Some(o) = order {
                 request_builder = request_builder.query([("order", o.as_str())]);
+            }
+            if let Some(l) = limit {
+                request_builder = request_builder.query([("limit", format!("{}", l))]);
+            }
+            if let Some(o) = offset {
+                request_builder = request_builder.query([("offset", format!("{}", o))]);
             }
             let list: Vec<ProjectDto> = request_builder.send().await.unwrap().json().await.unwrap();
 

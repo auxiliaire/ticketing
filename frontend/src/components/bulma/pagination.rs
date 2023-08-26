@@ -1,4 +1,4 @@
-use yew::{classes, html, Component, Context, Properties};
+use yew::{classes, html, Callback, Component, Context, Properties};
 
 const PAGINATION_LINK_CLASS: &str = "pagination-link";
 const PAGINATION_ACTIVE_CLASS: &str = "is-current";
@@ -7,20 +7,21 @@ const PAGINATION_PREV_CLASS: &str = "pagination-previous";
 const PAGINATION_NEXT_CLASS: &str = "pagination-next";
 const MAX_SHOWN_STEPS: u64 = 3;
 
-pub struct Pagination {
-    steps: u64,
-    current: u64,
-}
-
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
     pub total: i64,
     pub offset: u64,
     pub limit: u64,
+    pub paginghandler: Callback<u64>, // offset
 }
 
 pub enum PaginationMsg {
     ButtonPressed(u64),
+}
+
+pub struct Pagination {
+    steps: u64,
+    current: u64,
 }
 
 impl Component for Pagination {
@@ -45,7 +46,7 @@ impl Component for Pagination {
             PaginationMsg::ButtonPressed(step) => {
                 let offset = Pagination::calculate_offset(step, ctx.props().limit);
                 if step != self.current {
-                    log::debug!("Offset: {}", offset);
+                    ctx.props().paginghandler.emit(offset);
                 }
             }
         }
