@@ -71,7 +71,7 @@ impl Component for ProjectListPage {
                 </p>
                 <div class="section">
                     <Table<ProjectField, IProjectDto, ProjectValue> {datasource} {sorthandler} />
-                    <Pagination total={23} offset={5} limit={5} />
+                    <Pagination total={23} offset={20} limit={5} />
                 </div>
                 <div class="section pt-0">
                     <div class="field is-grouped">
