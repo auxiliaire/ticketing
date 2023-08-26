@@ -10,7 +10,10 @@ use crate::{
     Route,
 };
 use implicit_clone::unsync::IString;
-use shared::dtos::project_dto::{IProjectDto, ProjectDto, ProjectField, ProjectValue};
+use shared::dtos::{
+    page::Page,
+    project_dto::{IProjectDto, ProjectDto, ProjectField, ProjectValue},
+};
 use yew::prelude::*;
 use yew_router::prelude::Link;
 
@@ -18,12 +21,13 @@ const DEFAULT_LIMIT: u64 = 5;
 const DEFAULT_OFFSET: u64 = 0;
 
 pub enum Msg {
-    FetchedProjects(Vec<ProjectDto>),
+    FetchedProjects(Page<ProjectDto>),
     SortProjects(TableHeadData),
     UpdateOffset(u64),
 }
 
 pub struct ProjectListPage {
+    total: i64,
     list: Vec<ProjectDto>,
     sort: Option<IString>,
     order: Option<IString>,
@@ -47,6 +51,7 @@ impl Component for ProjectListPage {
             ctx.link().callback(Msg::FetchedProjects),
         );
         Self {
+            total: 0,
             list: Vec::new(),
             sort,
             order,
@@ -57,8 +62,11 @@ impl Component for ProjectListPage {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::FetchedProjects(projects) => {
-                self.list = projects;
+            Msg::FetchedProjects(project_page) => {
+                self.total = project_page.total;
+                self.list = project_page.list;
+                self.limit = project_page.limit;
+                self.offset = project_page.offset;
             }
             Msg::SortProjects(sortdata) => {
                 self.sort = sortdata.sort.as_ref().map(|s| s.sort.clone());
@@ -112,7 +120,7 @@ impl Component for ProjectListPage {
                 </p>
                 <div class="section">
                     <Table<ProjectField, IProjectDto, ProjectValue> {datasource} {sorthandler} />
-                    <Pagination total={8} offset={self.offset} limit={self.limit} {paginghandler} />
+                    <Pagination total={self.total} offset={self.offset} limit={self.limit} {paginghandler} />
                 </div>
                 <div class="section pt-0">
                     <div class="field is-grouped">

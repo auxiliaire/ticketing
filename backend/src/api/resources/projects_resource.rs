@@ -1,3 +1,11 @@
+use crate::api::{
+    error::{ApiError, JsonError},
+    query::{
+        filters::pagination::{Pagination, TotalCount},
+        ordering::Ordering,
+    },
+    validated_json::ValidatedJson,
+};
 use axum::{
     extract::{Json, Path, Query},
     http::StatusCode,
@@ -13,15 +21,9 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
     QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
 };
-use shared::dtos::project_dto::ProjectTickets as ProjectTicketsDto;
 use shared::dtos::ticket_dto::TicketDto;
+use shared::dtos::{page::Page, project_dto::ProjectTickets as ProjectTicketsDto};
 use shared::{dtos::project_dto::ProjectDto, validation::ticket_validation::TicketStatus};
-
-use crate::api::{
-    error::{ApiError, JsonError},
-    query::{filters::pagination::Pagination, ordering::Ordering},
-    validated_json::ValidatedJson,
-};
 
 pub fn router() -> Router {
     Router::new()
@@ -38,7 +40,15 @@ async fn get_projects(
     db: Extension<DatabaseConnection>,
     Query(pagination): Query<Pagination>,
     Query(ordering): Query<Ordering>,
-) -> Result<Json<Vec<ProjectDto>>, ApiError> {
+) -> Result<Json<Page<ProjectDto>>, ApiError> {
+    let total = Project::find()
+        .select_only()
+        .column_as(projects::Column::Id.count(), "count")
+        .into_model::<TotalCount>()
+        .one(&*db)
+        .await?
+        .unwrap()
+        .count;
     let mut select = Project::find();
     if let Some(sort) = ordering.sort.and_then(|s| sort_to_column(s.as_str())) {
         select = select.order_by::<projects::Column>(sort, ordering.order.0);
@@ -51,7 +61,12 @@ async fn get_projects(
         .iter()
         .map(|m| m.into())
         .collect::<Vec<ProjectDto>>();
-    Ok(Json(list))
+    Ok(Json(Page {
+        total,
+        offset: pagination.offset.unwrap(),
+        limit: pagination.limit.unwrap(),
+        list,
+    }))
 }
 
 fn sort_to_column(s: &str) -> Option<projects::Column> {

@@ -54,10 +54,16 @@ impl Component for Pagination {
     }
 
     fn view(&self, ctx: &Context<Self>) -> yew::Html {
+        match ctx.props().limit == 0 || ctx.props().total == 0 {
+            true => html!(),
+            false => self.normal_view(ctx),
+        }
+    }
+}
+
+impl Pagination {
+    fn normal_view(&self, ctx: &Context<Self>) -> yew::Html {
         let max = std::cmp::min(MAX_SHOWN_STEPS, self.steps);
-        log::debug!("steps: {}", self.steps);
-        log::debug!("max: {}", max);
-        log::debug!("current: {}", self.current);
         let items = (1..max + 1).map(|i| {
             html! (
                 <li>
@@ -94,10 +100,12 @@ impl Component for Pagination {
             }
             false => html!(),
         };
+        let prev = std::cmp::max(self.current - 1, 1);
+        let next = std::cmp::min(self.current + 1, self.steps);
         html!(
             <nav class="pagination is-small" role="navigation" aria-label="pagination">
-                <a class={classes!(self.prev_classes())}>{ "Previous" }</a>
-                <a class={classes!(self.next_classes())}>{ "Next page" }</a>
+                <a class={classes!(self.prev_classes())} onclick={ctx.link().callback(move |_| PaginationMsg::ButtonPressed(prev))}>{ "Previous" }</a>
+                <a class={classes!(self.next_classes())} onclick={ctx.link().callback(move |_| PaginationMsg::ButtonPressed(next))}>{ "Next page" }</a>
                 <ul class="pagination-list">
                     { for items }
                     { rest }
@@ -105,9 +113,7 @@ impl Component for Pagination {
             </nav>
         )
     }
-}
 
-impl Pagination {
     fn calculate_steps(total: i64, limit: u64) -> u64 {
         (f64::from(total as i32) / f64::from(limit as i32)).ceil() as u64
     }

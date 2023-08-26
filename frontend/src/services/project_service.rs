@@ -1,6 +1,7 @@
 use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
+use shared::dtos::page::Page;
 use shared::dtos::project_dto::{ProjectDto, ProjectTickets};
 use shared::dtos::ticket_dto::TicketDto;
 use yew::{platform::spawn_local, Callback};
@@ -31,7 +32,7 @@ impl ProjectService {
         order: Option<IString>,
         limit: Option<u64>,
         offset: Option<u64>,
-        callback: Callback<Vec<ProjectDto>>,
+        callback: Callback<Page<ProjectDto>>,
     ) {
         spawn_local(async move {
             let mut request_builder =
@@ -48,9 +49,10 @@ impl ProjectService {
             if let Some(o) = offset {
                 request_builder = request_builder.query([("offset", format!("{}", o))]);
             }
-            let list: Vec<ProjectDto> = request_builder.send().await.unwrap().json().await.unwrap();
+            let page: Page<ProjectDto> =
+                request_builder.send().await.unwrap().json().await.unwrap();
 
-            callback.emit(list);
+            callback.emit(page);
         });
     }
 
