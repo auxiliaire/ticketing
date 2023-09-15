@@ -58,7 +58,7 @@ impl ProjectService {
 
     pub fn fetch_latest(callback: Callback<Vec<ProjectDto>>) {
         spawn_local(async move {
-            let list: Vec<ProjectDto> =
+            let page: Page<ProjectDto> =
                 Request::get(format!("{}{}", get_api_url(), PROJECTS_ENDPOINT).as_str())
                     .query([("limit", "3"), ("sort", "id"), ("order", "desc")])
                     .send()
@@ -68,7 +68,7 @@ impl ProjectService {
                     .await
                     .unwrap();
 
-            callback.emit(list);
+            callback.emit(page.list);
         });
     }
 
