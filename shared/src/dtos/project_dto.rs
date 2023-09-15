@@ -100,9 +100,11 @@ impl From<&Model> for ProjectDto {
         Self {
             id: Some(m.id),
             summary: m.summary.to_owned(),
-            deadline: m
-                .deadline
-                .map(|d| DateTime::from_local(NaiveDateTime::new(d, NaiveTime::default()), Utc)),
+            deadline: m.deadline.map(|d| {
+                NaiveDateTime::new(d, NaiveTime::default())
+                    .and_local_timezone(Utc)
+                    .unwrap()
+            }),
             user_id: m.user_id,
             active: m.active,
         }
@@ -114,9 +116,11 @@ impl From<Model> for ProjectDto {
         Self {
             id: Some(m.id),
             summary: m.summary.to_owned(),
-            deadline: m
-                .deadline
-                .map(|d| DateTime::from_local(NaiveDateTime::new(d, NaiveTime::default()), Utc)),
+            deadline: m.deadline.map(|d| {
+                NaiveDateTime::new(d, NaiveTime::default())
+                    .and_local_timezone(Utc)
+                    .unwrap()
+            }),
             user_id: m.user_id,
             active: m.active,
         }

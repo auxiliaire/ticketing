@@ -2,12 +2,11 @@ use crate::components::bulma::field::Field;
 use crate::components::html::checkbox::Checkbox;
 use crate::components::html::date_input::DateInput;
 use crate::components::html::text_input::TextInput;
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{NaiveDate, Utc};
 use frontend::services::user_service::UserService;
 use gloo_timers::callback::Timeout;
 use implicit_clone::sync::IArray;
 use implicit_clone::unsync::IString;
-use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::user_dto::UserDto;
@@ -91,8 +90,12 @@ impl Component for ProjectForm {
                 match NaiveDate::parse_from_str(self.deadline.as_str(), "%F") {
                     Ok(d) => {
                         log::debug!("Successfully parsed '{}'", self.deadline.as_str());
-                        self.project.deadline =
-                            Some(DateTime::from_local(d.and_hms_opt(0, 0, 0).unwrap(), Utc));
+                        self.project.deadline = Some(
+                            d.and_hms_opt(0, 0, 0)
+                                .unwrap()
+                                .and_local_timezone(Utc)
+                                .unwrap(),
+                        );
                     }
                     Err(e) => log::debug!("Parse failed with '{}'", e.to_string()),
                 }
