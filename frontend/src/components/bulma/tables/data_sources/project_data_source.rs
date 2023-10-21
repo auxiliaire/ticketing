@@ -23,7 +23,7 @@ impl From<&Vec<ProjectDto>> for ProjectDataSource {
             data: IArray::from(
                 source
                     .iter()
-                    .map(|ticket| Rc::new(ticket.clone()))
+                    .map(|project| Rc::new(project.clone()))
                     .collect::<Vec<IProjectDto>>(),
             ),
             has_column_head: true,
