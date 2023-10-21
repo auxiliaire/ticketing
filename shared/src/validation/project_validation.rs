@@ -18,3 +18,26 @@ impl ProjectValidation {
         deadline >= &tomorrow
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deadline_validation_future() {
+        let deadline = Utc::now().checked_add_days(Days::new(2));
+        assert!(
+            ProjectValidation::deadline_validation(&deadline).is_ok(),
+            "Deadline should be valid in the future."
+        );
+    }
+
+    #[test]
+    fn test_deadline_validation_expired() {
+        let deadline = Some(Utc::now());
+        assert!(
+            ProjectValidation::deadline_validation(&deadline).is_err(),
+            "Deadline should be invalid if expired."
+        );
+    }
+}
