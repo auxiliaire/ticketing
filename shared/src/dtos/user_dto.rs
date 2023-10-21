@@ -13,6 +13,7 @@ pub enum UserField {
     Id,
     Name,
     Role,
+    Action,
 }
 
 impl ImplicitClone for UserField {}
@@ -28,6 +29,7 @@ pub enum UserValue {
     Id(Rc<Option<u64>>),
     Name(Rc<String>),
     Role(Rc<Option<UserRole>>),
+    Action(Rc<Option<u64>>),
 }
 
 impl Display for UserValue {
@@ -40,6 +42,10 @@ impl Display for UserValue {
             UserValue::Name(name) => write!(f, "{}", name),
             UserValue::Role(role_ref) => match role_ref.as_ref() {
                 Some(role) => write!(f, "{}", role),
+                None => write!(f, ""),
+            },
+            UserValue::Action(id_ref) => match id_ref.as_ref() {
+                Some(id) => write!(f, "{}", id),
                 None => write!(f, ""),
             },
         }
@@ -71,6 +77,7 @@ impl Getter<UserField, UserValue> for IUserDto {
             UserField::Id => UserValue::Id(Rc::new(self.id)),
             UserField::Name => UserValue::Name(Rc::new(self.name.clone())),
             UserField::Role => UserValue::Role(Rc::new(self.role)),
+            UserField::Action => UserValue::Action(Rc::new(self.id)),
         }
     }
 }

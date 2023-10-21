@@ -17,6 +17,8 @@ impl From<&Vec<UserDto>> for UserDataSource {
     fn from(source: &Vec<UserDto>) -> Self {
         Self(Rc::new(TableDataSource {
             empty_label: IString::from("There are no users yet"),
+            // Override fieldset:
+            fieldset: IArray::from(vec![UserField::Id, UserField::Name, UserField::Role]),
             data: IArray::from(
                 source
                     .iter()
@@ -39,6 +41,12 @@ impl From<&Vec<UserDto>> for UserDataSource {
                         UserField::Role => Some(html! {
                             <span class="tag">{celldata.data.role}</span>
                         }),
+                        // Hide columns:
+                        UserField::Action => None,
+                        // Add an extra column:
+                        // UserField::Action => Some(html! {
+                        //    <span class="tag">{ "Action: " }{celldata.data.id}</span>
+                        // }),
                     },
                     None => None,
                 }
