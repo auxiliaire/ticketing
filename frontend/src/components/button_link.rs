@@ -48,7 +48,7 @@ where
             Some(ButtonLinkData { label, to }) => {
                 html! {
                     <Link<R> classes={classes!("button", "is-small", "is-info")} {to}>
-                        { label }
+                        { html! {label}}
                     </Link<R>>
                 }
             }

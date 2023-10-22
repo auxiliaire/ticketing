@@ -39,7 +39,7 @@ impl From<&Vec<UserDto>> for UserDataSource {
                             </Link<Route>>
                         }),
                         UserField::Role => Some(html! {
-                            <span class="tag">{celldata.data.role}</span>
+                            <span class="tag">{ html! {celldata.data.role.map_or("".to_owned(), |r| format!("{}", r))}}</span>
                         }),
                         // Hide columns:
                         UserField::Action => None,

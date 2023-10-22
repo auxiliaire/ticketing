@@ -201,7 +201,7 @@ impl Component for ProjectForm {
                             <ul>
                             {
                                 common_error.iter().map(|message| {
-                                    html!{<li>{ message }</li>}
+                                    html!{<li>{ html! {message}}</li>}
                                 }).collect::<Html>()
                             }
                             </ul>

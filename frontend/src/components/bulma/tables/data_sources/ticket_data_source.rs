@@ -49,7 +49,7 @@ impl From<&Vec<TicketDto>> for TicketDataSource {
                             <PriorityTag priority={Rc::new(celldata.data.priority.clone())} />
                         }),
                         TicketField::Status => Some(html! {
-                            <span class="tag">{celldata.data.status}</span>
+                            <span class="tag">{ html! {celldata.data.status}}</span>
                         }),
                         _ => None,
                     },

@@ -6,14 +6,18 @@ pub struct Field;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct Props {
+    #[prop_or_default]
     pub label: Option<AttrValue>,
     pub children: Children,
     #[prop_or_default]
     pub class: Option<AttrValue>,
     #[prop_or_default]
     pub has_addons: bool,
+    #[prop_or_default]
     pub help: Option<IArray<IString>>,
+    #[prop_or_default]
     pub icon_left: Option<AttrValue>,
+    #[prop_or_default]
     pub icon_right: Option<AttrValue>,
 }
 
@@ -50,7 +54,7 @@ impl Component for Field {
                         <ul>
                             {
                                 help.iter().map(|message| {
-                                    html!{<li>{ message }</li>}
+                                    html!{<li>{html! {message}}</li>}
                                 }).collect::<Html>()
                             }
                         </ul>

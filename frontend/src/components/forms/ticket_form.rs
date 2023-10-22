@@ -327,7 +327,7 @@ impl TicketForm {
                                 <ul>
                                 {
                                     common_error.iter().map(|message| {
-                                        html!{<li>{ message }</li>}
+                                        html!{<li>{ html! {message}}</li>}
                                     }).collect::<Html>()
                                 }
                                 </ul>
@@ -336,7 +336,7 @@ impl TicketForm {
                     </div>
                 }
                 <div class="columns">
-                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::Title }</h6></div>
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ html! {TicketField::Title}}</h6></div>
                     <div class="column">
                         <span class={classes!(self.span_class(TicketField::Title))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Title))}>{ self.ticket.title.clone() }</span>
                         <Field class={classes!(self.field_class(TicketField::Title))} help={&self.title_error}>
@@ -345,7 +345,7 @@ impl TicketForm {
                     </div>
                 </div>
                 <div class="columns">
-                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::Description }</h6></div>
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ html! {TicketField::Description}}</h6></div>
                     <div class="column">
                         <span class={classes!(self.span_class(TicketField::Description))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Description))}>{ self.ticket.description.clone() }</span>
                         <Field class={classes!(self.field_class(TicketField::Description))} help={&self.description_error}>
@@ -354,7 +354,7 @@ impl TicketForm {
                     </div>
                 </div>
                 <div class="columns">
-                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::Project }</h6></div>
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ html! {TicketField::Project}}</h6></div>
                     <div class="column">
                         <span class={classes!(self.span_class(TicketField::Project))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Project))}>
                             if let Some(ButtonLinkData { label, to: _ }) = self.project.clone() {
@@ -370,7 +370,7 @@ impl TicketForm {
                     </div>
                 </div>
                 <div class="columns">
-                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::Priority }</h6></div>
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ html! {TicketField::Priority}}</h6></div>
                     <div class="column">
                         <span class={classes!(self.span_class(TicketField::Priority))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Priority))}><PriorityTag {priority} /></span>
                         <Field class={classes!(self.field_class(TicketField::Priority))} help={&self.status_error}>
@@ -379,7 +379,7 @@ impl TicketForm {
                     </div>
                 </div>
                 <div class="columns">
-                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::Status }</h6></div>
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ html! {TicketField::Status}}</h6></div>
                     <div class="column">
                         <span class={classes!(self.span_class(TicketField::Status))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Status))}><span class="tag is-light">{ self.ticket.status.to_string() }</span></span>
                         <Field class={classes!(self.field_class(TicketField::Status))} help={&self.status_error}>
@@ -388,7 +388,7 @@ impl TicketForm {
                     </div>
                 </div>
                 <div class="columns">
-                    <div class="column is-one-quarter"><h6 class="title is-6">{ TicketField::User }</h6></div>
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ html! {TicketField::User}}</h6></div>
                     <div class="column">
                         <span class={classes!(self.span_class(TicketField::User))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::User))}>
                             if let Some(ButtonLinkData { label, to: _ }) = self.user.clone() {
@@ -441,7 +441,7 @@ impl TicketForm {
                         <ul>
                         {
                             common_error.iter().map(|message| {
-                                html!{<li>{ message }</li>}
+                                html!{<li>{ html! {message}}</li>}
                             }).collect::<Html>()
                         }
                         </ul>

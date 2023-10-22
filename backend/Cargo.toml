@@ -12,7 +12,7 @@ path = "src/lib.rs"
 anyhow = "1.0"
 async-trait = "0.1"
 axum = { version = "0.6", features = [ "query", "macros" ] }
-axum-extra = "0.7"
+axum-extra = "0.8.0"
 chrono = { version = "0.4", default-features = false }
 dotenvy = "0.15"
 entity = { path = "../entity" }

@@ -228,7 +228,7 @@ impl Component for ProjectBoardPage {
         let status_headers = TicketStatus::iter()
             .filter(Self::is_status_managable)
             .map(|status| html! {
-                <div class="tile col"><div class="tile notification is-light is-vertical"><p class="tile is-uppercase is-size-7"><b>{ status }</b></p></div></div>
+                <div class="tile col"><div class="tile notification is-light is-vertical"><p class="tile is-uppercase is-size-7"><b>{ html! {status}}</b></p></div></div>
             });
 
         let statuses = TicketStatus::iter()

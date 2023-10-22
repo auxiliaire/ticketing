@@ -10,4 +10,8 @@ members = [".", "backend", "entity", "frontend", "migration", "shared"]
 
 [dependencies]
 backend = { path = "backend" }
+entity = { path = "entity" }
+frontend = { path = "frontend" }
+migration = { path = "migration" }
+shared = { path = "shared" }
 tokio = { version = "1.28", features = [ "full" ] }
