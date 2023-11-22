@@ -1,8 +1,8 @@
 use crate::components::button_link::{ButtonLink, ButtonLinkData};
 use crate::components::priority_tag::PriorityTag;
+use crate::route::Route;
 use crate::services::project_service::ProjectService;
 use crate::services::{ticket_service::TicketService, user_service::UserService};
-use crate::Route;
 use implicit_clone::sync::IString;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::TicketDto;

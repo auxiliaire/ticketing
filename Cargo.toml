@@ -15,3 +15,6 @@ frontend = { path = "frontend" }
 migration = { path = "migration" }
 shared = { path = "shared" }
 tokio = { version = "1.28", features = [ "full" ] }
+
+[dev-dependencies]
+thirtyfour = "0.31"

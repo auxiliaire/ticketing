@@ -1,67 +1,26 @@
-use crate::pages::project_board_page::ProjectBoardPage;
-use crate::pages::project_list_page::ProjectListPage;
-use crate::pages::project_new_page::ProjectNewPage;
-use crate::pages::project_page::ProjectPage;
-use crate::pages::registration_page::RegistrationPage;
-use crate::pages::ticket_new_page::TicketNewPage;
-use crate::pages::ticket_page::TicketPage;
-use pages::home_page::HomePage;
-use pages::page_not_found::PageNotFound;
-use pages::user_list_page::UserListPage;
-use pages::user_page::UserPage;
+use frontend::app_state::AppState;
+use frontend::dialog::Dialog;
+use frontend::pages::home_page::HomePage;
+use frontend::pages::page_not_found::PageNotFound;
+use frontend::pages::project_board_page::ProjectBoardPage;
+use frontend::pages::project_list_page::ProjectListPage;
+use frontend::pages::project_new_page::ProjectNewPage;
+use frontend::pages::project_page::ProjectPage;
+use frontend::pages::registration_page::RegistrationPage;
+use frontend::pages::ticket_new_page::TicketNewPage;
+use frontend::pages::ticket_page::TicketPage;
+use frontend::pages::user_list_page::UserListPage;
+use frontend::pages::user_page::UserPage;
+use frontend::route::Route;
 use std::rc::Rc;
 use yew::html::Scope;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-mod components;
-mod pages;
-mod services;
-
-#[derive(Routable, PartialEq, Eq, Clone, Debug)]
-pub enum Route {
-    #[at("/projects/:id/board")]
-    ProjectBoard { id: u64 },
-    #[at("/projects/new")]
-    ProjectNew,
-    #[at("/projects/:id")]
-    Project { id: u64 },
-    #[at("/projects")]
-    Projects,
-    #[at("/register")]
-    Registration,
-    #[at("/users/:id")]
-    User { id: u64 },
-    #[at("/users")]
-    Users,
-    #[at("/tickets/new")]
-    TicketNew,
-    #[at("/tickets/:id")]
-    Ticket { id: u64 },
-    #[at("/")]
-    Home,
-    #[not_found]
-    #[at("/404")]
-    NotFound,
-}
-
 pub enum AppMsg {
     ToggleNavbar,
     UpdateDialog(Rc<Dialog>),
     CloseDialog,
-}
-
-#[derive(Clone, Default, PartialEq)]
-pub struct Dialog {
-    active: bool,
-    content: Html,
-}
-
-#[derive(Clone, Default, PartialEq)]
-pub struct AppState {
-    update_dialog: Callback<Rc<Dialog>>,
-    close_dialog: Callback<()>,
-    navbar_active: bool,
 }
 
 pub struct App {

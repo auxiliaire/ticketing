@@ -1,5 +1,5 @@
 use super::dialog_context::DialogContext;
-use crate::AppState;
+use crate::app_state::AppState;
 use implicit_clone::unsync::IString;
 use std::rc::Rc;
 use yew::{html, Children, Component, Context, ContextHandle, ContextProvider, Html, Properties};

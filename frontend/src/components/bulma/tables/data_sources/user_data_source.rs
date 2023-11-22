@@ -3,7 +3,7 @@ use crate::{
         composite_cell_data::CompositeCellData,
         table_data_source::{ITableDataSource, TableDataSource},
     },
-    Route,
+    route::Route,
 };
 use implicit_clone::unsync::{IArray, IString};
 use shared::dtos::user_dto::{IUserDto, UserDto, UserField, UserValue};

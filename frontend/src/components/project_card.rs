@@ -1,6 +1,6 @@
 use crate::pages::project_page::ProjectPageMsg;
+use crate::route::Route;
 use crate::services::project_service::ProjectService;
-use crate::Route;
 use yew::prelude::*;
 use yew_router::prelude::*;
 

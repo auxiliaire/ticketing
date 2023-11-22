@@ -9,9 +9,9 @@ use crate::components::dialogs::select_dialog::SelectDialog;
 use crate::components::forms::ticket_form::TicketForm;
 use crate::components::option_data::OptionData;
 use crate::services::project_service::ProjectService;
+use crate::services::ticket_service::TicketService;
 use crate::services::user_service::UserService;
-use crate::{AppState, Dialog, Route};
-use frontend::services::ticket_service::TicketService;
+use crate::{app_state::AppState, dialog::Dialog, route::Route};
 use implicit_clone::{
     sync::{IArray, IString},
     unsync,

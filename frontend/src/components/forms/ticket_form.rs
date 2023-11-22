@@ -4,11 +4,11 @@ use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
 use crate::components::icon_link::{IconLink, IconLinkData};
 use crate::components::priority_tag::PriorityTag;
+use crate::route::Route;
 use crate::services::project_service::ProjectService;
-use crate::Route;
+use crate::services::user_service::UserService;
 use crate::{components::bulma::field::Field, services::ticket_service::TicketService};
 use entity::sea_orm_active_enums::Priority;
-use frontend::services::user_service::UserService;
 use gloo_timers::callback::Timeout;
 use implicit_clone::{
     sync,

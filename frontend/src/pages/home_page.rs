@@ -1,4 +1,4 @@
-use crate::{services::project_service::ProjectService, Route};
+use crate::{route::Route, services::project_service::ProjectService};
 use shared::dtos::project_dto::ProjectDto;
 use yew::prelude::*;
 use yew_router::prelude::Link;
