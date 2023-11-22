@@ -30,7 +30,7 @@ impl OptionData for TicketDto {
     }
 
     fn get_label(&self) -> implicit_clone::unsync::IString {
-        implicit_clone::unsync::IString::from(format!("{}", self.title.as_str()))
+        implicit_clone::unsync::IString::from(self.title.as_str().to_string())
     }
 }
 
