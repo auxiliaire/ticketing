@@ -38,9 +38,10 @@ fn test_app() {
         .build()
         .unwrap()
         .block_on(async {
-            match test_with_webdriver().await {
-                Ok(_) => println!("OK"),
-                Err(e) => assert_eq!("", e.to_string()),
-            }
+            assert!(test_with_webdriver().await.is_ok());
+            // match test_with_webdriver().await {
+            //    Ok(_) => println!("OK"),
+            //    Err(e) => assert_eq!("", e.to_string()),
+            // }
         })
 }
