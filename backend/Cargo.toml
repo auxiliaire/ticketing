@@ -13,6 +13,7 @@ anyhow = "1.0"
 async-trait = "0.1"
 axum = { version = "0.7", features = [ "query", "macros" ] }
 axum-extra = "0.9"
+axum-login = "0.12"
 chrono = { version = "0.4", default-features = false }
 dotenvy = "0.15"
 entity = { path = "../entity" }

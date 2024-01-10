@@ -12,6 +12,7 @@ pub mod error;
 pub mod query;
 pub mod resources;
 pub mod validated_json;
+pub mod auth_backend;
 
 pub async fn serve(db: DatabaseConnection) -> anyhow::Result<()> {
     let listener = TcpListener::bind(&get_socket_address())

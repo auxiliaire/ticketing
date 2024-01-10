@@ -67,6 +67,18 @@ impl From<(StatusCode, String, String, Errors)> for JsonError {
     }
 }
 
+impl From<AuthError> for JsonError {
+    fn from(value: AuthError) -> Self {
+        JsonError {
+            status: StatusCode::UNAUTHORIZED,
+            code: Option::None,
+            message: String::from("Authentication/Authorization Error"),
+            origin: Option::None,
+            details: Option::None,
+        }
+    }
+}
+
 impl IntoResponse for JsonError {
     fn into_response(self) -> axum::response::Response {
         (
@@ -87,6 +99,9 @@ impl IntoResponse for JsonError {
     }
 }
 
+#[derive(Debug, Error, Serialize)]
+pub enum AuthError {}
+
 #[derive(Debug, Display, Error)]
 pub enum ApiError {
     #[error(transparent)]
@@ -95,6 +110,7 @@ pub enum ApiError {
     ValidationRejection(#[from] Errors),
     DbAppError(#[from] DbErr),
     HandlerError(#[from] JsonError),
+    AuthError(#[from] AuthError),
 }
 
 impl ApiError {
@@ -128,6 +144,7 @@ impl IntoResponse for ApiError {
                 String::from("db_error"),
             )),
             ApiError::HandlerError(handler_error) => handler_error,
+            ApiError::AuthError(auth_error) => JsonError::from(auth_error),
         }
         .into_response()
     }

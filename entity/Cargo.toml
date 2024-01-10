@@ -1,6 +1,6 @@
 [package]
 name = "entity"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
 
@@ -9,6 +9,7 @@ name = "entity"
 path = "src/lib.rs"
 
 [dependencies]
+axum-login = "0.12"
 sea-orm = { version = "0.12" }
 strum = "0.25"
 
