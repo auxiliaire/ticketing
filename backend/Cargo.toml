@@ -1,6 +1,6 @@
 [package]
 name = "backend"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
 
@@ -11,13 +11,15 @@ path = "src/lib.rs"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-axum = { version = "0.6", features = [ "query", "macros" ] }
-axum-extra = "0.8.0"
+axum = { version = "0.7", features = [ "query", "macros" ] }
+axum-extra = "0.9"
 chrono = { version = "0.4", default-features = false }
 dotenvy = "0.15"
 entity = { path = "../entity" }
 futures = "0.3.27"
-http = "0.2"
+http = "1.0"
+http-body = "1.0"
+hyper = "1"
 log = "0.4"
 migration = { path = "../migration" }
 mime = "0.3"
@@ -27,7 +29,7 @@ serde_valid = "0.16"
 shared = { path = "../shared" }
 thiserror = "1.0"
 tokio = { version = "1.28", features = [ "full" ] }
-tower-http = { version = "0.4", features = [ "cors" ] }
+tower-http = { version = "0.5", features = [ "cors" ] }
 tower = "0.4"
 
 [dependencies.sea-orm]

@@ -3,6 +3,7 @@ use axum::{Extension, Router};
 use http::Method;
 use sea_orm::DatabaseConnection;
 use shared::api::get_socket_address;
+use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 
@@ -13,8 +14,10 @@ pub mod resources;
 pub mod validated_json;
 
 pub async fn serve(db: DatabaseConnection) -> anyhow::Result<()> {
-    axum::Server::bind(&get_socket_address())
-        .serve(router(db).into_make_service())
+    let listener = TcpListener::bind(&get_socket_address())
+        .await
+        .context("failed to bind listener");
+    axum::serve(listener.unwrap(), router(db).into_make_service())
         .await
         .context("failed to serve API")
 }
