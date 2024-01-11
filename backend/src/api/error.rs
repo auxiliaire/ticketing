@@ -68,7 +68,7 @@ impl From<(StatusCode, String, String, Errors)> for JsonError {
 }
 
 impl From<AuthError> for JsonError {
-    fn from(value: AuthError) -> Self {
+    fn from(_value: AuthError) -> Self {
         JsonError {
             status: StatusCode::UNAUTHORIZED,
             code: Option::None,

@@ -4,6 +4,8 @@ use entity::users::Entity as User;
 use sea_orm::{ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 use shared::dtos::login_dto::LoginDto;
 
+pub type AuthSession = axum_login::AuthSession<AuthBackend>;
+
 #[derive(Clone, Debug)]
 pub struct AuthBackend {
     db: DatabaseConnection,
@@ -31,6 +33,9 @@ impl AuthnBackend for AuthBackend {
             ))
             .one(&self.db)
             .await?;
+
+        // println!("User: {:?}", user);
+
         Ok(user.filter(|user| {
             // TODO: replace dummy comparison with proper hash based validation:
             creds.password == user.password
