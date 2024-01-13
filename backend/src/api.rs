@@ -1,6 +1,7 @@
 use self::auth_backend::AuthBackend;
 use anyhow::Context;
 use axum::{Extension, Router};
+use axum_csrf::{CsrfConfig, CsrfLayer};
 use axum_login::{
     tower_sessions::{MemoryStore, SessionManagerLayer},
     AuthManagerLayerBuilder,
@@ -40,6 +41,10 @@ pub fn router(db: DatabaseConnection) -> Router {
         ])
         .allow_headers(Any)
         .allow_origin(Any);
+    let cors_layer = ServiceBuilder::new().layer(cors);
+
+    let csrf = CsrfConfig::default();
+    let csrf_layer = CsrfLayer::new(csrf);
 
     let session_store = MemoryStore::default();
     let session_layer = SessionManagerLayer::new(session_store);
@@ -55,5 +60,7 @@ pub fn router(db: DatabaseConnection) -> Router {
         .merge(resources::projects_resource::router())
         .merge(login_controller::router())
         .layer(auth_layer)
-        .layer(ServiceBuilder::new().layer(cors).layer(Extension(db)))
+        .layer(Extension(db))
+        .layer(csrf_layer)
+        .layer(cors_layer)
 }
