@@ -1,4 +1,4 @@
-use self::auth_backend::AuthBackend;
+use self::{auth_backend::AuthBackend, jwt::JwtLayer};
 use anyhow::Context;
 use axum::{Extension, Router};
 use axum_csrf::{CsrfConfig, CsrfLayer};
@@ -16,6 +16,7 @@ use tower_http::cors::{Any, CorsLayer};
 pub mod auth_backend;
 pub mod consts;
 pub mod error;
+pub mod jwt;
 pub mod login_controller;
 pub mod query;
 pub mod resources;
@@ -50,7 +51,9 @@ pub fn router(db: DatabaseConnection) -> Router {
     let session_layer = SessionManagerLayer::new(session_store);
 
     let auth_backend = AuthBackend::new(db.clone());
-    let auth_layer = AuthManagerLayerBuilder::new(auth_backend, session_layer).build();
+    let auth_layer = AuthManagerLayerBuilder::new(auth_backend.clone(), session_layer).build();
+
+    let jwt_layer = JwtLayer::default();
 
     Router::new()
         .merge(resources::users_resource::router())
@@ -58,8 +61,10 @@ pub fn router(db: DatabaseConnection) -> Router {
         .merge(resources::ticket_updates_resource::router())
         .merge(resources::comments_resource::router())
         .merge(resources::projects_resource::router())
+        .layer(jwt_layer)
         .merge(login_controller::router())
         .layer(auth_layer)
+        .layer(Extension(auth_backend))
         .layer(Extension(db))
         .layer(csrf_layer)
         .layer(cors_layer)

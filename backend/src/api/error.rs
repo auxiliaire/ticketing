@@ -43,6 +43,18 @@ impl From<(StatusCode, String)> for JsonError {
     }
 }
 
+impl From<(StatusCode, String, Option<String>)> for JsonError {
+    fn from((status, message, code): (StatusCode, String, Option<String>)) -> Self {
+        JsonError {
+            status,
+            code,
+            message,
+            origin: Option::None,
+            details: Option::None,
+        }
+    }
+}
+
 impl From<(StatusCode, String, String)> for JsonError {
     fn from((status, message, origin): (StatusCode, String, String)) -> Self {
         JsonError {
@@ -68,11 +80,17 @@ impl From<(StatusCode, String, String, Errors)> for JsonError {
 }
 
 impl From<AuthError> for JsonError {
-    fn from(_value: AuthError) -> Self {
+    fn from(
+        AuthError {
+            status,
+            message,
+            code,
+        }: AuthError,
+    ) -> Self {
         JsonError {
-            status: StatusCode::UNAUTHORIZED,
-            code: Option::None,
-            message: String::from("Authentication/Authorization Error"),
+            status,
+            code,
+            message,
             origin: Option::None,
             details: Option::None,
         }
@@ -100,7 +118,35 @@ impl IntoResponse for JsonError {
 }
 
 #[derive(Debug, Error, Serialize)]
-pub enum AuthError {}
+pub struct AuthError {
+    #[serde(skip_serializing)]
+    pub(crate) status: StatusCode,
+    pub code: Option<String>,
+    pub message: String,
+}
+
+impl Display for AuthError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "(status = {}, message = '{}', code = '{}')",
+            self.status,
+            self.message,
+            <std::option::Option<std::string::String> as Clone>::clone(&self.code)
+                .unwrap_or_default()
+        )
+    }
+}
+
+impl Default for AuthError {
+    fn default() -> Self {
+        Self {
+            status: StatusCode::UNAUTHORIZED,
+            code: Default::default(),
+            message: String::from("Authentication/Authorization Error"),
+        }
+    }
+}
 
 #[derive(Debug, Display, Error)]
 pub enum ApiError {
