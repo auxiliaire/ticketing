@@ -20,6 +20,8 @@ pub enum Route {
     TicketNew,
     #[at("/tickets/:id")]
     Ticket { id: u64 },
+    #[at("/login")]
+    Login,
     #[at("/")]
     Home,
     #[not_found]

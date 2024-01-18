@@ -1,4 +1,5 @@
 use crate::components::bulma::field::Field;
+use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::checkbox::Checkbox;
 use crate::components::html::date_input::DateInput;
 use crate::components::html::text_input::TextInput;
@@ -14,6 +15,7 @@ use shared::validation::is_empty::IsEmpty;
 use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
 };
+use std::rc::Rc;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -26,6 +28,7 @@ pub struct Props {
 }
 
 pub enum ProjectMsg {
+    DialogContextChanged(Rc<DialogContext>),
     UpdateSummary(AttrValue),
     UpdateDeadline(AttrValue),
     UpdateOwner(AttrValue),
@@ -41,6 +44,7 @@ pub enum ProjectMsg {
 }
 
 pub struct ProjectForm {
+    dialog_context: Option<Rc<DialogContext>>,
     project: ProjectDto,
     deadline: IString,
     owner: IString,
@@ -59,7 +63,12 @@ impl Component for ProjectForm {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
+        let option_dialog_context = ctx
+            .link()
+            .context::<Rc<DialogContext>>(ctx.link().callback(ProjectMsg::DialogContextChanged));
+        let dialog_context = option_dialog_context.map(|(context, _listener)| context);
         Self {
+            dialog_context,
             project: ProjectDto::default(),
             deadline: IString::from(""),
             owner: IString::from(""),
@@ -81,6 +90,9 @@ impl Component for ProjectForm {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            ProjectMsg::DialogContextChanged(context) => {
+                self.dialog_context = Some(context);
+            }
             ProjectMsg::UpdateSummary(summary) => {
                 self.project.summary = String::from(summary.as_str());
             }
@@ -168,10 +180,15 @@ impl Component for ProjectForm {
                     self.update_errors(errors);
                 }
             }
-            ProjectMsg::Cancel() => {
-                let navigator = ctx.link().navigator().unwrap();
-                navigator.back();
-            }
+            ProjectMsg::Cancel() => match self.dialog_context.clone() {
+                Some(context) => {
+                    context.closehandler.emit(());
+                }
+                None => {
+                    let navigator = ctx.link().navigator().unwrap();
+                    navigator.back();
+                }
+            },
         }
         true
     }

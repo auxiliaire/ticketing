@@ -53,15 +53,15 @@ impl Component for ProjectBoardPage {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<Rc<AppState>>(ctx.link().callback(Msg::ContextChanged))
+            .expect("context to be set");
         ProjectService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
         ProjectService::fetch_assigned_tickets(
             ctx.props().id,
             ctx.link().callback(Msg::FetchedTickets),
         );
-        let (app_state, _listener) = ctx
-            .link()
-            .context::<Rc<AppState>>(ctx.link().callback(Msg::ContextChanged))
-            .expect("context to be set");
         Self {
             project: ProjectDto::default(),
             user: None,

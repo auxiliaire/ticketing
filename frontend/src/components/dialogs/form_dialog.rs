@@ -1,11 +1,11 @@
 use super::dialog_context::DialogContext;
-use crate::app_state::AppState;
+use crate::app_state::AppStateContext;
 use implicit_clone::unsync::IString;
 use std::rc::Rc;
-use yew::{html, Children, Component, Context, ContextHandle, ContextProvider, Html, Properties};
+use yew::{html, Children, Component, Context, ContextProvider, Html, Properties};
 
 pub enum FormDialogMsg {
-    ContextChanged(Rc<AppState>),
+    ContextChanged(AppStateContext),
     CloseDialog,
 }
 
@@ -16,8 +16,7 @@ pub struct FormDialogProps {
 }
 
 pub struct FormDialog {
-    app_state: Rc<AppState>,
-    _listener: ContextHandle<Rc<AppState>>,
+    app_state: AppStateContext,
     dialog_context: Rc<DialogContext>,
 }
 
@@ -28,14 +27,13 @@ impl Component for FormDialog {
     fn create(ctx: &yew::Context<Self>) -> Self {
         let (app_state, _listener) = ctx
             .link()
-            .context::<Rc<AppState>>(ctx.link().callback(FormDialogMsg::ContextChanged))
+            .context::<AppStateContext>(ctx.link().callback(FormDialogMsg::ContextChanged))
             .expect("context to be set");
         let dialog_context = Rc::new(DialogContext {
             closehandler: ctx.link().callback(|_| FormDialogMsg::CloseDialog),
         });
         Self {
             app_state,
-            _listener,
             dialog_context,
         }
     }

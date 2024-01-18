@@ -109,7 +109,7 @@ where
                             "Could not extract claims from header"
                         );
                         let mut res = Response::default();
-                        *res.status_mut() = http::StatusCode::BAD_REQUEST;
+                        *res.status_mut() = http::StatusCode::UNAUTHORIZED;
                         return Ok(res);
                     }
                 };

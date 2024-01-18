@@ -1,4 +1,5 @@
 use crate::components::bulma::field::Field;
+use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
 use implicit_clone::unsync::{IArray, IString};
@@ -11,6 +12,7 @@ use shared::validation::user_validation::{OptionUserRole, UserRole, UserValidati
 use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
 };
+use std::rc::Rc;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 use yew::prelude::*;
@@ -22,6 +24,7 @@ pub struct Props {
 }
 
 pub enum RegistrationMsg {
+    DialogContextChanged(Rc<DialogContext>),
     UpdateName(AttrValue),
     UpdatePassword(AttrValue),
     UpdatePasswordVerification(AttrValue),
@@ -32,6 +35,7 @@ pub enum RegistrationMsg {
 }
 
 pub struct RegistrationForm {
+    dialog_context: Option<Rc<DialogContext>>,
     user: UserDto,
     password: IString,
     password_repeat: IString,
@@ -46,7 +50,12 @@ impl Component for RegistrationForm {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
+        let option_dialog_context = ctx.link().context::<Rc<DialogContext>>(
+            ctx.link().callback(RegistrationMsg::DialogContextChanged),
+        );
+        let dialog_context = option_dialog_context.map(|(context, _listener)| context);
         Self {
+            dialog_context,
             user: UserDto::default(),
             password: IString::from(""),
             password_repeat: IString::from(""),
@@ -64,6 +73,9 @@ impl Component for RegistrationForm {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            RegistrationMsg::DialogContextChanged(context) => {
+                self.dialog_context = Some(context);
+            }
             RegistrationMsg::UpdateName(name) => {
                 self.user.name = String::from(name.as_str());
             }
@@ -94,10 +106,15 @@ impl Component for RegistrationForm {
                     self.update_errors(errors);
                 }
             }
-            RegistrationMsg::Cancel() => {
-                let navigator = ctx.link().navigator().unwrap();
-                navigator.back();
-            }
+            RegistrationMsg::Cancel() => match self.dialog_context.clone() {
+                Some(context) => {
+                    context.closehandler.emit(());
+                }
+                None => {
+                    let navigator = ctx.link().navigator().unwrap();
+                    navigator.back();
+                }
+            },
         }
         true
     }
