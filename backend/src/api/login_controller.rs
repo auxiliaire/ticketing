@@ -1,6 +1,6 @@
 use super::{
     auth_backend::AuthSession,
-    consts::AUTH_BASIC,
+    auth_utils::{extract_auth_from_header, AuthScheme},
     error::{ApiError, AuthError},
     jwt::encode_jwt,
     query,
@@ -17,7 +17,7 @@ use axum_csrf::CsrfToken;
 use axum_extra::extract::cookie::{Cookie, CookieJar};
 use axum_login::{login_required, AuthnBackend};
 use base64::{engine, Engine};
-use http::{header::AUTHORIZATION, HeaderMap, StatusCode};
+use http::{HeaderMap, StatusCode};
 use redis::{AsyncCommands, Client};
 use serde::{Deserialize, Serialize};
 use shared::dtos::login_dto::LoginDto;
@@ -143,24 +143,31 @@ async fn authenticate_raw(
 }
 
 async fn refresh_token(
+    headers: HeaderMap,
     jar: CookieJar,
     Extension(store): Extension<Client>,
 ) -> Result<String, ApiError> {
-    // TODO: additionally get token from header.
-    let Some(refresh_token_cookie) = jar.get("refresh-token") else {
-        return Err(ApiError::new(
-            StatusCode::UNAUTHORIZED,
-            String::from("Token is missing"),
-        ));
+    let bearer = extract_auth_from_header(&headers, AuthScheme::Bearer);
+    let refresh_token_cookie = jar.get("refresh-token");
+
+    // Get token from cookie OR bearer:
+    let refresh_token = match (refresh_token_cookie, bearer) {
+        (Some(refresh_token_cookie), _) => refresh_token_cookie.value().to_owned(),
+        (_, Ok(bearer)) => bearer,
+        _ => {
+            return Err(ApiError::new(
+                StatusCode::UNAUTHORIZED,
+                String::from("Token is missing"),
+            ));
+        }
     };
-    let refresh_token = refresh_token_cookie.value();
 
     let mut con = store
         .get_tokio_connection()
         .await
         .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let jwt = con
-        .get::<String, String>(refresh_token.to_owned())
+        .get::<String, String>(refresh_token)
         .await
         .map_err(|e| {
             ApiError::new(
@@ -176,16 +183,8 @@ async fn generate_token_using_auth(
     headers: HeaderMap,
     auth_backend: AuthBackend,
 ) -> Result<String, ApiError> {
-    let creds_vec = headers
-        .get(AUTHORIZATION)
-        .and_then(|header| std::str::from_utf8(header.as_bytes()).ok())
-        .map(|auth_header| auth_header.trim_start_matches(AUTH_BASIC).to_owned())
-        .ok_or(AuthError {
-            status: StatusCode::BAD_REQUEST,
-            message: String::from("No auth token found"),
-            code: Some(String::from("Bearer")),
-        })
-        .and_then(|base64_string| {
+    let creds_vec =
+        extract_auth_from_header(&headers, AuthScheme::Basic).and_then(|base64_string| {
             engine::general_purpose::STANDARD
                 .decode(base64_string)
                 .map_err(|_| AuthError {

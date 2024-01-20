@@ -1,33 +1,74 @@
-use crate::{components::forms::login_form::LoginForm, services::auth_service::AuthService};
+use crate::{
+    app_state::{AppState, AppStateContext},
+    components::forms::login_form::LoginForm,
+    route::Route,
+    services::auth_service::{try_authenticate, AuthService},
+};
 use shared::{api::error::error_response::ErrorResponse, dtos::login_dto::LoginDto};
 use yew::prelude::*;
+use yew_router::scope_ext::RouterScopeExt;
 
 pub enum LoginMsg {
+    ContextChanged(AppStateContext),
     Submitted((LoginDto, Callback<ErrorResponse>)),
-    TokenCreated(LoginDto),
+    LoggedIn(LoginDto),
+    Authenticated(Option<String>),
 }
 
-pub struct LoginPage {}
+pub struct LoginPage {
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
+}
+
 impl Component for LoginPage {
     type Message = LoginMsg;
     type Properties = ();
 
-    fn create(_: &Context<Self>) -> Self {
-        Self {}
+    fn create(ctx: &Context<Self>) -> Self {
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<AppStateContext>(ctx.link().callback(LoginMsg::ContextChanged))
+            .expect("context to be set");
+        if app_state.identity.is_some() {
+            let referer = app_state.referer.clone().unwrap_or(Route::Home);
+            let navigator = ctx.link().navigator().unwrap();
+            navigator.replace(&referer);
+        } else {
+            try_authenticate(
+                app_state.clone(),
+                ctx.link().callback(LoginMsg::Authenticated),
+            );
+        }
+        Self {
+            app_state,
+            _listener,
+        }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            LoginMsg::ContextChanged(state) => {
+                self.app_state = state;
+            }
             LoginMsg::Submitted((creds, callback_error)) => {
                 log::debug!("Submitted: {}", creds.username);
                 AuthService::authenticate(
                     creds,
-                    ctx.link().callback(LoginMsg::TokenCreated),
+                    ctx.link().callback(LoginMsg::LoggedIn),
                     callback_error,
                 );
             }
-            LoginMsg::TokenCreated(creds) => {
+            LoginMsg::LoggedIn(creds) => {
                 log::debug!("Created: {}", creds.username);
+                AppState::update_identity(&self.app_state, Some(creds));
+            }
+            LoginMsg::Authenticated(auth_res) => {
+                if auth_res.is_some() {
+                    log::debug!("Authenticated successfully!");
+                    let referer = self.app_state.referer.clone().unwrap_or(Route::Home);
+                    let navigator = ctx.link().navigator().unwrap();
+                    navigator.replace(&referer);
+                }
             }
         }
         true

@@ -9,8 +9,6 @@ lazy_static! {
 
 pub const DEFAULT_PAGINATION_OFFSET: u64 = 0;
 pub const DEFAULT_PAGINATION_LIMIT: u64 = 5;
-pub const AUTH_BASIC: &str = "Basic ";
-pub const AUTH_BEARER: &str = "Bearer ";
 
 fn set_store_url() -> String {
     dotenvy::var("REDIS_URL")

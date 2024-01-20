@@ -1,11 +1,12 @@
 use super::{
-    consts::{AUTH_BEARER, JWT_SECRET},
+    auth_utils::{extract_auth_from_header, AuthScheme},
+    consts::JWT_SECRET,
     error::AuthError,
 };
 use chrono::{Duration, Utc};
 use entity::users::Entity as User;
 use futures::Future;
-use http::{header::AUTHORIZATION, HeaderValue, Request, Response, StatusCode};
+use http::{HeaderMap, Request, Response, StatusCode};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use sea_orm::{ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
@@ -21,15 +22,8 @@ pub struct Claims {
 }
 
 impl Claims {
-    fn try_from_header(auth_header: Option<&HeaderValue>) -> Result<Claims, AuthError> {
-        auth_header
-            .and_then(|header| std::str::from_utf8(header.as_bytes()).ok())
-            .map(|auth_header| auth_header.trim_start_matches(AUTH_BEARER).to_owned())
-            .ok_or(AuthError {
-                status: StatusCode::BAD_REQUEST,
-                message: String::from("No auth token found"),
-                code: Some(String::from("Bearer")),
-            })
+    fn try_from_header(headers: &HeaderMap) -> Result<Claims, AuthError> {
+        extract_auth_from_header(headers, AuthScheme::Bearer)
             .and_then(|token| {
                 decode_jwt(token).map_err(|_| AuthError {
                     status: StatusCode::UNAUTHORIZED,
@@ -101,7 +95,7 @@ where
 
         Box::pin(
             async move {
-                let claims = match Claims::try_from_header(req.headers().get(AUTHORIZATION)) {
+                let claims = match Claims::try_from_header(req.headers()) {
                     Ok(c) => c,
                     Err(e) => {
                         tracing::error!(

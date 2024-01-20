@@ -56,11 +56,12 @@ impl ProjectService {
         });
     }
 
-    pub fn fetch_latest(callback: Callback<Vec<ProjectDto>>) {
+    pub fn fetch_latest(jwt: String, callback: Callback<Vec<ProjectDto>>) {
         spawn_local(async move {
             let page: Page<ProjectDto> =
                 Request::get(format!("{}{}", get_api_url(), PROJECTS_ENDPOINT).as_str())
                     .query([("limit", "3"), ("sort", "id"), ("order", "desc")])
+                    .header("Authorization", format!("Bearer {}", jwt).as_str())
                     .send()
                     .await
                     .unwrap()

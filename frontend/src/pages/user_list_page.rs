@@ -1,5 +1,5 @@
 use crate::{
-    app_state::AppStateContext,
+    app_state::{AppState, AppStateContext},
     components::bulma::tables::{
         data_sources::user_data_source::UserDataSource, table::Table,
         table_data_source::ITableDataSource, table_head_data::TableHeadData,
@@ -35,6 +35,7 @@ impl Component for UserListPage {
         if app_state.identity.is_some() {
             UserService::fetch_all(None, None, None, ctx.link().callback(Msg::FetchedUsers));
         } else {
+            AppState::update_referer(&app_state, ctx.link().route::<Route>());
             let navigator = ctx.link().navigator().unwrap();
             navigator.replace(&Route::Login);
         }

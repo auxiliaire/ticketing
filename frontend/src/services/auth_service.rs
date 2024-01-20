@@ -4,6 +4,10 @@ use shared::api::{error::error_response::ErrorResponse, get_api_url};
 use shared::dtos::login_dto::LoginDto;
 use yew::{platform::spawn_local, Callback};
 
+use crate::app_state::{AppState, AppStateContext};
+
+pub const REFRESH_TOKEN_KEY: &str = "refresh-token";
+
 const AUTHENTICATE_ENDPOINT: &str = "authenticate";
 const REFRESH_TOKEN_ENDPOINT: &str = "refresh-token";
 
@@ -31,7 +35,9 @@ impl AuthService {
                     match text_result {
                         Ok(token) => {
                             log::debug!("Token: {}", token);
-                            // TODO: Save token to Storage
+                            let storage =
+                                web_sys::window().unwrap().local_storage().unwrap().unwrap();
+                            storage.set(REFRESH_TOKEN_KEY, &token).unwrap();
                             Ok(token)
                         }
                         Err(e) => {
@@ -51,8 +57,8 @@ impl AuthService {
             // Getting JWT:
             let res = Request::get(format!("{}{}", get_api_url(), REFRESH_TOKEN_ENDPOINT).as_str())
                 .header(
-                    "Cookie",
-                    &format!("refresh-token={}", refresh_token.as_str()),
+                    "Authorization",
+                    &format!("Bearer {}", refresh_token.as_str()),
                 )
                 .send()
                 .await;
@@ -77,6 +83,64 @@ impl AuthService {
             };
         });
     }
+}
+
+pub async fn try_authenticate_async(app_state: &AppStateContext) -> Result<String, ErrorResponse> {
+    if app_state
+        .identity
+        .as_ref()
+        .is_some_and(|i| !i.token.is_empty())
+    {
+        return Ok(app_state.identity.as_ref().unwrap().token.clone());
+    }
+    // Looking for refresh token in the local storage:
+    let storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
+    let refresh_token = match storage.get(REFRESH_TOKEN_KEY) {
+        Ok(Some(t)) => t,
+        _ => {
+            return Err(ErrorResponse::from(String::from(
+                "Could not retrieve refresh token",
+            )));
+        }
+    };
+
+    // Getting JWT:
+    let res = Request::get(format!("{}{}", get_api_url(), REFRESH_TOKEN_ENDPOINT).as_str())
+        .header(
+            "Authorization",
+            &format!("Bearer {}", refresh_token.as_str()),
+        )
+        .send()
+        .await;
+
+    match res {
+        Ok(resp) => {
+            let text_result = resp.text().await;
+            match text_result {
+                Ok(token) => {
+                    log::debug!("JWT: {}", token);
+                    AppState::update_identity(
+                        app_state,
+                        Some(LoginDto {
+                            username: String::from("<Faded>"),
+                            password: String::default(),
+                            token: token.clone(),
+                            redirect: None,
+                        }),
+                    );
+                    Ok(token)
+                }
+                Err(e) => Err(ErrorResponse::from(e.to_string())),
+            }
+        }
+        Err(e) => Err(ErrorResponse::from(e.to_string())),
+    }
+}
+
+pub fn try_authenticate(app_state: AppStateContext, callback: Callback<Option<String>>) {
+    spawn_local(async move {
+        callback.emit(try_authenticate_async(&app_state.clone()).await.ok());
+    });
 }
 
 fn create_token(creds: &LoginDto) -> String {

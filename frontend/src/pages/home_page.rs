@@ -6,7 +6,10 @@ use crate::{
     },
     dialog::Dialog,
     route::Route,
-    services::{auth_service::AuthService, project_service::ProjectService},
+    services::{
+        auth_service::{try_authenticate, AuthService},
+        project_service::ProjectService,
+    },
 };
 use shared::{
     api::error::error_response::ErrorResponse,
@@ -24,6 +27,7 @@ pub enum HomeMsg {
     SubmittedLoginForm((LoginDto, Callback<ErrorResponse>)),
     SubmittedRegistrationForm((UserDto, Callback<ErrorResponse>)),
     LoggedIn(LoginDto),
+    Authenticated(Option<String>),
 }
 
 pub struct HomePage {
@@ -42,7 +46,15 @@ impl Component for HomePage {
             .context::<AppStateContext>(ctx.link().callback(HomeMsg::ContextChanged))
             .expect("context to be set");
         if app_state.identity.is_some() {
-            ProjectService::fetch_latest(ctx.link().callback(HomeMsg::FetchedProjects));
+            ProjectService::fetch_latest(
+                app_state.identity.clone().unwrap().token.clone(),
+                ctx.link().callback(HomeMsg::FetchedProjects),
+            );
+        } else {
+            try_authenticate(
+                app_state.clone(),
+                ctx.link().callback(HomeMsg::Authenticated),
+            );
         }
         Self {
             list: Vec::with_capacity(3),
@@ -101,6 +113,15 @@ impl Component for HomePage {
             HomeMsg::LoggedIn(creds) => {
                 log::debug!("Logged in {}", creds.username);
                 AppState::update_identity_and_close_dialog(&self.app_state, Some(creds));
+            }
+            HomeMsg::Authenticated(auth_res) => {
+                if let Some(jwt) = auth_res {
+                    log::debug!("Authenticated successfully!");
+                    ProjectService::fetch_latest(
+                        jwt,
+                        ctx.link().callback(HomeMsg::FetchedProjects),
+                    );
+                }
             }
         }
         true

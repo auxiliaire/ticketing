@@ -1,4 +1,4 @@
-use crate::dialog::Dialog;
+use crate::{dialog::Dialog, route::Route};
 use shared::dtos::login_dto::LoginDto;
 use std::rc::Rc;
 use yew::{
@@ -11,6 +11,7 @@ pub struct AppState {
     pub dialog: Rc<Dialog>,
     pub navbar_active: bool,
     pub identity: Option<LoginDto>,
+    pub referer: Option<Route>,
 }
 
 impl AppState {
@@ -19,6 +20,7 @@ impl AppState {
             dialog: dialog.clone(),
             navbar_active: ctx.navbar_active,
             identity: ctx.identity.clone(),
+            referer: ctx.referer.clone(),
         });
     }
 
@@ -28,6 +30,7 @@ impl AppState {
             dialog: Dialog::default().into(),
             navbar_active: ctx.navbar_active,
             identity: ctx.identity.clone(),
+            referer: ctx.referer.clone(),
         });
     }
 
@@ -36,6 +39,16 @@ impl AppState {
             dialog: ctx.dialog.clone(),
             navbar_active: !ctx.navbar_active,
             identity: ctx.identity.clone(),
+            referer: ctx.referer.clone(),
+        });
+    }
+
+    pub fn update_identity(ctx: &AppStateContext, identity: Option<LoginDto>) {
+        ctx.dispatch(AppState {
+            dialog: ctx.dialog.clone(),
+            navbar_active: ctx.navbar_active,
+            identity: identity.clone(),
+            referer: ctx.referer.clone(),
         });
     }
 
@@ -44,6 +57,16 @@ impl AppState {
             dialog: Dialog::default().into(),
             navbar_active: ctx.navbar_active,
             identity: identity.clone(),
+            referer: ctx.referer.clone(),
+        });
+    }
+
+    pub fn update_referer(ctx: &AppStateContext, referer: Option<Route>) {
+        ctx.dispatch(AppState {
+            dialog: ctx.dialog.clone(),
+            navbar_active: ctx.navbar_active,
+            identity: ctx.identity.clone(),
+            referer: referer.clone(),
         });
     }
 }

@@ -15,6 +15,7 @@ use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 
 pub mod auth_backend;
+pub mod auth_utils;
 pub mod consts;
 pub mod error;
 pub mod jwt;
