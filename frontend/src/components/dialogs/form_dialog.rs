@@ -47,7 +47,7 @@ impl Component for FormDialog {
             FormDialogMsg::ContextChanged(state) => {
                 self.app_state = state;
             }
-            FormDialogMsg::CloseDialog => AppState::close_dialog(&self.app_state)
+            FormDialogMsg::CloseDialog => AppState::close_dialog(&self.app_state),
         }
         true
     }
