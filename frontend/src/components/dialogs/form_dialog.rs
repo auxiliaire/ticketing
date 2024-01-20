@@ -1,5 +1,5 @@
 use super::dialog_context::DialogContext;
-use crate::app_state::AppStateContext;
+use crate::app_state::{AppState, AppStateContext};
 use implicit_clone::unsync::IString;
 use std::rc::Rc;
 use yew::{html, Children, Component, Context, ContextProvider, Html, Properties};
@@ -47,9 +47,7 @@ impl Component for FormDialog {
             FormDialogMsg::ContextChanged(state) => {
                 self.app_state = state;
             }
-            FormDialogMsg::CloseDialog => {
-                self.app_state.close_dialog.emit(());
-            }
+            FormDialogMsg::CloseDialog => AppState::close_dialog(&self.app_state)
         }
         true
     }
@@ -60,7 +58,7 @@ impl Component for FormDialog {
             <>
                 <header class="modal-card-head">
                     <p class="modal-card-title">{ ctx.props().title.clone() }</p>
-                    <button class="delete" aria-label="close" onclick={self.app_state.close_dialog.reform(move |_| ())}></button>
+                    <button class="delete" aria-label="close" onclick={ctx.link().callback(|_| FormDialogMsg::CloseDialog)}></button>
                 </header>
                 <ContextProvider<Rc<DialogContext>> {context}>
                     { for ctx.props().children.iter() }

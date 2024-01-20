@@ -1,11 +1,15 @@
 use anyhow::Context;
-use api::consts::DATABASE_URL;
+use api::consts::{DATABASE_URL, STORE_URL};
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{ConnectOptions, Database};
 
 pub mod api;
 
 pub async fn main() {
+    let store = redis::Client::open(STORE_URL.clone())
+        .context("Could not establish connection to Redis")
+        .unwrap();
+
     let mut opt = ConnectOptions::new(DATABASE_URL.clone());
     opt.max_connections(100)
         .min_connections(5)
@@ -21,5 +25,5 @@ pub async fn main() {
         .context("Migration failed")
         .unwrap();
 
-    api::serve(pool).await.unwrap();
+    api::serve(store, pool).await.unwrap();
 }

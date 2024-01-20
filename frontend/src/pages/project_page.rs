@@ -1,3 +1,4 @@
+use crate::app_state::AppStateContext;
 use crate::components::bulma::tables::data_sources::ticket_data_source::TicketDataSource;
 use crate::components::bulma::tables::table::Table;
 use crate::components::bulma::tables::table_data_source::ITableDataSource;
@@ -43,7 +44,7 @@ pub enum ProjectPageMsg {
     FetchedProject(ProjectDto),
     FetchedUser(UserDto),
     FetchedTickets(Vec<TicketDto>),
-    ContextChanged(Rc<AppState>),
+    ContextChanged(AppStateContext),
     OpenSelectDialog(),
     OpenFormDialog(),
     SelectedTickets(IArray<u64>),
@@ -56,9 +57,10 @@ pub struct ProjectPage {
     project: ProjectDto,
     user: Option<ButtonLinkData<Route>>,
     ticket_list: Vec<TicketDto>,
-    app_state: Rc<AppState>,
-    _listener: ContextHandle<Rc<AppState>>,
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
 }
+
 impl Component for ProjectPage {
     type Message = ProjectPageMsg;
     type Properties = Props;
@@ -74,7 +76,7 @@ impl Component for ProjectPage {
         );
         let (app_state, _listener) = ctx
             .link()
-            .context::<Rc<AppState>>(ctx.link().callback(ProjectPageMsg::ContextChanged))
+            .context::<AppStateContext>(ctx.link().callback(ProjectPageMsg::ContextChanged))
             .expect("context to be set");
         Self {
             project: ProjectDto::default(),
@@ -127,7 +129,7 @@ impl Component for ProjectPage {
                         <SelectDialog<u64, TicketDto> {optionsapi} {onselect} />
                     },
                 });
-                self.app_state.update_dialog.emit(dialog);
+                AppState::update_dialog(&self.app_state, dialog);
             }
             ProjectPageMsg::OpenFormDialog() => {
                 let dialog = Rc::new(Dialog {
@@ -138,7 +140,7 @@ impl Component for ProjectPage {
                         </FormDialog>
                     },
                 });
-                self.app_state.update_dialog.emit(dialog);
+                AppState::update_dialog(&self.app_state, dialog);
             }
             ProjectPageMsg::SelectedTickets(tickets) => {
                 let callback = ctx.link().callback(ProjectPageMsg::FetchedTickets);
@@ -147,7 +149,7 @@ impl Component for ProjectPage {
                     tickets.iter().collect::<Vec<u64>>(),
                     callback,
                 );
-                self.app_state.close_dialog.emit(());
+                AppState::close_dialog(&self.app_state);
             }
             ProjectPageMsg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
@@ -169,7 +171,7 @@ impl Component for ProjectPage {
             ),
             ProjectPageMsg::TicketCreated(ticket) => {
                 log::debug!("Created: {}", ticket);
-                self.app_state.close_dialog.emit(());
+                AppState::close_dialog(&self.app_state);
                 ProjectService::fetch_assigned_tickets(
                     ctx.props().id,
                     ctx.link().callback(ProjectPageMsg::FetchedTickets),

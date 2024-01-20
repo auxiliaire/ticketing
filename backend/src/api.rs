@@ -7,6 +7,7 @@ use axum_login::{
     AuthManagerLayerBuilder,
 };
 use http::Method;
+use redis::Client;
 use sea_orm::DatabaseConnection;
 use shared::api::get_socket_address;
 use tokio::net::TcpListener;
@@ -22,16 +23,16 @@ pub mod query;
 pub mod resources;
 pub mod validated_json;
 
-pub async fn serve(db: DatabaseConnection) -> anyhow::Result<()> {
+pub async fn serve(store: Client, db: DatabaseConnection) -> anyhow::Result<()> {
     let listener = TcpListener::bind(&get_socket_address())
         .await
         .context("failed to bind listener");
-    axum::serve(listener.unwrap(), router(db).into_make_service())
+    axum::serve(listener.unwrap(), router(store, db).into_make_service())
         .await
         .context("failed to serve API")
 }
 
-pub fn router(db: DatabaseConnection) -> Router {
+pub fn router(store: Client, db: DatabaseConnection) -> Router {
     let cors = CorsLayer::new()
         .allow_methods([
             Method::POST,
@@ -66,6 +67,7 @@ pub fn router(db: DatabaseConnection) -> Router {
         .layer(auth_layer)
         .layer(Extension(auth_backend))
         .layer(Extension(db))
+        .layer(Extension(store))
         .layer(csrf_layer)
         .layer(cors_layer)
 }

@@ -1,4 +1,5 @@
 use crate::{
+    app_state::AppStateContext,
     components::bulma::{
         pagination::Pagination,
         tables::{
@@ -15,12 +16,13 @@ use shared::dtos::{
     project_dto::{IProjectDto, ProjectDto, ProjectField, ProjectValue},
 };
 use yew::prelude::*;
-use yew_router::prelude::Link;
+use yew_router::{prelude::Link, scope_ext::RouterScopeExt};
 
 const DEFAULT_LIMIT: u64 = 5;
 const DEFAULT_OFFSET: u64 = 0;
 
 pub enum Msg {
+    ContextChanged(AppStateContext),
     FetchedProjects(Page<ProjectDto>),
     SortProjects(TableHeadData),
     UpdateOffset(u64),
@@ -33,23 +35,34 @@ pub struct ProjectListPage {
     order: Option<IString>,
     limit: u64,
     offset: u64,
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
 }
 impl Component for ProjectListPage {
     type Message = Msg;
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<AppStateContext>(ctx.link().callback(Msg::ContextChanged))
+            .expect("context to be set");
         let sort = None;
         let order = None;
         let limit = DEFAULT_LIMIT;
         let offset = DEFAULT_OFFSET;
-        ProjectService::fetch_all(
-            sort.clone(),
-            order.clone(),
-            Some(limit),
-            Some(offset),
-            ctx.link().callback(Msg::FetchedProjects),
-        );
+        if app_state.identity.is_some() {
+            ProjectService::fetch_all(
+                sort.clone(),
+                order.clone(),
+                Some(limit),
+                Some(offset),
+                ctx.link().callback(Msg::FetchedProjects),
+            );
+        } else {
+            let navigator = ctx.link().navigator().unwrap();
+            navigator.replace(&Route::Login);
+        }
         Self {
             total: 0,
             list: Vec::new(),
@@ -57,11 +70,16 @@ impl Component for ProjectListPage {
             order,
             limit,
             offset,
+            app_state,
+            _listener,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::ContextChanged(state) => {
+                self.app_state = state;
+            }
             Msg::FetchedProjects(project_page) => {
                 self.total = project_page.total;
                 self.list = project_page.list;

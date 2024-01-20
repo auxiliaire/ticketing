@@ -1,33 +1,55 @@
 use crate::{
+    app_state::AppStateContext,
     components::bulma::tables::{
         data_sources::user_data_source::UserDataSource, table::Table,
         table_data_source::ITableDataSource, table_head_data::TableHeadData,
     },
+    route::Route,
     services::user_service::UserService,
 };
 use implicit_clone::unsync::IString;
 use shared::dtos::user_dto::{IUserDto, UserDto, UserField, UserValue};
 use yew::prelude::*;
+use yew_router::scope_ext::RouterScopeExt;
 
 pub enum Msg {
+    ContextChanged(AppStateContext),
     FetchedUsers(Vec<UserDto>),
     SortUsers(TableHeadData),
 }
 
 pub struct UserListPage {
     list: Vec<UserDto>,
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
 }
 impl Component for UserListPage {
     type Message = Msg;
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        UserService::fetch_all(None, None, None, ctx.link().callback(Msg::FetchedUsers));
-        Self { list: Vec::new() }
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<AppStateContext>(ctx.link().callback(Msg::ContextChanged))
+            .expect("context to be set");
+        if app_state.identity.is_some() {
+            UserService::fetch_all(None, None, None, ctx.link().callback(Msg::FetchedUsers));
+        } else {
+            let navigator = ctx.link().navigator().unwrap();
+            navigator.replace(&Route::Login);
+        }
+        Self {
+            list: Vec::new(),
+            app_state,
+            _listener,
+        }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::ContextChanged(state) => {
+                self.app_state = state;
+            }
             Msg::FetchedUsers(users) => {
                 self.list = users;
             }

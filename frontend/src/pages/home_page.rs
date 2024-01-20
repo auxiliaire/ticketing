@@ -14,13 +14,13 @@ use shared::{
 };
 use std::rc::Rc;
 use yew::prelude::*;
-use yew_router::{prelude::Link, scope_ext::RouterScopeExt};
+use yew_router::prelude::Link;
 
 pub enum HomeMsg {
     FetchedProjects(Vec<ProjectDto>),
     ContextChanged(AppStateContext),
-    OpenRegistrationDialog(),
-    OpenLoginDialog(),
+    OpenRegistrationDialog,
+    OpenLoginDialog,
     SubmittedLoginForm((LoginDto, Callback<ErrorResponse>)),
     SubmittedRegistrationForm((UserDto, Callback<ErrorResponse>)),
     LoggedIn(LoginDto),
@@ -29,6 +29,7 @@ pub enum HomeMsg {
 pub struct HomePage {
     list: Vec<ProjectDto>,
     app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
 }
 
 impl Component for HomePage {
@@ -46,6 +47,7 @@ impl Component for HomePage {
         Self {
             list: Vec::with_capacity(3),
             app_state,
+            _listener,
         }
     }
 
@@ -65,7 +67,7 @@ impl Component for HomePage {
                 );
                 self.app_state = state;
             }
-            HomeMsg::OpenLoginDialog() => {
+            HomeMsg::OpenLoginDialog => {
                 let dialog = Rc::new(Dialog {
                     active: true,
                     content: html! {
@@ -74,9 +76,9 @@ impl Component for HomePage {
                         </FormDialog>
                     },
                 });
-                self.app_state.update_dialog.emit(dialog);
+                AppState::update_dialog(&self.app_state, dialog);
             }
-            HomeMsg::OpenRegistrationDialog() => {
+            HomeMsg::OpenRegistrationDialog => {
                 let dialog = Rc::new(Dialog {
                     active: true,
                     content: html! {
@@ -85,7 +87,7 @@ impl Component for HomePage {
                         </FormDialog>
                     },
                 });
-                self.app_state.update_dialog.emit(dialog);
+                AppState::update_dialog(&self.app_state, dialog);
             }
             HomeMsg::SubmittedLoginForm((creds, callback_error)) => {
                 log::debug!("Submitted login creds for {}", creds.username);
@@ -98,15 +100,7 @@ impl Component for HomePage {
             HomeMsg::SubmittedRegistrationForm(_) => todo!(),
             HomeMsg::LoggedIn(creds) => {
                 log::debug!("Logged in {}", creds.username);
-                self.app_state.close_dialog.emit(());
-                self.app_state.dispatch(AppState {
-                    update_dialog: self.app_state.update_dialog.clone(),
-                    close_dialog: self.app_state.close_dialog.clone(),
-                    navbar_active: self.app_state.navbar_active,
-                    identity: Some(creds),
-                });
-                let navigator = ctx.link().navigator().unwrap();
-                navigator.replace(&Route::Home);
+                AppState::update_identity_and_close_dialog(&self.app_state, Some(creds));
             }
         }
         true
@@ -203,8 +197,8 @@ impl HomePage {
     }
 
     fn view_unauthorized(&self, ctx: &Context<Self>) -> Html {
-        let on_register_click = |_| HomeMsg::OpenRegistrationDialog();
-        let on_login_click = |_| HomeMsg::OpenLoginDialog();
+        let on_register_click = ctx.link().callback(|_| HomeMsg::OpenRegistrationDialog);
+        let on_login_click = ctx.link().callback(|_| HomeMsg::OpenLoginDialog);
         html! {
             <div class="tile is-parent">
                 <div class="tile is-child box" style="display: flex; flex-direction: column">
@@ -213,11 +207,11 @@ impl HomePage {
 
                     <p>
                         { "In order to gain access to our ticket management application, please " }
-                        <a href="#" onclick={ctx.link().callback(on_register_click)}>
+                        <a href="#" onclick={on_register_click}>
                             { "register" }
                         </a>
                         { " or " }
-                        <a href="#" onclick={ctx.link().callback(on_login_click)}>
+                        <a href="#" onclick={on_login_click}>
                             { "log in" }
                         </a>
                         { "." }

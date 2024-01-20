@@ -1,5 +1,5 @@
 use crate::{
-    components::forms::ticket_form::TicketForm, route::Route,
+    app_state::AppStateContext, components::forms::ticket_form::TicketForm, route::Route,
     services::ticket_service::TicketService,
 };
 use shared::{api::error::error_response::ErrorResponse, dtos::ticket_dto::TicketDto};
@@ -7,21 +7,40 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 pub enum TicketMsg {
+    ContextChanged(AppStateContext),
     Submitted((TicketDto, Callback<ErrorResponse>)),
     Created(TicketDto),
 }
 
-pub struct TicketNewPage {}
+pub struct TicketNewPage {
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
+}
+
 impl Component for TicketNewPage {
     type Message = TicketMsg;
     type Properties = ();
 
-    fn create(_: &Context<Self>) -> Self {
-        Self {}
+    fn create(ctx: &Context<Self>) -> Self {
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<AppStateContext>(ctx.link().callback(TicketMsg::ContextChanged))
+            .expect("context to be set");
+        if app_state.identity.is_none() {
+            let navigator = ctx.link().navigator().unwrap();
+            navigator.replace(&Route::Login);
+        }
+        Self {
+            app_state,
+            _listener,
+        }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            TicketMsg::ContextChanged(state) => {
+                self.app_state = state;
+            }
             TicketMsg::Submitted((ticket, callback_error)) => {
                 log::debug!("Submitted: {}", ticket);
                 TicketService::create(

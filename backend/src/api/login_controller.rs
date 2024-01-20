@@ -14,11 +14,14 @@ use axum::{
     Extension, Form, Router,
 };
 use axum_csrf::CsrfToken;
+use axum_extra::extract::cookie::{Cookie, CookieJar};
 use axum_login::{login_required, AuthnBackend};
 use base64::{engine, Engine};
 use http::{header::AUTHORIZATION, HeaderMap, StatusCode};
+use redis::{AsyncCommands, Client};
 use serde::{Deserialize, Serialize};
 use shared::dtos::login_dto::LoginDto;
+use uuid::Uuid;
 
 pub fn router() -> Router {
     Router::new()
@@ -31,7 +34,9 @@ pub fn router() -> Router {
         .route("/login-success", get(login_success))
         .route("/logout", get(logout))
         // API routes
-        .route("/authenticate", post(authenticate))
+        .route("/authenticate-cookie", post(authenticate_cookie))
+        .route("/authenticate", post(authenticate_raw))
+        .route("/refresh-token", get(refresh_token))
 }
 
 #[derive(Deserialize, Serialize, Template)]
@@ -96,9 +101,80 @@ async fn logout(mut auth_session: AuthSession) -> impl IntoResponse {
     }
 }
 
-async fn authenticate(
+async fn authenticate_cookie(
     headers: HeaderMap,
     Extension(auth_backend): Extension<AuthBackend>,
+    jar: CookieJar,
+) -> Result<(CookieJar, String), ApiError> {
+    let token = generate_token_using_auth(headers, auth_backend).await?;
+    Ok((
+        jar.add(
+            Cookie::build(("api-token", token))
+                .domain("127.0.0.1:8080")
+                .path("/")
+                .secure(false)
+                .http_only(true),
+        ),
+        String::default(),
+    ))
+}
+
+async fn authenticate_raw(
+    headers: HeaderMap,
+    Extension(store): Extension<Client>,
+    Extension(auth_backend): Extension<AuthBackend>,
+) -> Result<String, ApiError> {
+    // We can just return the token in the body, or create a refresh token instead.
+    let token = generate_token_using_auth(headers, auth_backend).await?;
+
+    // Generate key for token:
+    let key = Uuid::new_v4().to_string();
+
+    // Storing the JWT token in cache:
+    let mut con = store
+        .get_tokio_connection()
+        .await
+        .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    con.set(key.as_str(), token)
+        .await
+        .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(key)
+}
+
+async fn refresh_token(
+    jar: CookieJar,
+    Extension(store): Extension<Client>,
+) -> Result<String, ApiError> {
+    // TODO: additionally get token from header.
+    let Some(refresh_token_cookie) = jar.get("refresh-token") else {
+        return Err(ApiError::new(
+            StatusCode::UNAUTHORIZED,
+            String::from("Token is missing"),
+        ));
+    };
+    let refresh_token = refresh_token_cookie.value();
+
+    let mut con = store
+        .get_tokio_connection()
+        .await
+        .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let jwt = con
+        .get::<String, String>(refresh_token.to_owned())
+        .await
+        .map_err(|e| {
+            ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Error using store: '{}'", e),
+            )
+        })?;
+
+    Ok(jwt.to_string())
+}
+
+async fn generate_token_using_auth(
+    headers: HeaderMap,
+    auth_backend: AuthBackend,
 ) -> Result<String, ApiError> {
     let creds_vec = headers
         .get(AUTHORIZATION)
@@ -137,5 +213,6 @@ async fn authenticate(
 
     let token = encode_jwt(user.name)
         .map_err(|status| ApiError::new(status, String::from("Token creation error")))?;
+
     Ok(token)
 }

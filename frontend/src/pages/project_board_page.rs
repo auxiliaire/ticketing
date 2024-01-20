@@ -1,3 +1,4 @@
+use crate::app_state::AppStateContext;
 use crate::components::button_link::{ButtonLink, ButtonLinkData};
 use crate::components::check_tag::CheckTag;
 use crate::components::dialogs::form_dialog::FormDialog;
@@ -19,6 +20,7 @@ use strum::IntoEnumIterator;
 use web_sys::DragEvent;
 use yew::prelude::*;
 use yew_router::prelude::Link;
+use yew_router::scope_ext::RouterScopeExt;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
@@ -29,7 +31,7 @@ pub enum Msg {
     FetchedProject(ProjectDto),
     FetchedUser(UserDto),
     FetchedTickets(Vec<TicketDto>),
-    ContextChanged(Rc<AppState>),
+    ContextChanged(AppStateContext),
     OpenSelectDialog(),
     OpenFormDialog(),
     OpenTicketDialog(u64),
@@ -45,8 +47,8 @@ pub struct ProjectBoardPage {
     project: ProjectDto,
     user: Option<ButtonLinkData<Route>>,
     ticket_list: Vec<TicketDto>,
-    app_state: Rc<AppState>,
-    _listener: ContextHandle<Rc<AppState>>,
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
 }
 impl Component for ProjectBoardPage {
     type Message = Msg;
@@ -55,13 +57,19 @@ impl Component for ProjectBoardPage {
     fn create(ctx: &Context<Self>) -> Self {
         let (app_state, _listener) = ctx
             .link()
-            .context::<Rc<AppState>>(ctx.link().callback(Msg::ContextChanged))
+            .context::<AppStateContext>(ctx.link().callback(Msg::ContextChanged))
             .expect("context to be set");
-        ProjectService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
-        ProjectService::fetch_assigned_tickets(
-            ctx.props().id,
-            ctx.link().callback(Msg::FetchedTickets),
-        );
+
+        if app_state.identity.is_some() {
+            ProjectService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
+            ProjectService::fetch_assigned_tickets(
+                ctx.props().id,
+                ctx.link().callback(Msg::FetchedTickets),
+            );
+        } else {
+            let navigator = ctx.link().navigator().unwrap();
+            navigator.replace(&Route::Login);
+        }
         Self {
             project: ProjectDto::default(),
             user: None,
@@ -106,7 +114,7 @@ impl Component for ProjectBoardPage {
                         <SelectDialog<u64, TicketDto> {optionsapi} {onselect} />
                     },
                 });
-                self.app_state.update_dialog.emit(dialog);
+                AppState::update_dialog(&self.app_state, dialog);
             }
             Msg::OpenFormDialog() => {
                 let dialog = Rc::new(Dialog {
@@ -117,7 +125,7 @@ impl Component for ProjectBoardPage {
                         </FormDialog>
                     },
                 });
-                self.app_state.update_dialog.emit(dialog);
+                AppState::update_dialog(&self.app_state, dialog);
             }
             Msg::OpenTicketDialog(ticketid) => {
                 if let Some(ticket) = self
@@ -135,7 +143,7 @@ impl Component for ProjectBoardPage {
                             </FormDialog>
                         },
                     });
-                    self.app_state.update_dialog.emit(dialog);
+                    AppState::update_dialog(&self.app_state, dialog);
                 }
             }
             Msg::SelectedTickets(tickets) => {
@@ -145,7 +153,7 @@ impl Component for ProjectBoardPage {
                     tickets.iter().collect::<Vec<u64>>(),
                     callback,
                 );
-                self.app_state.close_dialog.emit(());
+                AppState::close_dialog(&self.app_state);
             }
             Msg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
@@ -165,7 +173,7 @@ impl Component for ProjectBoardPage {
             }
             Msg::TicketCreated(ticket) => {
                 log::debug!("Created: {}", ticket);
-                self.app_state.close_dialog.emit(());
+                AppState::close_dialog(&self.app_state);
                 ProjectService::fetch_assigned_tickets(
                     ctx.props().id,
                     ctx.link().callback(Msg::FetchedTickets),

@@ -1,3 +1,4 @@
+use crate::app_state::AppStateContext;
 use crate::components::button_link::{ButtonLink, ButtonLinkData};
 use crate::components::priority_tag::PriorityTag;
 use crate::route::Route;
@@ -9,6 +10,7 @@ use shared::dtos::ticket_dto::TicketDto;
 use shared::dtos::user_dto::UserDto;
 use std::rc::Rc;
 use yew::prelude::*;
+use yew_router::scope_ext::RouterScopeExt;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
@@ -16,6 +18,7 @@ pub struct Props {
 }
 
 pub enum Msg {
+    ContextChanged(AppStateContext),
     FetchedTicket(TicketDto),
     FetchedProject(ProjectDto),
     FetchedUser(UserDto),
@@ -25,17 +28,31 @@ pub struct TicketPage {
     ticket: TicketDto,
     project: Option<ButtonLinkData<Route>>,
     user: Option<ButtonLinkData<Route>>,
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
 }
+
 impl Component for TicketPage {
     type Message = Msg;
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        TicketService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedTicket));
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<AppStateContext>(ctx.link().callback(Msg::ContextChanged))
+            .expect("context to be set");
+        if app_state.identity.is_some() {
+            TicketService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedTicket));
+        } else {
+            let navigator = ctx.link().navigator().unwrap();
+            navigator.replace(&Route::Login);
+        }
         Self {
             ticket: TicketDto::default(),
             project: None,
             user: None,
+            app_state,
+            _listener,
         }
     }
 
@@ -46,6 +63,9 @@ impl Component for TicketPage {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::ContextChanged(state) => {
+                self.app_state = state;
+            }
             Msg::FetchedTicket(ticket) => {
                 self.ticket = ticket;
                 if let Some(project_id) = self.ticket.project_id {
@@ -80,6 +100,8 @@ impl Component for TicketPage {
             ticket,
             project,
             user,
+            app_state: _,
+            _listener,
         } = self;
         let priority = Rc::new(ticket.priority.clone());
 

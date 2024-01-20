@@ -1,84 +1,37 @@
-use frontend::app_state::{AppState, AppStateProvider};
-use frontend::dialog::Dialog;
-use frontend::pages::home_page::HomePage;
-use frontend::pages::login_page::LoginPage;
-use frontend::pages::page_not_found::PageNotFound;
-use frontend::pages::project_board_page::ProjectBoardPage;
-use frontend::pages::project_list_page::ProjectListPage;
-use frontend::pages::project_new_page::ProjectNewPage;
-use frontend::pages::project_page::ProjectPage;
-use frontend::pages::registration_page::RegistrationPage;
-use frontend::pages::ticket_new_page::TicketNewPage;
-use frontend::pages::ticket_page::TicketPage;
-use frontend::pages::user_list_page::UserListPage;
-use frontend::pages::user_page::UserPage;
+use frontend::app_state::AppStateProvider;
+use frontend::components::app_modal::AppModal;
+use frontend::components::navbar::Navbar;
+use frontend::pages::{
+    home_page::HomePage, login_page::LoginPage, page_not_found::PageNotFound,
+    project_board_page::ProjectBoardPage, project_list_page::ProjectListPage,
+    project_new_page::ProjectNewPage, project_page::ProjectPage,
+    registration_page::RegistrationPage, ticket_new_page::TicketNewPage, ticket_page::TicketPage,
+    user_list_page::UserListPage, user_page::UserPage,
+};
 use frontend::route::Route;
-use std::rc::Rc;
-use yew::html::Scope;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-pub enum AppMsg {
-    ToggleNavbar,
-    UpdateDialog(Rc<Dialog>),
-    CloseDialog,
-}
+pub struct App {}
 
-pub struct App {
-    state: Rc<AppState>,
-    dialog: Rc<Dialog>,
-}
 impl Component for App {
-    type Message = AppMsg;
+    type Message = ();
     type Properties = ();
 
-    fn create(ctx: &Context<Self>) -> Self {
-        let update_dialog = ctx.link().callback(AppMsg::UpdateDialog);
-        let close_dialog = ctx.link().callback(|_| AppMsg::CloseDialog);
-        let state = AppState {
-            navbar_active: false,
-            update_dialog,
-            close_dialog,
-            identity: None,
-        }
-        .into();
-        Self {
-            state,
-            dialog: Rc::new(Dialog::default()),
-        }
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self {}
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        // TODO: Factor state handling logic out into AppStateProvider, remove state prop.
-        match msg {
-            AppMsg::ToggleNavbar => {
-                let shared_state = Rc::make_mut(&mut self.state);
-                shared_state.navbar_active = !shared_state.navbar_active;
-            }
-            AppMsg::UpdateDialog(dialog) => {
-                self.dialog = dialog;
-            }
-            AppMsg::CloseDialog => {
-                self.dialog = Rc::new(Dialog::default());
-            }
-        }
-        true
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let modal_active = match self.dialog.active {
-            true => "is-active",
-            false => "",
-        };
-
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <BrowserRouter>
-                <AppStateProvider state={self.state.clone()}>
-                    { self.view_nav(ctx.link(), self.state.clone()) }
+                <AppStateProvider>
+                    <Navbar/>
 
                     <main>
-                        <Switch<Route> render={switch} />
+                        <Switch<Route> render={switch}/>
                     </main>
+
                     <footer class="footer">
                         <div class="content has-text-centered">
                             { "Powered by " }
@@ -91,115 +44,9 @@ impl Component for App {
                             <a href="https://bulma.io">{ "Bulma" }</a>
                         </div>
                     </footer>
-                    <div id="app-modal" class={classes!("modal", modal_active)}>
-                        <div class="modal-background"></div>
-                        <div class="modal-card">
-                            { self.dialog.clone().content.clone() }
-                        </div>
-                    </div>
+                    <AppModal/>
                 </AppStateProvider>
             </BrowserRouter>
-        }
-    }
-}
-
-impl App {
-    fn view_nav(&self, link: &Scope<Self>, state: Rc<AppState>) -> Html {
-        let active_class = if !self.state.navbar_active {
-            "is-active"
-        } else {
-            ""
-        };
-
-        html! {
-            <nav class="navbar is-link" role="navigation" aria-label="main navigation">
-                <div class="navbar-brand is-size-4">
-                    <div class="navbar-item pr-0">
-                        <i class="fa-solid fa-tag"></i>
-                    </div>
-                    <h1 class="navbar-item is-size-3">
-                        { "Ticketing in Rust" }
-                    </h1>
-
-                    <button class={classes!("navbar-burger", "burger", active_class)}
-                        aria-label="menu" aria-expanded="false"
-                        onclick={link.callback(|_| AppMsg::ToggleNavbar)}
-                    >
-                        <span aria-hidden="true"></span>
-                        <span aria-hidden="true"></span>
-                        <span aria-hidden="true"></span>
-                    </button>
-                </div>
-                <div class={classes!("navbar-menu", active_class)}>
-                    <div class="navbar-start">
-                        <Link<Route> classes={classes!("navbar-item")} to={Route::Home}>
-                            { "Home" }
-                        </Link<Route>>
-                        {
-                            if state.identity.is_some() {
-                                html! {
-                                    <>
-                                        /*<Link<Route> classes={classes!("navbar-item")} to={Route::Tickets}>
-                                            { "Tickets" }
-                                        </Link<Route>>*/
-
-                                        <div class="navbar-item has-dropdown is-hoverable">
-                                            <div class="navbar-link">
-                                                { "Options" }
-                                            </div>
-                                            <div class="navbar-dropdown">
-                                                <Link<Route> classes={classes!("navbar-item")} to={Route::Users}>
-                                                    { "List of users" }
-                                                </Link<Route>>
-                                                <Link<Route> classes={classes!("navbar-item")} to={Route::Projects}>
-                                                    { "List of projects" }
-                                                </Link<Route>>
-                                                    <Link<Route> classes={classes!("navbar-item")} to={Route::ProjectNew}>
-                                                    { "Create new project" }
-                                                </Link<Route>>
-                                            </div>
-                                        </div>
-
-                                        <div class="navbar-item">
-                                            <Link<Route> classes={classes!("button", "is-info", "is-light")} to={Route::TicketNew}>
-                                                { "Create" }
-                                            </Link<Route>>
-                                        </div>
-                                    </>
-                                }
-                            } else { html! { <></> } }
-                        }
-                    </div>
-                        <div class="navbar-end">
-                        {
-                            if state.identity.is_some() {
-                                html! {
-                                    <div class="navbar-item pl-2">
-                                        <Link<Route> classes={classes!("button", "is-info", "is-light")} to={Route::Registration}>
-                                            { "Logout" }
-                                        </Link<Route>>
-                                    </div>
-                                }
-                            } else {
-                                html! {
-                                    <>
-                                        <div class="navbar-item pr-2">
-                                            <Link<Route> classes={classes!("button", "is-primary", "is-light")} to={Route::Registration}>
-                                                { "Register" }
-                                        </Link<Route>>
-                                        </div>
-                                        <div class="navbar-item pl-2">
-                                            <Link<Route> classes={classes!("button", "is-info", "is-light")} to={Route::Login}>
-                                                { "Login" }
-                                            </Link<Route>>
-                                        </div>
-                                    </>
-                                }
-                            }
-                        }
-                        </div>
-                </div>
-            </nav>
         }
     }
 }
