@@ -130,7 +130,11 @@ pub async fn try_authenticate_async(app_state: &AppStateContext) -> Result<Strin
                     );
                     Ok(token)
                 }
-                Err(e) => Err(ErrorResponse::from(e.to_string())),
+                Err(e) => {
+                    let storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
+                    storage.delete(REFRESH_TOKEN_KEY).unwrap_or_default();
+                    Err(ErrorResponse::from(e.to_string()))
+                }
             }
         }
         Err(e) => Err(ErrorResponse::from(e.to_string())),
