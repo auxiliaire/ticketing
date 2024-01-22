@@ -190,7 +190,7 @@ async fn generate_token_using_auth(
                 .map_err(|_| AuthError {
                     status: StatusCode::BAD_REQUEST,
                     message: String::from("Invalid token"),
-                    code: Some(String::from("Basic")),
+                    code: Some(AuthScheme::Basic.to_string()),
                 })
         })?;
     let creds: Vec<&str> = std::str::from_utf8(&creds_vec)
