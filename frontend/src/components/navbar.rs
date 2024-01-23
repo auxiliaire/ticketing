@@ -1,6 +1,7 @@
 use crate::{
     app_state::{AppState, AppStateContext},
     route::Route,
+    services::auth_service::REFRESH_TOKEN_KEY,
 };
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -8,6 +9,7 @@ use yew_router::prelude::*;
 pub enum NavbarMsg {
     ContextChanged(AppStateContext),
     ToggleNavbar,
+    DoLogout,
 }
 
 pub struct Navbar {
@@ -36,6 +38,12 @@ impl Component for Navbar {
                 self.app_state = state;
             }
             NavbarMsg::ToggleNavbar => AppState::toggle_navbar(&self.app_state),
+            NavbarMsg::DoLogout => {
+                let storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
+                storage.delete(REFRESH_TOKEN_KEY).unwrap();
+
+                AppState::update_identity(&self.app_state, None);
+            }
         }
         true
     }
@@ -111,9 +119,9 @@ impl Component for Navbar {
                             if self.app_state.identity.is_some() {
                                 html! {
                                     <div class="navbar-item pl-2">
-                                        <Link<Route> classes={classes!("button", "is-info", "is-light")} to={Route::Registration}>
+                                        <button class={classes!("button", "is-info", "is-light")} onclick={ctx.link().callback(|_| NavbarMsg::DoLogout)}>
                                             { "Logout" }
-                                        </Link<Route>>
+                                        </button>
                                     </div>
                                 }
                             } else {
