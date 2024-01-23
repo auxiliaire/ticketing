@@ -28,3 +28,25 @@ pub enum Route {
     #[at("/404")]
     NotFound,
 }
+
+pub struct RouteSelector {}
+
+impl RouteSelector {
+    pub fn is_protected(route: Route) -> bool {
+        matches!(
+            route,
+            Route::ProjectBoard { id: _ }
+                | Route::ProjectNew
+                | Route::Project { id: _ }
+                | Route::Projects
+                | Route::User { id: _ }
+                | Route::Users
+                | Route::TicketNew
+                | Route::Ticket { id: _ }
+        )
+    }
+
+    pub fn is_public(route: Route) -> bool {
+        !Self::is_protected(route)
+    }
+}

@@ -1,14 +1,13 @@
-use crate::{app_state::AppStateContext, route::Route, services::user_service::UserService};
-use shared::dtos::user_dto::UserDto;
+use crate::{app_state::AppStateContext, services::user_service::UserService};
+use shared::dtos::{login_dto::LoginDto, user_dto::UserDto};
 use yew::prelude::*;
-use yew_router::scope_ext::RouterScopeExt;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
     pub id: u64,
 }
 
-pub enum Msg {
+pub enum UserPageMsg {
     ContextChanged(AppStateContext),
     FetchedUser(UserDto),
 }
@@ -19,20 +18,15 @@ pub struct UserPage {
     _listener: ContextHandle<AppStateContext>,
 }
 impl Component for UserPage {
-    type Message = Msg;
+    type Message = UserPageMsg;
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
         let (app_state, _listener) = ctx
             .link()
-            .context::<AppStateContext>(ctx.link().callback(Msg::ContextChanged))
+            .context::<AppStateContext>(ctx.link().callback(UserPageMsg::ContextChanged))
             .expect("context to be set");
-        if app_state.identity.is_some() {
-            UserService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedUser));
-        } else {
-            let navigator = ctx.link().navigator().unwrap();
-            navigator.replace(&Route::Login);
-        }
+        UserPage::init(&app_state, ctx);
         Self {
             user: UserDto::default(),
             app_state,
@@ -41,16 +35,16 @@ impl Component for UserPage {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        UserService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedUser));
+        UserPage::init(&self.app_state, ctx);
         true
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::ContextChanged(state) => {
+            UserPageMsg::ContextChanged(state) => {
                 self.app_state = state;
             }
-            Msg::FetchedUser(user) => {
+            UserPageMsg::FetchedUser(user) => {
                 self.user = user;
             }
         }
@@ -86,6 +80,18 @@ impl Component for UserPage {
                     </div>
                 </div>
             </div>
+        }
+    }
+}
+
+impl UserPage {
+    fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
+        if let Some(LoginDto { token, .. }) = &app_state.identity {
+            UserService::fetch(
+                token.to_string(),
+                ctx.props().id,
+                ctx.link().callback(UserPageMsg::FetchedUser),
+            );
         }
     }
 }

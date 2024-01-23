@@ -6,10 +6,7 @@ use crate::{
     },
     dialog::Dialog,
     route::Route,
-    services::{
-        auth_service::{try_authenticate, AuthService},
-        project_service::ProjectService,
-    },
+    services::{auth_service::AuthService, project_service::ProjectService},
 };
 use shared::{
     api::error::error_response::ErrorResponse,
@@ -27,7 +24,6 @@ pub enum HomeMsg {
     SubmittedLoginForm((LoginDto, Callback<ErrorResponse>)),
     SubmittedRegistrationForm((UserDto, Callback<ErrorResponse>)),
     LoggedIn(LoginDto),
-    Authenticated(Option<String>),
 }
 
 pub struct HomePage {
@@ -45,17 +41,7 @@ impl Component for HomePage {
             .link()
             .context::<AppStateContext>(ctx.link().callback(HomeMsg::ContextChanged))
             .expect("context to be set");
-        if app_state.identity.is_some() {
-            ProjectService::fetch_latest(
-                app_state.identity.clone().unwrap().token.clone(),
-                ctx.link().callback(HomeMsg::FetchedProjects),
-            );
-        } else {
-            try_authenticate(
-                app_state.clone(),
-                ctx.link().callback(HomeMsg::Authenticated),
-            );
-        }
+        HomePage::init(&app_state, ctx);
         Self {
             list: Vec::with_capacity(3),
             app_state,
@@ -69,15 +55,8 @@ impl Component for HomePage {
                 self.list = projects;
             }
             HomeMsg::ContextChanged(state) => {
-                log::debug!(
-                    "Identity: {}",
-                    <std::option::Option<shared::dtos::login_dto::LoginDto> as Clone>::clone(
-                        &state.identity
-                    )
-                    .map(|i| i.username)
-                    .unwrap_or_default()
-                );
                 self.app_state = state;
+                HomePage::init(&self.app_state, ctx);
             }
             HomeMsg::OpenLoginDialog => {
                 let dialog = Rc::new(Dialog {
@@ -114,15 +93,6 @@ impl Component for HomePage {
                 log::debug!("Logged in {}", creds.username);
                 AppState::update_identity_and_close_dialog(&self.app_state, Some(creds));
             }
-            HomeMsg::Authenticated(auth_res) => {
-                if let Some(jwt) = auth_res {
-                    log::debug!("Authenticated successfully!");
-                    ProjectService::fetch_latest(
-                        jwt,
-                        ctx.link().callback(HomeMsg::FetchedProjects),
-                    );
-                }
-            }
         }
         true
     }
@@ -152,6 +122,15 @@ impl Component for HomePage {
 }
 
 impl HomePage {
+    fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
+        if app_state.identity.is_some() {
+            ProjectService::fetch_latest(
+                app_state.identity.clone().unwrap().token.clone(),
+                ctx.link().callback(HomeMsg::FetchedProjects),
+            );
+        }
+    }
+
     fn view_info_tiles(&self) -> Html {
         let projects = self.list.iter().map(|ProjectDto { id, summary, deadline: _, user_id: _, active: _ }| {
             match id {

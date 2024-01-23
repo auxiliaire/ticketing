@@ -9,10 +9,11 @@ const USERS_ENDPOINT: &str = "users";
 pub struct UserService;
 
 impl UserService {
-    pub fn fetch(id: u64, callback: Callback<UserDto>) {
+    pub fn fetch(jwt: String, id: u64, callback: Callback<UserDto>) {
         spawn_local(async move {
             let user: UserDto =
                 Request::get(format!("{}{}/{}", get_api_url(), USERS_ENDPOINT, id).as_str())
+                    .header("Authorization", format!("Bearer {}", jwt).as_str())
                     .send()
                     .await
                     .unwrap()
@@ -25,6 +26,7 @@ impl UserService {
     }
 
     pub fn fetch_all(
+        jwt: String,
         search: Option<IString>,
         sort: Option<IString>,
         order: Option<IString>,
@@ -42,7 +44,14 @@ impl UserService {
             if let Some(o) = order {
                 request_builder = request_builder.query([("order", o.as_str())]);
             }
-            let list: Vec<UserDto> = request_builder.send().await.unwrap().json().await.unwrap();
+            let list: Vec<UserDto> = request_builder
+                .header("Authorization", format!("Bearer {}", jwt).as_str())
+                .send()
+                .await
+                .unwrap()
+                .json()
+                .await
+                .unwrap();
 
             callback.emit(list);
         });

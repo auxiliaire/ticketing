@@ -5,12 +5,12 @@ use crate::route::Route;
 use crate::services::project_service::ProjectService;
 use crate::services::{ticket_service::TicketService, user_service::UserService};
 use implicit_clone::sync::IString;
+use shared::dtos::login_dto::LoginDto;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::TicketDto;
 use shared::dtos::user_dto::UserDto;
 use std::rc::Rc;
 use yew::prelude::*;
-use yew_router::scope_ext::RouterScopeExt;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
@@ -41,11 +41,12 @@ impl Component for TicketPage {
             .link()
             .context::<AppStateContext>(ctx.link().callback(Msg::ContextChanged))
             .expect("context to be set");
-        if app_state.identity.is_some() {
-            TicketService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedTicket));
-        } else {
-            let navigator = ctx.link().navigator().unwrap();
-            navigator.replace(&Route::Login);
+        if let Some(LoginDto { token, .. }) = &app_state.identity {
+            TicketService::fetch(
+                token.to_string(),
+                ctx.props().id,
+                ctx.link().callback(Msg::FetchedTicket),
+            );
         }
         Self {
             ticket: TicketDto::default(),
@@ -57,7 +58,13 @@ impl Component for TicketPage {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        TicketService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedTicket));
+        if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+            TicketService::fetch(
+                token.to_string(),
+                ctx.props().id,
+                ctx.link().callback(Msg::FetchedTicket),
+            );
+        }
         true
     }
 
@@ -68,11 +75,21 @@ impl Component for TicketPage {
             }
             Msg::FetchedTicket(ticket) => {
                 self.ticket = ticket;
-                if let Some(project_id) = self.ticket.project_id {
-                    ProjectService::fetch(project_id, ctx.link().callback(Msg::FetchedProject));
-                }
-                if let Some(user_id) = self.ticket.user_id {
-                    UserService::fetch(user_id, ctx.link().callback(Msg::FetchedUser));
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    if let Some(project_id) = self.ticket.project_id {
+                        ProjectService::fetch(
+                            token.to_string(),
+                            project_id,
+                            ctx.link().callback(Msg::FetchedProject),
+                        );
+                    }
+                    if let Some(user_id) = self.ticket.user_id {
+                        UserService::fetch(
+                            token.to_string(),
+                            user_id,
+                            ctx.link().callback(Msg::FetchedUser),
+                        );
+                    }
                 }
             }
             Msg::FetchedProject(project) => {

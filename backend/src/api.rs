@@ -1,4 +1,4 @@
-use self::{auth_backend::AuthBackend, jwt::JwtLayer};
+use self::{auth_backend::AuthBackend, consts::CLIENT_URL, jwt::JwtLayer};
 use anyhow::Context;
 use axum::{Extension, Router};
 use axum_csrf::{CsrfConfig, CsrfLayer};
@@ -6,13 +6,16 @@ use axum_login::{
     tower_sessions::{MemoryStore, SessionManagerLayer},
     AuthManagerLayerBuilder,
 };
-use http::Method;
+use http::{
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, ORIGIN},
+    HeaderValue, Method,
+};
 use redis::Client;
 use sea_orm::DatabaseConnection;
 use shared::api::get_socket_address;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 
 pub mod auth_backend;
 pub mod auth_utils;
@@ -42,8 +45,8 @@ pub fn router(store: Client, db: DatabaseConnection) -> Router {
             Method::DELETE,
             Method::OPTIONS,
         ])
-        .allow_headers(Any)
-        .allow_origin(Any);
+        .allow_headers([ACCEPT, AUTHORIZATION, CONTENT_TYPE, ORIGIN])
+        .allow_origin(CLIENT_URL.parse::<HeaderValue>().unwrap());
     let cors_layer = ServiceBuilder::new().layer(cors);
 
     let csrf = CsrfConfig::default();

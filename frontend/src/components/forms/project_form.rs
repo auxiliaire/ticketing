@@ -1,3 +1,4 @@
+use crate::app_state::AppStateContext;
 use crate::components::bulma::field::Field;
 use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::checkbox::Checkbox;
@@ -9,6 +10,7 @@ use gloo_timers::callback::Timeout;
 use implicit_clone::sync::IArray;
 use implicit_clone::unsync::IString;
 use shared::api::error::error_response::ErrorResponse;
+use shared::dtos::login_dto::LoginDto;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::user_dto::UserDto;
 use shared::validation::is_empty::IsEmpty;
@@ -28,6 +30,7 @@ pub struct Props {
 }
 
 pub enum ProjectMsg {
+    ContextChanged(AppStateContext),
     DialogContextChanged(Rc<DialogContext>),
     UpdateSummary(AttrValue),
     UpdateDeadline(AttrValue),
@@ -44,6 +47,8 @@ pub enum ProjectMsg {
 }
 
 pub struct ProjectForm {
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
     dialog_context: Option<Rc<DialogContext>>,
     project: ProjectDto,
     deadline: IString,
@@ -63,11 +68,17 @@ impl Component for ProjectForm {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<AppStateContext>(ctx.link().callback(ProjectMsg::ContextChanged))
+            .expect("context to be set");
         let option_dialog_context = ctx
             .link()
             .context::<Rc<DialogContext>>(ctx.link().callback(ProjectMsg::DialogContextChanged));
         let dialog_context = option_dialog_context.map(|(context, _listener)| context);
         Self {
+            app_state,
+            _listener,
             dialog_context,
             project: ProjectDto::default(),
             deadline: IString::from(""),
@@ -90,6 +101,9 @@ impl Component for ProjectForm {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            ProjectMsg::ContextChanged(state) => {
+                self.app_state = state;
+            }
             ProjectMsg::DialogContextChanged(context) => {
                 self.dialog_context = Some(context);
             }
@@ -137,9 +151,15 @@ impl Component for ProjectForm {
                 if let Some(timeout) = self.search_timeout.take() {
                     timeout.cancel();
                 }
-                self.search_timeout = Some(Timeout::new(SEARCH_DELAY_MS, || {
-                    UserService::fetch_all(Some(q), None, None, fetch_callback)
-                }));
+                self.search_timeout =
+                    self.app_state
+                        .identity
+                        .clone()
+                        .map(|LoginDto { token, .. }| {
+                            Timeout::new(SEARCH_DELAY_MS, || {
+                                UserService::fetch_all(token, Some(q), None, None, fetch_callback)
+                            })
+                        });
             }
             ProjectMsg::ToggleSearchDropdownDelayed(value) => {
                 let toggle_search_dropdown = ctx.link().callback(ProjectMsg::ToggleSearchDropdown);

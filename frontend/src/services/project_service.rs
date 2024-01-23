@@ -12,10 +12,11 @@ const TICKETS_ENDPOINT: &str = "tickets";
 pub struct ProjectService;
 
 impl ProjectService {
-    pub fn fetch(id: u64, callback: Callback<ProjectDto>) {
+    pub fn fetch(jwt: String, id: u64, callback: Callback<ProjectDto>) {
         spawn_local(async move {
             let project: ProjectDto =
                 Request::get(format!("{}{}/{}", get_api_url(), PROJECTS_ENDPOINT, id).as_str())
+                    .header("Authorization", format!("Bearer {}", jwt).as_str())
                     .send()
                     .await
                     .unwrap()
@@ -28,6 +29,7 @@ impl ProjectService {
     }
 
     pub fn fetch_all(
+        jwt: String,
         sort: Option<IString>,
         order: Option<IString>,
         limit: Option<u64>,
@@ -49,8 +51,14 @@ impl ProjectService {
             if let Some(o) = offset {
                 request_builder = request_builder.query([("offset", format!("{}", o))]);
             }
-            let page: Page<ProjectDto> =
-                request_builder.send().await.unwrap().json().await.unwrap();
+            let page: Page<ProjectDto> = request_builder
+                .header("Authorization", format!("Bearer {}", jwt).as_str())
+                .send()
+                .await
+                .unwrap()
+                .json()
+                .await
+                .unwrap();
 
             callback.emit(page);
         });
@@ -73,7 +81,11 @@ impl ProjectService {
         });
     }
 
-    pub fn fetch_assigned_tickets(project_id: u64, callback: Callback<Vec<TicketDto>>) {
+    pub fn fetch_assigned_tickets(
+        jwt: String,
+        project_id: u64,
+        callback: Callback<Vec<TicketDto>>,
+    ) {
         spawn_local(async move {
             let list: Vec<TicketDto> = Request::get(
                 format!(
@@ -85,6 +97,7 @@ impl ProjectService {
                 )
                 .as_str(),
             )
+            .header("Authorization", format!("Bearer {}", jwt).as_str())
             .send()
             .await
             .unwrap()

@@ -16,7 +16,7 @@ use shared::dtos::{
     project_dto::{IProjectDto, ProjectDto, ProjectField, ProjectValue},
 };
 use yew::prelude::*;
-use yew_router::{prelude::Link, scope_ext::RouterScopeExt};
+use yew_router::prelude::Link;
 
 const DEFAULT_LIMIT: u64 = 5;
 const DEFAULT_OFFSET: u64 = 0;
@@ -51,18 +51,14 @@ impl Component for ProjectListPage {
         let order = None;
         let limit = DEFAULT_LIMIT;
         let offset = DEFAULT_OFFSET;
-        if app_state.identity.is_some() {
-            ProjectService::fetch_all(
-                sort.clone(),
-                order.clone(),
-                Some(limit),
-                Some(offset),
-                ctx.link().callback(Msg::FetchedProjects),
-            );
-        } else {
-            let navigator = ctx.link().navigator().unwrap();
-            navigator.replace(&Route::Login);
-        }
+        ProjectListPage::init(
+            &app_state,
+            ctx,
+            sort.clone(),
+            order.clone(),
+            Some(limit),
+            Some(offset),
+        );
         Self {
             total: 0,
             list: Vec::new(),
@@ -92,22 +88,24 @@ impl Component for ProjectListPage {
                     .sort
                     .as_ref()
                     .map(|s| IString::from(s.order.to_string()));
-                ProjectService::fetch_all(
+                ProjectListPage::init(
+                    &self.app_state,
+                    ctx,
                     self.sort.clone(),
                     self.order.clone(),
                     Some(self.limit),
                     Some(self.offset),
-                    ctx.link().callback(Msg::FetchedProjects),
                 )
             }
             Msg::UpdateOffset(offset) => {
                 self.offset = offset;
-                ProjectService::fetch_all(
+                ProjectListPage::init(
+                    &self.app_state,
+                    ctx,
                     self.sort.clone(),
                     self.order.clone(),
                     Some(self.limit),
                     Some(self.offset),
-                    ctx.link().callback(Msg::FetchedProjects),
                 )
             }
         }
@@ -153,6 +151,28 @@ impl Component for ProjectListPage {
                     </div>
                 </div>
             </div>
+        }
+    }
+}
+
+impl ProjectListPage {
+    fn init(
+        app_state: &AppStateContext,
+        ctx: &Context<Self>,
+        sort: Option<IString>,
+        order: Option<IString>,
+        limit: Option<u64>,
+        offset: Option<u64>,
+    ) {
+        if app_state.identity.is_some() {
+            ProjectService::fetch_all(
+                app_state.identity.clone().unwrap().token.clone(),
+                sort,
+                order,
+                limit,
+                offset,
+                ctx.link().callback(Msg::FetchedProjects),
+            );
         }
     }
 }

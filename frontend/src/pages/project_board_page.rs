@@ -11,6 +11,7 @@ use crate::services::user_service::UserService;
 use crate::{app_state::AppState, dialog::Dialog, route::Route};
 use implicit_clone::sync::{IArray, IString};
 use shared::api::error::error_response::ErrorResponse;
+use shared::dtos::login_dto::LoginDto;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::TicketDto;
 use shared::dtos::user_dto::UserDto;
@@ -20,18 +21,18 @@ use strum::IntoEnumIterator;
 use web_sys::DragEvent;
 use yew::prelude::*;
 use yew_router::prelude::Link;
-use yew_router::scope_ext::RouterScopeExt;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
     pub id: u64,
 }
 
-pub enum Msg {
+pub enum ProjectBoardPageMsg {
+    ContextChanged(AppStateContext),
     FetchedProject(ProjectDto),
     FetchedUser(UserDto),
     FetchedTickets(Vec<TicketDto>),
-    ContextChanged(AppStateContext),
+    FetchUnassigned(Callback<Vec<TicketDto>>),
     OpenSelectDialog(),
     OpenFormDialog(),
     OpenTicketDialog(u64),
@@ -50,26 +51,18 @@ pub struct ProjectBoardPage {
     app_state: AppStateContext,
     _listener: ContextHandle<AppStateContext>,
 }
+
 impl Component for ProjectBoardPage {
-    type Message = Msg;
+    type Message = ProjectBoardPageMsg;
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
         let (app_state, _listener) = ctx
             .link()
-            .context::<AppStateContext>(ctx.link().callback(Msg::ContextChanged))
+            .context::<AppStateContext>(ctx.link().callback(ProjectBoardPageMsg::ContextChanged))
             .expect("context to be set");
 
-        if app_state.identity.is_some() {
-            ProjectService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
-            ProjectService::fetch_assigned_tickets(
-                ctx.props().id,
-                ctx.link().callback(Msg::FetchedTickets),
-            );
-        } else {
-            let navigator = ctx.link().navigator().unwrap();
-            navigator.replace(&Route::Login);
-        }
+        ProjectBoardPage::init(&app_state, ctx);
         Self {
             project: ProjectDto::default(),
             user: None,
@@ -80,17 +73,29 @@ impl Component for ProjectBoardPage {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        ProjectService::fetch(ctx.props().id, ctx.link().callback(Msg::FetchedProject));
+        if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+            ProjectService::fetch(
+                token.clone(),
+                ctx.props().id,
+                ctx.link().callback(ProjectBoardPageMsg::FetchedProject),
+            );
+        }
         true
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::FetchedProject(project) => {
+            ProjectBoardPageMsg::FetchedProject(project) => {
                 self.project = project;
-                UserService::fetch(self.project.user_id, ctx.link().callback(Msg::FetchedUser));
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    UserService::fetch(
+                        token.clone(),
+                        self.project.user_id,
+                        ctx.link().callback(ProjectBoardPageMsg::FetchedUser),
+                    );
+                }
             }
-            Msg::FetchedUser(user) => {
+            ProjectBoardPageMsg::FetchedUser(user) => {
                 self.user = Some(ButtonLinkData {
                     label: IString::from(user.name),
                     to: Route::User {
@@ -98,16 +103,17 @@ impl Component for ProjectBoardPage {
                     },
                 });
             }
-            Msg::FetchedTickets(tickets) => {
+            ProjectBoardPageMsg::FetchedTickets(tickets) => {
                 self.ticket_list = tickets;
             }
-            Msg::ContextChanged(state) => {
+            ProjectBoardPageMsg::ContextChanged(state) => {
                 self.app_state = state;
+                ProjectBoardPage::init(&self.app_state, ctx);
             }
-            Msg::OpenSelectDialog() => {
+            ProjectBoardPageMsg::OpenSelectDialog() => {
                 let optionsapi: Callback<Callback<Vec<TicketDto>>> =
-                    Callback::from(TicketService::fetch_unassigned);
-                let onselect: Callback<IArray<u64>> = ctx.link().callback(Msg::SelectedTickets);
+                    ctx.link().callback(ProjectBoardPageMsg::FetchUnassigned);
+                let onselect: Callback<IArray<u64>> = ctx.link().callback(ProjectBoardPageMsg::SelectedTickets);
                 let dialog = Rc::new(Dialog {
                     active: true,
                     content: html! {
@@ -116,18 +122,18 @@ impl Component for ProjectBoardPage {
                 });
                 AppState::update_dialog(&self.app_state, dialog);
             }
-            Msg::OpenFormDialog() => {
+            ProjectBoardPageMsg::OpenFormDialog() => {
                 let dialog = Rc::new(Dialog {
                     active: true,
                     content: html! {
                         <FormDialog title="Create a new Ticket">
-                            <TicketForm projectid={ctx.props().id} onsubmit={ctx.link().callback(Msg::SubmittedForm)} />
+                            <TicketForm projectid={ctx.props().id} onsubmit={ctx.link().callback(ProjectBoardPageMsg::SubmittedForm)} />
                         </FormDialog>
                     },
                 });
                 AppState::update_dialog(&self.app_state, dialog);
             }
-            Msg::OpenTicketDialog(ticketid) => {
+            ProjectBoardPageMsg::OpenTicketDialog(ticketid) => {
                 if let Some(ticket) = self
                     .ticket_list
                     .iter()
@@ -139,15 +145,15 @@ impl Component for ProjectBoardPage {
                         active: true,
                         content: html! {
                             <FormDialog title={ticket.title.clone()}>
-                                <TicketForm {ticketid} projectid={ctx.props().id} onsubmit={ctx.link().callback(Msg::SubmittedForm)} />
+                                <TicketForm {ticketid} projectid={ctx.props().id} onsubmit={ctx.link().callback(ProjectBoardPageMsg::SubmittedForm)} />
                             </FormDialog>
                         },
                     });
                     AppState::update_dialog(&self.app_state, dialog);
                 }
             }
-            Msg::SelectedTickets(tickets) => {
-                let callback = ctx.link().callback(Msg::FetchedTickets);
+            ProjectBoardPageMsg::SelectedTickets(tickets) => {
+                let callback = ctx.link().callback(ProjectBoardPageMsg::FetchedTickets);
                 ProjectService::assign_tickets(
                     ctx.props().id,
                     tickets.iter().collect::<Vec<u64>>(),
@@ -155,38 +161,41 @@ impl Component for ProjectBoardPage {
                 );
                 AppState::close_dialog(&self.app_state);
             }
-            Msg::SubmittedForm((ticket, callback_error)) => {
+            ProjectBoardPageMsg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
                 if ticket.id.is_some() {
                     TicketService::update(
                         ticket,
-                        ctx.link().callback(Msg::TicketCreated),
+                        ctx.link().callback(ProjectBoardPageMsg::TicketCreated),
                         callback_error,
                     );
                 } else {
                     TicketService::create(
                         ticket,
-                        ctx.link().callback(Msg::TicketCreated),
+                        ctx.link().callback(ProjectBoardPageMsg::TicketCreated),
                         callback_error,
                     );
                 }
             }
-            Msg::TicketCreated(ticket) => {
+            ProjectBoardPageMsg::TicketCreated(ticket) => {
                 log::debug!("Created: {}", ticket);
                 AppState::close_dialog(&self.app_state);
-                ProjectService::fetch_assigned_tickets(
-                    ctx.props().id,
-                    ctx.link().callback(Msg::FetchedTickets),
-                );
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    ProjectService::fetch_assigned_tickets(
+                        token.clone(),
+                        ctx.props().id,
+                        ctx.link().callback(ProjectBoardPageMsg::FetchedTickets),
+                    );
+                }
             }
-            Msg::TicketUpdated(ticket) => {
+            ProjectBoardPageMsg::TicketUpdated(ticket) => {
                 log::debug!("Updated: {}", ticket);
             }
-            Msg::DragStart(e, id) => {
+            ProjectBoardPageMsg::DragStart(e, id) => {
                 log::debug!("Drag started. Id: {}", id);
                 let _ = set_transfer_data(e, format!("{}", id).as_str());
             }
-            Msg::Drop(e, status) => {
+            ProjectBoardPageMsg::Drop(e, status) => {
                 e.prevent_default();
                 if let Ok(id_s) = get_transfer_data(e) {
                     if let Ok(id) = id_s.as_str().parse::<u64>() {
@@ -209,7 +218,7 @@ impl Component for ProjectBoardPage {
                                         user_id: ticket.user_id,
                                         priority: ticket.priority.clone(),
                                     },
-                                    ctx.link().callback(Msg::TicketCreated),
+                                    ctx.link().callback(ProjectBoardPageMsg::TicketCreated),
                                     Callback::noop(),
                                 );
                             }
@@ -217,6 +226,11 @@ impl Component for ProjectBoardPage {
                     }
                 }
             }
+            ProjectBoardPageMsg::FetchUnassigned(consumer) => {
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    TicketService::fetch_unassigned(token.to_string(), consumer);
+                }
+            },
         }
         true
     }
@@ -230,8 +244,8 @@ impl Component for ProjectBoardPage {
             _listener,
         } = self;
 
-        let on_assign_click = |_| Msg::OpenSelectDialog();
-        let on_add_click = |_| Msg::OpenFormDialog();
+        let on_assign_click = |_| ProjectBoardPageMsg::OpenSelectDialog();
+        let on_add_click = |_| ProjectBoardPageMsg::OpenFormDialog();
 
         let status_headers = TicketStatus::iter()
             .filter(Self::is_status_managable)
@@ -330,6 +344,21 @@ impl Component for ProjectBoardPage {
 }
 
 impl ProjectBoardPage {
+    fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
+        if let Some(LoginDto { token, .. }) = &app_state.identity {
+            ProjectService::fetch(
+                token.to_string(),
+                ctx.props().id,
+                ctx.link().callback(ProjectBoardPageMsg::FetchedProject),
+            );
+            ProjectService::fetch_assigned_tickets(
+                token.to_string(),
+                ctx.props().id,
+                ctx.link().callback(ProjectBoardPageMsg::FetchedTickets),
+            );
+        }
+    }
+
     fn is_status_managable(status: &TicketStatus) -> bool {
         status != &TicketStatus::Created && status != &TicketStatus::Closed
     }
@@ -365,12 +394,12 @@ impl ProjectBoardPage {
     }
 
     fn drop_callback(ctx: &Context<Self>, column: TicketStatus) -> Callback<DragEvent> {
-        let function = move |e: DragEvent| Msg::Drop(e, column);
+        let function = move |e: DragEvent| ProjectBoardPageMsg::Drop(e, column);
         ctx.link().callback(function)
     }
 
     fn dragstart_callback(ctx: &Context<Self>, id: u64) -> Callback<DragEvent> {
-        let function = move |e: DragEvent| Msg::DragStart(e, id);
+        let function = move |e: DragEvent| ProjectBoardPageMsg::DragStart(e, id);
         ctx.link().callback(function)
     }
 
@@ -397,7 +426,7 @@ impl ProjectBoardPage {
     }
 
     fn ticket_click_callback(ctx: &Context<Self>, id: u64) -> Callback<MouseEvent> {
-        let function = move |_: MouseEvent| Msg::OpenTicketDialog(id);
+        let function = move |_: MouseEvent| ProjectBoardPageMsg::OpenTicketDialog(id);
         ctx.link().callback(function)
     }
 }

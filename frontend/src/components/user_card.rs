@@ -1,4 +1,4 @@
-use crate::pages::user_page::Msg;
+use crate::pages::user_page::UserPageMsg;
 use crate::route::Route;
 use crate::services::user_service::UserService;
 use yew::prelude::*;
@@ -15,7 +15,7 @@ pub struct UserCard {
     id: Option<u64>,
 }
 impl Component for UserCard {
-    type Message = Msg;
+    type Message = UserPageMsg;
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
@@ -27,7 +27,8 @@ impl Component for UserCard {
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         if let Some(id) = ctx.props().id {
-            UserService::fetch(id, ctx.link().callback(Msg::FetchedUser));
+            todo!("Check whether this fetch is really needed");
+            // UserService::fetch(id, ctx.link().callback(UserPageMsg::FetchedUser));
         }
         true
     }

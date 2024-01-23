@@ -1,8 +1,4 @@
-use super::{
-    auth_utils::{extract_auth_from_header, AuthScheme},
-    consts::JWT_SECRET,
-    error::AuthError,
-};
+use super::{auth_utils::extract_auth_from_header, consts::JWT_SECRET, error::AuthError};
 use chrono::{Duration, Utc};
 use entity::users::Entity as User;
 use futures::Future;
@@ -10,6 +6,7 @@ use http::{HeaderMap, Request, Response, StatusCode};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use sea_orm::{ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
+use shared::api::auth::AuthScheme;
 use std::pin::Pin;
 use tower::{Layer, Service};
 use tracing::Instrument;

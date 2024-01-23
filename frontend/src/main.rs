@@ -1,4 +1,5 @@
 use frontend::app_state::AppStateProvider;
+use frontend::authenticator::Authenticator;
 use frontend::components::app_modal::AppModal;
 use frontend::components::navbar::Navbar;
 use frontend::pages::{
@@ -26,25 +27,27 @@ impl Component for App {
         html! {
             <BrowserRouter>
                 <AppStateProvider>
-                    <Navbar/>
+                    <Authenticator>
+                        <Navbar/>
 
-                    <main>
-                        <Switch<Route> render={switch}/>
-                    </main>
+                        <main>
+                            <Switch<Route> render={switch}/>
+                        </main>
 
-                    <footer class="footer">
-                        <div class="content has-text-centered">
-                            { "Powered by " }
-                            <a href="https://crates.io/crates/axum">{ "Axum" }</a>
-                            { ", " }
-                            <a href="https://www.sea-ql.org/SeaORM/">{ "SeaORM" }</a>
-                            { ", " }
-                            <a href="https://yew.rs">{ "Yew" }</a>
-                            { " and " }
-                            <a href="https://bulma.io">{ "Bulma" }</a>
-                        </div>
-                    </footer>
-                    <AppModal/>
+                        <footer class="footer">
+                            <div class="content has-text-centered">
+                                { "Powered by " }
+                                <a href="https://crates.io/crates/axum">{ "Axum" }</a>
+                                { ", " }
+                                <a href="https://www.sea-ql.org/SeaORM/">{ "SeaORM" }</a>
+                                { ", " }
+                                <a href="https://yew.rs">{ "Yew" }</a>
+                                { " and " }
+                                <a href="https://bulma.io">{ "Bulma" }</a>
+                            </div>
+                        </footer>
+                        <AppModal/>
+                    </Authenticator>
                 </AppStateProvider>
             </BrowserRouter>
         }

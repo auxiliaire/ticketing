@@ -1,16 +1,14 @@
 use crate::{
-    app_state::{AppState, AppStateContext},
+    app_state::AppStateContext,
     components::bulma::tables::{
         data_sources::user_data_source::UserDataSource, table::Table,
         table_data_source::ITableDataSource, table_head_data::TableHeadData,
     },
-    route::Route,
     services::user_service::UserService,
 };
 use implicit_clone::unsync::IString;
 use shared::dtos::user_dto::{IUserDto, UserDto, UserField, UserValue};
 use yew::prelude::*;
-use yew_router::scope_ext::RouterScopeExt;
 
 pub enum Msg {
     ContextChanged(AppStateContext),
@@ -32,13 +30,7 @@ impl Component for UserListPage {
             .link()
             .context::<AppStateContext>(ctx.link().callback(Msg::ContextChanged))
             .expect("context to be set");
-        if app_state.identity.is_some() {
-            UserService::fetch_all(None, None, None, ctx.link().callback(Msg::FetchedUsers));
-        } else {
-            AppState::update_referer(&app_state, ctx.link().route::<Route>());
-            let navigator = ctx.link().navigator().unwrap();
-            navigator.replace(&Route::Login);
-        }
+        UserListPage::init(&app_state, ctx);
         Self {
             list: Vec::new(),
             app_state,
@@ -54,15 +46,20 @@ impl Component for UserListPage {
             Msg::FetchedUsers(users) => {
                 self.list = users;
             }
-            Msg::SortUsers(sortdata) => UserService::fetch_all(
-                None,
-                sortdata.sort.as_ref().map(|s| s.sort.clone()),
-                sortdata
-                    .sort
-                    .as_ref()
-                    .map(|s| IString::from(s.order.to_string())),
-                ctx.link().callback(Msg::FetchedUsers),
-            ),
+            Msg::SortUsers(sortdata) => {
+                if self.app_state.identity.is_some() {
+                    UserService::fetch_all(
+                        self.app_state.identity.clone().unwrap().token.clone(),
+                        None,
+                        sortdata.sort.as_ref().map(|s| s.sort.clone()),
+                        sortdata
+                            .sort
+                            .as_ref()
+                            .map(|s| IString::from(s.order.to_string())),
+                        ctx.link().callback(Msg::FetchedUsers),
+                    )
+                }
+            }
         }
         true
     }
@@ -94,6 +91,20 @@ impl Component for UserListPage {
                     </div>
                 </div>
             </div>
+        }
+    }
+}
+
+impl UserListPage {
+    fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
+        if app_state.identity.is_some() {
+            UserService::fetch_all(
+                app_state.identity.clone().unwrap().token.clone(),
+                None,
+                None,
+                None,
+                ctx.link().callback(Msg::FetchedUsers),
+            );
         }
     }
 }

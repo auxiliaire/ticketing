@@ -10,10 +10,11 @@ const UNASSIGNED_MARKER: &str = "/unassigned";
 pub struct TicketService;
 
 impl TicketService {
-    pub fn fetch(id: u64, callback: Callback<TicketDto>) {
+    pub fn fetch(jwt: String, id: u64, callback: Callback<TicketDto>) {
         spawn_local(async move {
             let ticket: TicketDto =
                 Request::get(format!("{}{}/{}", get_api_url(), TICKETS_ENDPOINT, id).as_str())
+                    .header("Authorization", format!("Bearer {}", jwt).as_str())
                     .send()
                     .await
                     .unwrap()
@@ -26,6 +27,7 @@ impl TicketService {
     }
 
     pub fn fetch_all(
+        jwt: String,
         project_id: Option<u64>,
         search: Option<IString>,
         sort: Option<IString>,
@@ -47,17 +49,25 @@ impl TicketService {
             if let Some(o) = order {
                 request_builder = request_builder.query([("order", o.as_str())]);
             }
-            let list: Vec<TicketDto> = request_builder.send().await.unwrap().json().await.unwrap();
+            let list: Vec<TicketDto> = request_builder
+                .header("Authorization", format!("Bearer {}", jwt).as_str())
+                .send()
+                .await
+                .unwrap()
+                .json()
+                .await
+                .unwrap();
 
             callback.emit(list);
         });
     }
 
-    pub fn fetch_unassigned(callback: Callback<Vec<TicketDto>>) {
+    pub fn fetch_unassigned(jwt: String, callback: Callback<Vec<TicketDto>>) {
         spawn_local(async move {
             let list: Vec<TicketDto> = Request::get(
                 format!("{}{}{}", get_api_url(), TICKETS_ENDPOINT, UNASSIGNED_MARKER).as_str(),
             )
+            .header("Authorization", format!("Bearer {}", jwt).as_str())
             .send()
             .await
             .unwrap()

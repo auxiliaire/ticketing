@@ -1,12 +1,6 @@
 use super::error::AuthError;
 use http::{header::AUTHORIZATION, HeaderMap, StatusCode};
-use strum::{Display, EnumString};
-
-#[derive(Clone, Debug, Display, EnumString, PartialEq)]
-pub enum AuthScheme {
-    Basic,
-    Bearer,
-}
+use shared::api::auth::AuthScheme;
 
 pub fn extract_auth_from_header(
     headers: &HeaderMap,

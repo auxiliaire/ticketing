@@ -1,6 +1,6 @@
 use super::{
     auth_backend::AuthSession,
-    auth_utils::{extract_auth_from_header, AuthScheme},
+    auth_utils::extract_auth_from_header,
     error::{ApiError, AuthError},
     jwt::encode_jwt,
     query,
@@ -20,7 +20,7 @@ use base64::{engine, Engine};
 use http::{HeaderMap, StatusCode};
 use redis::{AsyncCommands, Client};
 use serde::{Deserialize, Serialize};
-use shared::dtos::login_dto::LoginDto;
+use shared::{api::auth::AuthScheme, dtos::login_dto::LoginDto};
 use uuid::Uuid;
 
 pub fn router() -> Router {

@@ -1,3 +1,4 @@
+use crate::app_state::AppStateContext;
 use crate::components::button_link::ButtonLinkData;
 use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::select::Select;
@@ -16,6 +17,7 @@ use implicit_clone::{
 };
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
+use shared::dtos::login_dto::LoginDto;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::{TicketDto, TicketField};
 use shared::dtos::user_dto::UserDto;
@@ -43,6 +45,7 @@ pub struct Props {
 }
 
 pub enum TicketMsg {
+    ContextChanged(AppStateContext),
     DialogContextChanged(Rc<DialogContext>),
     FetchedTicket(TicketDto),
     FetchedProject(ProjectDto),
@@ -65,6 +68,8 @@ pub enum TicketMsg {
 }
 
 pub struct TicketForm {
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
     dialog_context: Option<Rc<DialogContext>>,
     ticket: TicketDto,
     project: Option<ButtonLinkData<Route>>,
@@ -90,6 +95,10 @@ impl Component for TicketForm {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<AppStateContext>(ctx.link().callback(TicketMsg::ContextChanged))
+            .expect("context to be set");
         let option_dialog_context = ctx
             .link()
             .context::<Rc<DialogContext>>(ctx.link().callback(TicketMsg::DialogContextChanged));
@@ -99,10 +108,10 @@ impl Component for TicketForm {
             false => TicketStatus::Created,
         };
 
-        if let Some(ticket_id) = ctx.props().ticketid {
-            TicketService::fetch(ticket_id, ctx.link().callback(TicketMsg::FetchedTicket));
-        }
+        TicketForm::init(&app_state, ctx);
         Self {
+            app_state,
+            _listener,
             dialog_context,
             ticket: TicketDto {
                 project_id: ctx.props().projectid,
@@ -131,19 +140,29 @@ impl Component for TicketForm {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            TicketMsg::ContextChanged(state) => {
+                self.app_state = state;
+            }
             TicketMsg::DialogContextChanged(context) => {
                 self.dialog_context = Some(context);
             }
             TicketMsg::FetchedTicket(ticket) => {
                 self.ticket = ticket;
-                if let Some(project_id) = self.ticket.project_id {
-                    ProjectService::fetch(
-                        project_id,
-                        ctx.link().callback(TicketMsg::FetchedProject),
-                    );
-                }
-                if let Some(user_id) = self.ticket.user_id {
-                    UserService::fetch(user_id, ctx.link().callback(TicketMsg::FetchedUser));
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    if let Some(project_id) = self.ticket.project_id {
+                        ProjectService::fetch(
+                            token.clone(),
+                            project_id,
+                            ctx.link().callback(TicketMsg::FetchedProject),
+                        );
+                    }
+                    if let Some(user_id) = &self.ticket.user_id {
+                        UserService::fetch(
+                            token.clone(),
+                            *user_id,
+                            ctx.link().callback(TicketMsg::FetchedUser),
+                        );
+                    }
                 }
             }
             TicketMsg::FetchedProject(project) => {
@@ -208,9 +227,15 @@ impl Component for TicketForm {
                 if let Some(timeout) = self.search_timeout.take() {
                     timeout.cancel();
                 }
-                self.search_timeout = Some(Timeout::new(SEARCH_DELAY_MS, || {
-                    UserService::fetch_all(Some(q), None, None, fetch_callback)
-                }));
+                self.search_timeout =
+                    self.app_state
+                        .identity
+                        .clone()
+                        .map(|LoginDto { token, .. }| {
+                            Timeout::new(SEARCH_DELAY_MS, || {
+                                UserService::fetch_all(token, Some(q), None, None, fetch_callback)
+                            })
+                        })
             }
             TicketMsg::ToggleSearchDropdownDelayed(value) => {
                 let toggle_search_dropdown = ctx.link().callback(TicketMsg::ToggleSearchDropdown);
@@ -303,6 +328,18 @@ impl Component for TicketForm {
 }
 
 impl TicketForm {
+    fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
+        if let Some(LoginDto { token, .. }) = &app_state.identity {
+            if let Some(ticket_id) = ctx.props().ticketid {
+                TicketService::fetch(
+                    token.to_string(),
+                    ticket_id,
+                    ctx.link().callback(TicketMsg::FetchedTicket),
+                );
+            }
+        }
+    }
+
     fn soft_body(&self, ctx: &Context<Self>) -> Html {
         let users = self.user_list.iter().map(|t| {
             let select_user = ctx.link().callback(TicketMsg::UpdateUserId);

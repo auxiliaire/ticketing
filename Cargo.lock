@@ -1539,6 +1539,7 @@ dependencies = [
  "serde_valid",
  "shared",
  "strum",
+ "syn 2.0.48",
  "tracing",
  "wasm-bindgen",
  "wasm-bindgen-test",
