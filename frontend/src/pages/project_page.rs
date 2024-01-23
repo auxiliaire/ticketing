@@ -144,21 +144,27 @@ impl Component for ProjectPage {
                 AppState::update_dialog(&self.app_state, dialog);
             }
             ProjectPageMsg::SelectedTickets(tickets) => {
-                let callback = ctx.link().callback(ProjectPageMsg::FetchedTickets);
-                ProjectService::assign_tickets(
-                    ctx.props().id,
-                    tickets.iter().collect::<Vec<u64>>(),
-                    callback,
-                );
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    let callback = ctx.link().callback(ProjectPageMsg::FetchedTickets);
+                    ProjectService::assign_tickets(
+                        token.to_string(),
+                        ctx.props().id,
+                        tickets.iter().collect::<Vec<u64>>(),
+                        callback,
+                    );
+                }
                 AppState::close_dialog(&self.app_state);
             }
             ProjectPageMsg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
-                TicketService::create(
-                    ticket,
-                    ctx.link().callback(ProjectPageMsg::TicketCreated),
-                    callback_error,
-                );
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    TicketService::create(
+                        token.to_string(),
+                        ticket,
+                        ctx.link().callback(ProjectPageMsg::TicketCreated),
+                        callback_error,
+                    );
+                }
             }
             ProjectPageMsg::SortTickets(sortdata) => {
                 if let Some(LoginDto { token, .. }) = &self.app_state.identity {

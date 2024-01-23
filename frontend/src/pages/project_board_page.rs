@@ -113,7 +113,8 @@ impl Component for ProjectBoardPage {
             ProjectBoardPageMsg::OpenSelectDialog() => {
                 let optionsapi: Callback<Callback<Vec<TicketDto>>> =
                     ctx.link().callback(ProjectBoardPageMsg::FetchUnassigned);
-                let onselect: Callback<IArray<u64>> = ctx.link().callback(ProjectBoardPageMsg::SelectedTickets);
+                let onselect: Callback<IArray<u64>> =
+                    ctx.link().callback(ProjectBoardPageMsg::SelectedTickets);
                 let dialog = Rc::new(Dialog {
                     active: true,
                     content: html! {
@@ -153,28 +154,35 @@ impl Component for ProjectBoardPage {
                 }
             }
             ProjectBoardPageMsg::SelectedTickets(tickets) => {
-                let callback = ctx.link().callback(ProjectBoardPageMsg::FetchedTickets);
-                ProjectService::assign_tickets(
-                    ctx.props().id,
-                    tickets.iter().collect::<Vec<u64>>(),
-                    callback,
-                );
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    let callback = ctx.link().callback(ProjectBoardPageMsg::FetchedTickets);
+                    ProjectService::assign_tickets(
+                        token.to_string(),
+                        ctx.props().id,
+                        tickets.iter().collect::<Vec<u64>>(),
+                        callback,
+                    );
+                }
                 AppState::close_dialog(&self.app_state);
             }
             ProjectBoardPageMsg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
-                if ticket.id.is_some() {
-                    TicketService::update(
-                        ticket,
-                        ctx.link().callback(ProjectBoardPageMsg::TicketCreated),
-                        callback_error,
-                    );
-                } else {
-                    TicketService::create(
-                        ticket,
-                        ctx.link().callback(ProjectBoardPageMsg::TicketCreated),
-                        callback_error,
-                    );
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    if ticket.id.is_some() {
+                        TicketService::update(
+                            token.to_string(),
+                            ticket,
+                            ctx.link().callback(ProjectBoardPageMsg::TicketCreated),
+                            callback_error,
+                        );
+                    } else {
+                        TicketService::create(
+                            token.to_string(),
+                            ticket,
+                            ctx.link().callback(ProjectBoardPageMsg::TicketCreated),
+                            callback_error,
+                        );
+                    }
                 }
             }
             ProjectBoardPageMsg::TicketCreated(ticket) => {
@@ -200,27 +208,30 @@ impl Component for ProjectBoardPage {
                 if let Ok(id_s) = get_transfer_data(e) {
                     if let Ok(id) = id_s.as_str().parse::<u64>() {
                         log::debug!("Dropped. Status: id({}) -> {}", id, status);
-                        if let Some(ticket) = self
-                            .ticket_list
-                            .iter()
-                            .filter(|t| t.id == Some(id))
-                            .collect::<Vec<&TicketDto>>()
-                            .first()
-                        {
-                            if ticket.status != status {
-                                TicketService::update(
-                                    TicketDto {
-                                        id: Some(id),
-                                        title: ticket.title.clone(),
-                                        status,
-                                        description: ticket.description.clone(),
-                                        project_id: ticket.project_id,
-                                        user_id: ticket.user_id,
-                                        priority: ticket.priority.clone(),
-                                    },
-                                    ctx.link().callback(ProjectBoardPageMsg::TicketCreated),
-                                    Callback::noop(),
-                                );
+                        if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                            if let Some(ticket) = self
+                                .ticket_list
+                                .iter()
+                                .filter(|t| t.id == Some(id))
+                                .collect::<Vec<&TicketDto>>()
+                                .first()
+                            {
+                                if ticket.status != status {
+                                    TicketService::update(
+                                        token.to_string(),
+                                        TicketDto {
+                                            id: Some(id),
+                                            title: ticket.title.clone(),
+                                            status,
+                                            description: ticket.description.clone(),
+                                            project_id: ticket.project_id,
+                                            user_id: ticket.user_id,
+                                            priority: ticket.priority.clone(),
+                                        },
+                                        ctx.link().callback(ProjectBoardPageMsg::TicketCreated),
+                                        Callback::noop(),
+                                    );
+                                }
                             }
                         }
                     }
@@ -230,7 +241,7 @@ impl Component for ProjectBoardPage {
                 if let Some(LoginDto { token, .. }) = &self.app_state.identity {
                     TicketService::fetch_unassigned(token.to_string(), consumer);
                 }
-            },
+            }
         }
         true
     }

@@ -80,12 +80,14 @@ impl TicketService {
     }
 
     pub fn create(
+        jwt: String,
         ticket: TicketDto,
         callback: Callback<TicketDto>,
         callback_error: Callback<ErrorResponse>,
     ) {
         spawn_local(async move {
             let res = Request::post(format!("{}{}", get_api_url(), TICKETS_ENDPOINT).as_str())
+                .header("Authorization", format!("Bearer {}", jwt).as_str())
                 .json(&ticket)
                 .unwrap()
                 .send()
@@ -122,6 +124,7 @@ impl TicketService {
     }
 
     pub fn update(
+        jwt: String,
         ticket: TicketDto,
         callback: Callback<TicketDto>,
         callback_error: Callback<ErrorResponse>,
@@ -136,6 +139,7 @@ impl TicketService {
                 )
                 .as_str(),
             )
+            .header("Authorization", format!("Bearer {}", jwt).as_str())
             .json(&ticket)
             .unwrap()
             .send()

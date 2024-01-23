@@ -109,7 +109,12 @@ impl ProjectService {
         });
     }
 
-    pub fn assign_tickets(project_id: u64, tickets: Vec<u64>, callback: Callback<Vec<TicketDto>>) {
+    pub fn assign_tickets(
+        jwt: String,
+        project_id: u64,
+        tickets: Vec<u64>,
+        callback: Callback<Vec<TicketDto>>,
+    ) {
         spawn_local(async move {
             let project_tickets = ProjectTickets { tickets };
             let list: Vec<TicketDto> = Request::post(
@@ -122,6 +127,7 @@ impl ProjectService {
                 )
                 .as_str(),
             )
+            .header("Authorization", format!("Bearer {}", jwt).as_str())
             .json(&project_tickets)
             .unwrap()
             .send()
@@ -136,12 +142,14 @@ impl ProjectService {
     }
 
     pub fn create(
+        jwt: String,
         project: ProjectDto,
         callback: Callback<ProjectDto>,
         callback_error: Callback<ErrorResponse>,
     ) {
         spawn_local(async move {
             let res = Request::post(format!("{}{}", get_api_url(), PROJECTS_ENDPOINT).as_str())
+                .header("Authorization", format!("Bearer {}", jwt).as_str())
                 .json(&project)
                 .unwrap()
                 .send()

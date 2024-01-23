@@ -1,6 +1,7 @@
 use crate::app_state::AppStateContext;
 use crate::services::project_service::ProjectService;
 use crate::{components::forms::project_form::ProjectForm, route::Route};
+use shared::dtos::login_dto::LoginDto;
 use shared::{api::error::error_response::ErrorResponse, dtos::project_dto::ProjectDto};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -41,11 +42,14 @@ impl Component for ProjectNewPage {
                 self.app_state = state;
             }
             ProjectMsg::Submitted((project, callback_error)) => {
-                ProjectService::create(
-                    project,
-                    ctx.link().callback(ProjectMsg::Created),
-                    callback_error,
-                );
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    ProjectService::create(
+                        token.to_string(),
+                        project,
+                        ctx.link().callback(ProjectMsg::Created),
+                        callback_error,
+                    );
+                }
             }
             ProjectMsg::Created(project) => {
                 let navigator = ctx.link().navigator().unwrap();

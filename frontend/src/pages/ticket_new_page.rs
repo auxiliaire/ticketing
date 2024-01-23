@@ -2,7 +2,10 @@ use crate::{
     app_state::AppStateContext, components::forms::ticket_form::TicketForm, route::Route,
     services::ticket_service::TicketService,
 };
-use shared::{api::error::error_response::ErrorResponse, dtos::ticket_dto::TicketDto};
+use shared::{
+    api::error::error_response::ErrorResponse,
+    dtos::{login_dto::LoginDto, ticket_dto::TicketDto},
+};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -43,11 +46,14 @@ impl Component for TicketNewPage {
             }
             TicketMsg::Submitted((ticket, callback_error)) => {
                 log::debug!("Submitted: {}", ticket);
-                TicketService::create(
-                    ticket,
-                    ctx.link().callback(TicketMsg::Created),
-                    callback_error,
-                );
+                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                    TicketService::create(
+                        token.to_string(),
+                        ticket,
+                        ctx.link().callback(TicketMsg::Created),
+                        callback_error,
+                    );
+                }
             }
             TicketMsg::Created(ticket) => {
                 log::debug!("Created: {}", ticket);
