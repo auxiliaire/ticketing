@@ -41,6 +41,7 @@ tokio = { version = "1.28", features = [ "full" ] }
 tower-http = { version = "0.5", features = [ "cors" ] }
 tower = "0.4"
 tracing = "0.1"
+tracing-subscriber = "0.3"
 uuid = { version = "1.7", features = [ "v4" ] }
 
 [dependencies.sea-orm]

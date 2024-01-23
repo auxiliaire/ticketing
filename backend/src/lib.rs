@@ -2,10 +2,18 @@ use anyhow::Context;
 use api::consts::{DATABASE_URL, STORE_URL};
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{ConnectOptions, Database};
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 
 pub mod api;
 
 pub async fn main() {
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::TRACE)
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("Could not set tracing subscriber");
+
     let store = redis::Client::open(STORE_URL.clone())
         .context("Could not establish connection to Redis")
         .unwrap();
