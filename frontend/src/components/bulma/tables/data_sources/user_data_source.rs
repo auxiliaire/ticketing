@@ -18,7 +18,12 @@ impl From<&Vec<UserDto>> for UserDataSource {
         Self(Rc::new(TableDataSource {
             empty_label: IString::from("There are no users yet"),
             // Override fieldset:
-            fieldset: IArray::from(vec![UserField::Id, UserField::Name, UserField::Role]),
+            fieldset: IArray::from(vec![
+                UserField::Id,
+                UserField::Name,
+                UserField::Username,
+                UserField::Role,
+            ]),
             data: IArray::from(
                 source
                     .iter()
@@ -37,6 +42,11 @@ impl From<&Vec<UserDto>> for UserDataSource {
                             <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0", "pb-0")} to={Route::User { id }}>
                                 {celldata.data.name.clone()}
                             </Link<Route>>
+                        }),
+                        UserField::Username => Some(html! {
+                            <a classes={classes!("column", "is-full", "pl-0", "pt-0", "pb-0")} href={format!("mailto:{}", celldata.data.username.clone())}>
+                                {celldata.data.username.to_string().clone()}
+                            </a>
                         }),
                         UserField::Role => Some(html! {
                             <span class="tag">{ html! {celldata.data.role.map_or("".to_owned(), |r| format!("{}", r))}}</span>

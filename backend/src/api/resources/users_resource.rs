@@ -104,6 +104,7 @@ async fn put_user(
             let updated = users::ActiveModel {
                 id: Set(original.id),
                 name: Set(update.name.to_owned()),
+                username: Set(original.username),
                 password: Set(update.password.unwrap().to_owned()),
                 role: Set(update.role.map_or(String::from(""), |r| r.to_string())),
             }

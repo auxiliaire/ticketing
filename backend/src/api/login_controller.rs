@@ -210,7 +210,7 @@ async fn generate_token_using_auth(
         ));
     };
 
-    let token = encode_jwt(user.name)
+    let token = encode_jwt(user.username.to_string())
         .map_err(|status| ApiError::new(status, String::from("Token creation error")))?;
 
     Ok(token)

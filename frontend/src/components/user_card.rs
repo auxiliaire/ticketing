@@ -7,11 +7,13 @@ use yew_router::prelude::*;
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
 pub struct Props {
     pub name: AttrValue,
+    pub username: AttrValue,
     pub id: Option<u64>,
 }
 
 pub struct UserCard {
     name: AttrValue,
+    username: AttrValue,
     id: Option<u64>,
 }
 impl Component for UserCard {
@@ -21,6 +23,7 @@ impl Component for UserCard {
     fn create(ctx: &Context<Self>) -> Self {
         Self {
             name: ctx.props().name.clone(),
+            username: ctx.props().username.clone(),
             id: ctx.props().id,
         }
     }
@@ -34,13 +37,14 @@ impl Component for UserCard {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        let Self { name, id } = self;
+        let Self { name, username, id } = self;
         html! {
             <div class="card">
                 <div class="card-content">
                     <div class="media">
                         <div class="media-content">
                             <p class="title is-3">{ name }</p>
+                            <p class="subtitle is-6">{ username }</p>
                         </div>
                     </div>
                 </div>

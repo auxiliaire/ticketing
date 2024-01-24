@@ -64,6 +64,7 @@ impl Component for UserPage {
                     <div class="tile is-parent">
                         <article class="tile is-child notification is-light">
                             <p class="title">{ &user.name }</p>
+                            <p class="subtitle">{ &user.username.to_string() }</p>
                         </article>
                     </div>
                     <div class="tile">

@@ -20,7 +20,7 @@ pub struct Props {
 
 pub enum LoginMsg {
     DialogContextChanged(Rc<DialogContext>),
-    UpdateName(AttrValue),
+    UpdateUsername(AttrValue),
     UpdatePassword(AttrValue),
     Submit(),
     UpdateErrors(ErrorResponse),
@@ -59,8 +59,8 @@ impl Component for LoginForm {
             LoginMsg::DialogContextChanged(context) => {
                 self.dialog_context = Some(context);
             }
-            LoginMsg::UpdateName(name) => {
-                self.creds.username = String::from(name.as_str());
+            LoginMsg::UpdateUsername(username) => {
+                self.creds.username = String::from(username.as_str());
             }
             LoginMsg::UpdatePassword(password) => {
                 log::debug!("password update");
@@ -113,7 +113,7 @@ impl Component for LoginForm {
                         </p>
                     }
                     <Field label="Username">
-                        <TextInput value={self.creds.username.clone()} on_change={ctx.link().callback(LoginMsg::UpdateName)} valid={self.common_error.is_empty()} />
+                        <TextInput value={self.creds.username.clone()} on_change={ctx.link().callback(LoginMsg::UpdateUsername)} valid={self.common_error.is_empty()} />
                     </Field>
                     <Field label="Password">
                         <TextInput value={self.creds.password.clone()} on_change={ctx.link().callback(LoginMsg::UpdatePassword)} mask={true} valid={self.common_error.is_empty()} />

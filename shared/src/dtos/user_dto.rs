@@ -3,6 +3,7 @@ use crate::validation::user_validation::{UserRole, UserValidation};
 use entity::users::Model;
 use implicit_clone::ImplicitClone;
 use serde::{Deserialize, Serialize};
+use serde_email::Email;
 use serde_valid::Validate;
 use std::{fmt::Display, rc::Rc};
 use strum::{EnumCount, EnumIter, EnumString};
@@ -12,6 +13,7 @@ use strum::{EnumCount, EnumIter, EnumString};
 pub enum UserField {
     Id,
     Name,
+    Username,
     Role,
     Action,
 }
@@ -28,6 +30,7 @@ impl From<UserField> for usize {
 pub enum UserValue {
     Id(Rc<Option<u64>>),
     Name(Rc<String>),
+    Username(Rc<Email>),
     Role(Rc<Option<UserRole>>),
     Action(Rc<Option<u64>>),
 }
@@ -48,6 +51,7 @@ impl Display for UserValue {
                 Some(id) => write!(f, "{}", id),
                 None => write!(f, ""),
             },
+            UserValue::Username(username) => write!(f, "{}", username),
         }
     }
 }
@@ -65,6 +69,7 @@ pub struct UserDto {
     #[validate(min_length = 8)]
     #[validate(max_length = 20)]
     pub name: String,
+    pub username: Email,
     #[validate(custom(UserValidation::password_validation))]
     pub password: Option<String>,
     #[validate(custom(UserValidation::role_validation))]
@@ -78,6 +83,7 @@ impl Getter<UserField, UserValue> for IUserDto {
             UserField::Name => UserValue::Name(Rc::new(self.name.clone())),
             UserField::Role => UserValue::Role(Rc::new(self.role)),
             UserField::Action => UserValue::Action(Rc::new(self.id)),
+            UserField::Username => UserValue::Username(Rc::new(self.username.clone())),
         }
     }
 }
@@ -86,9 +92,10 @@ impl Display for UserDto {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "( id: {}, name: '{}', role: {} )",
+            "( id: {}, name: '{}', username: '{}'  role: {} )",
             self.id.map_or(String::from("-"), |id| format!("{}", id)),
             self.name,
+            self.username,
             self.role.map_or(String::from("-"), |r| r.to_string())
         )
     }
@@ -99,6 +106,7 @@ impl From<&Model> for UserDto {
         Self {
             id: Some(value.id),
             name: value.name.to_owned(),
+            username: value.username.to_owned(),
             password: None,
             role: UserRole::try_from(value.role.as_str()).ok(),
         }
@@ -110,6 +118,7 @@ impl From<Model> for UserDto {
         Self {
             id: Some(value.id),
             name: value.name.to_owned(),
+            username: value.username.to_owned(),
             password: None,
             role: UserRole::try_from(value.role.as_str()).ok(),
         }

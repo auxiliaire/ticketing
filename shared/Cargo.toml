@@ -16,4 +16,5 @@ regex = "1.9"
 serde = { version = "1", features = [ "derive" ] }
 serde_valid = "0.16"
 serde_with = "3.1"
+serde-email = { version = "3.0", features = [ "sea-orm" ] }
 strum = { version = "0.25", features = [ "derive" ] }

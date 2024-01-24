@@ -113,7 +113,7 @@ where
                 let Ok(Some(identity)) = User::find()
                     .filter(
                         Condition::all().add(
-                            <entity::prelude::Users as EntityTrait>::Column::Name
+                            <entity::prelude::Users as EntityTrait>::Column::Username
                                 .eq(claims.uname.clone()),
                         ),
                     )

@@ -29,7 +29,7 @@ impl AuthnBackend for AuthBackend {
     ) -> Result<Option<Self::User>, Self::Error> {
         let user = User::find()
             .filter(Condition::all().add(
-                <entity::prelude::Users as EntityTrait>::Column::Name.eq(creds.username.clone()),
+                <entity::prelude::Users as EntityTrait>::Column::Username.eq(creds.username.clone()),
             ))
             .one(&self.db)
             .await?;
