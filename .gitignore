@@ -1,6 +1,7 @@
 /target
 /frontend/dist
 /.idea
+/.pytest_cache
 /.vscode
 /.VSCodeCounter
 .env
