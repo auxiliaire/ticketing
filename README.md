@@ -15,14 +15,15 @@ This is an integrated Rust backend and frontend (with Yew) example.
 
 ### Infrastructure
 
-* SQLite
 * Rust
+* Redis
+* MySQL
 
 ### Backend
 
 * Axum
 * Tokio
-* SQLx
+* SeaORM
 * Serde
 
 ### Frontend
@@ -30,6 +31,7 @@ This is an integrated Rust backend and frontend (with Yew) example.
 * Yew
 * Tailwind CSS
 * daisyUI
+* Bulma
 
 ## Starting
 
@@ -50,6 +52,12 @@ cargo -Z unstable-options -C ./ watch -c -w src -x run
 ```bash
 cd frontend
 trunk serve
+```
+
+### Or combined
+
+```bash
+./start.sh
 ```
 
 Visit [Localhost](http://127.0.0.1:8080/).
