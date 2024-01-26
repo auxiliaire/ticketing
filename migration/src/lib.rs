@@ -13,6 +13,8 @@ mod m20230731_083101_alter_ticket_table;
 mod m20230731_155437_alter_ticket_table;
 mod m20240124_154353_alter_user_table;
 mod m20240124_170104_alter_user_table;
+mod m20240125_125611_alter_user_table;
+mod m20240125_130304_alter_user_table;
 
 pub struct Migrator;
 
@@ -33,6 +35,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20230731_155437_alter_ticket_table::Migration),
             Box::new(m20240124_154353_alter_user_table::Migration),
             Box::new(m20240124_170104_alter_user_table::Migration),
+            Box::new(m20240125_125611_alter_user_table::Migration),
+            Box::new(m20240125_130304_alter_user_table::Migration),
         ]
     }
 }

@@ -4,7 +4,7 @@ use crate::{
 };
 use shared::{
     api::error::error_response::ErrorResponse,
-    dtos::{login_dto::LoginDto, ticket_dto::TicketDto},
+    dtos::{identity::Identity, ticket_dto::TicketDto},
 };
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -46,7 +46,7 @@ impl Component for TicketNewPage {
             }
             TicketMsg::Submitted((ticket, callback_error)) => {
                 log::debug!("Submitted: {}", ticket);
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     TicketService::create(
                         token.to_string(),
                         ticket,

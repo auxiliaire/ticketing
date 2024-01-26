@@ -5,7 +5,7 @@ use crate::route::Route;
 use crate::services::project_service::ProjectService;
 use crate::services::{ticket_service::TicketService, user_service::UserService};
 use implicit_clone::sync::IString;
-use shared::dtos::login_dto::LoginDto;
+use shared::dtos::identity::Identity;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::TicketDto;
 use shared::dtos::user_dto::UserDto;
@@ -41,7 +41,7 @@ impl Component for TicketPage {
             .link()
             .context::<AppStateContext>(ctx.link().callback(Msg::ContextChanged))
             .expect("context to be set");
-        if let Some(LoginDto { token, .. }) = &app_state.identity {
+        if let Some(Identity { token, .. }) = &app_state.identity {
             TicketService::fetch(
                 token.to_string(),
                 ctx.props().id,
@@ -58,7 +58,7 @@ impl Component for TicketPage {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+        if let Some(Identity { token, .. }) = &self.app_state.identity {
             TicketService::fetch(
                 token.to_string(),
                 ctx.props().id,
@@ -75,7 +75,7 @@ impl Component for TicketPage {
             }
             Msg::FetchedTicket(ticket) => {
                 self.ticket = ticket;
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     if let Some(project_id) = self.ticket.project_id {
                         ProjectService::fetch(
                             token.to_string(),
@@ -104,7 +104,7 @@ impl Component for TicketPage {
                 self.user = Some(ButtonLinkData {
                     label: IString::from(user.name),
                     to: Route::User {
-                        id: user.id.unwrap(),
+                        id: user.public_id.unwrap(),
                     },
                 });
             }

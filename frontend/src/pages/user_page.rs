@@ -1,10 +1,12 @@
 use crate::{app_state::AppStateContext, services::user_service::UserService};
-use shared::dtos::{login_dto::LoginDto, user_dto::UserDto};
+use implicit_clone::unsync::IString;
+use shared::dtos::{identity::Identity, user_dto::UserDto};
+use uuid::Uuid;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
-    pub id: u64,
+    pub id: IString,
 }
 
 pub enum UserPageMsg {
@@ -87,10 +89,10 @@ impl Component for UserPage {
 
 impl UserPage {
     fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
-        if let Some(LoginDto { token, .. }) = &app_state.identity {
+        if let Some(Identity { token, .. }) = &app_state.identity {
             UserService::fetch(
                 token.to_string(),
-                ctx.props().id,
+                Uuid::parse_str(ctx.props().id.as_str()).unwrap(),
                 ctx.link().callback(UserPageMsg::FetchedUser),
             );
         }

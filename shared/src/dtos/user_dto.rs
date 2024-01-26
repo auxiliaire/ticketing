@@ -7,11 +7,13 @@ use serde_email::Email;
 use serde_valid::Validate;
 use std::{fmt::Display, rc::Rc};
 use strum::{EnumCount, EnumIter, EnumString};
+use uuid::Uuid;
 // use serde_with::skip_serializing_none;
 
 #[derive(Copy, Clone, strum::Display, EnumCount, EnumIter, EnumString, PartialEq)]
 pub enum UserField {
     Id,
+    PublicId,
     Name,
     Username,
     Role,
@@ -29,16 +31,21 @@ impl From<UserField> for usize {
 #[derive(Clone, Debug, PartialEq)]
 pub enum UserValue {
     Id(Rc<Option<u64>>),
+    PublicId(Rc<Option<Uuid>>),
     Name(Rc<String>),
     Username(Rc<Email>),
     Role(Rc<Option<UserRole>>),
-    Action(Rc<Option<u64>>),
+    Action(Rc<Option<Uuid>>),
 }
 
 impl Display for UserValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             UserValue::Id(id_ref) => match id_ref.as_ref() {
+                Some(id) => write!(f, "{}", id),
+                None => write!(f, ""),
+            },
+            UserValue::PublicId(id_ref) => match id_ref.as_ref() {
                 Some(id) => write!(f, "{}", id),
                 None => write!(f, ""),
             },
@@ -66,6 +73,7 @@ pub type IUserDto = Rc<UserDto>;
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
 pub struct UserDto {
     pub id: Option<u64>,
+    pub public_id: Option<Uuid>,
     #[validate(min_length = 8)]
     #[validate(max_length = 20)]
     pub name: String,
@@ -80,9 +88,10 @@ impl Getter<UserField, UserValue> for IUserDto {
     fn get(&self, field: UserField) -> UserValue {
         match field {
             UserField::Id => UserValue::Id(Rc::new(self.id)),
+            UserField::PublicId => UserValue::PublicId(Rc::new(self.public_id)),
             UserField::Name => UserValue::Name(Rc::new(self.name.clone())),
             UserField::Role => UserValue::Role(Rc::new(self.role)),
-            UserField::Action => UserValue::Action(Rc::new(self.id)),
+            UserField::Action => UserValue::Action(Rc::new(self.public_id)),
             UserField::Username => UserValue::Username(Rc::new(self.username.clone())),
         }
     }
@@ -105,6 +114,7 @@ impl From<&Model> for UserDto {
     fn from(value: &Model) -> Self {
         Self {
             id: Some(value.id),
+            public_id: Some(value.public_id),
             name: value.name.to_owned(),
             username: value.username.to_owned(),
             password: None,
@@ -117,6 +127,7 @@ impl From<Model> for UserDto {
     fn from(value: Model) -> Self {
         Self {
             id: Some(value.id),
+            public_id: Some(value.public_id),
             name: value.name.to_owned(),
             username: value.username.to_owned(),
             password: None,

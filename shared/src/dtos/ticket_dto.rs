@@ -2,10 +2,12 @@ use super::getter::Getter;
 use crate::validation::ticket_validation::{TicketPriority, TicketStatus};
 use entity::{sea_orm_active_enums::Priority, tickets::Model};
 use implicit_clone::ImplicitClone;
+use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 use std::{fmt::Display, rc::Rc, str::FromStr};
 use strum::{Display, EnumCount, EnumIter, EnumString};
+use uuid::Uuid;
 
 #[derive(Copy, Clone, Display, EnumCount, EnumIter, EnumString, PartialEq)]
 pub enum TicketField {
@@ -33,7 +35,7 @@ pub enum TicketValue {
     Description(Rc<String>),
     Project(Rc<Option<u64>>),
     Status(Rc<TicketStatus>),
-    User(Rc<Option<u64>>),
+    User(Rc<Option<Uuid>>),
     Priority(Rc<TicketPriority>),
 }
 
@@ -62,6 +64,17 @@ impl Display for TicketValue {
 
 pub type ITicketDto = Rc<TicketDto>;
 
+#[derive(Debug, FromQueryResult)]
+pub struct TicketQueryResult {
+    pub id: Option<u64>,
+    pub title: String,
+    pub description: String,
+    pub project_id: Option<u64>,
+    pub status: String,
+    pub user_id: Option<Uuid>,
+    pub priority: Option<Priority>,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Validate)]
 pub struct TicketDto {
     pub id: Option<u64>,
@@ -73,7 +86,7 @@ pub struct TicketDto {
     pub description: String,
     pub project_id: Option<u64>,
     pub status: TicketStatus,
-    pub user_id: Option<u64>,
+    pub user_id: Option<Uuid>,
     pub priority: TicketPriority,
 }
 
@@ -125,7 +138,7 @@ impl From<&Model> for TicketDto {
             description: m.description.to_owned(),
             project_id: m.project_id,
             status: TicketStatus::from_str(m.status.as_str()).unwrap(),
-            user_id: m.user_id,
+            user_id: None,
             priority: TicketPriority(m.priority.as_ref().unwrap().to_owned()),
         }
     }
@@ -135,6 +148,20 @@ impl From<Model> for TicketDto {
     fn from(m: Model) -> Self {
         Self {
             id: Some(m.id),
+            title: m.title.to_owned(),
+            description: m.description.to_owned(),
+            project_id: m.project_id,
+            status: TicketStatus::from_str(m.status.as_str()).unwrap(),
+            user_id: None,
+            priority: TicketPriority(m.priority.unwrap()),
+        }
+    }
+}
+
+impl From<TicketQueryResult> for TicketDto {
+    fn from(m: TicketQueryResult) -> Self {
+        Self {
+            id: m.id,
             title: m.title.to_owned(),
             description: m.description.to_owned(),
             project_id: m.project_id,

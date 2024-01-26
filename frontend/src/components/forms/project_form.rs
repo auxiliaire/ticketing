@@ -10,7 +10,7 @@ use gloo_timers::callback::Timeout;
 use implicit_clone::sync::IArray;
 use implicit_clone::unsync::IString;
 use shared::api::error::error_response::ErrorResponse;
-use shared::dtos::login_dto::LoginDto;
+use shared::dtos::identity::Identity;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::user_dto::UserDto;
 use shared::validation::is_empty::IsEmpty;
@@ -18,6 +18,7 @@ use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
 };
 use std::rc::Rc;
+use uuid::Uuid;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -35,7 +36,7 @@ pub enum ProjectMsg {
     UpdateSummary(AttrValue),
     UpdateDeadline(AttrValue),
     UpdateOwner(AttrValue),
-    UpdateUserId((u64, IString)),
+    UpdateUserId((IString, IString)),
     UpdateActive(bool),
     SearchUser(AttrValue),
     ToggleSearchDropdownDelayed(bool),
@@ -56,7 +57,7 @@ pub struct ProjectForm {
     user_search: IString,
     search_timeout: Option<Timeout>,
     dropdown_enabled: bool,
-    user_list: IArray<(u64, IString)>,
+    user_list: IArray<(IString, IString)>,
     on_submit: Callback<(ProjectDto, Callback<ErrorResponse>)>,
     common_error: IValidationMessages,
     summary_error: IValidationMessages,
@@ -128,13 +129,13 @@ impl Component for ProjectForm {
             }
             ProjectMsg::UpdateOwner(value) => {
                 self.owner = value;
-                if let Ok(v) = self.owner.as_str().parse::<u64>() {
+                if let Ok(v) = Uuid::parse_str(self.owner.as_str()) {
                     self.project.user_id = v;
                 }
             }
             ProjectMsg::UpdateUserId((id, name)) => {
-                self.owner = IString::from(format!("{}", id));
-                self.project.user_id = id;
+                self.owner = id.clone();
+                self.project.user_id = Uuid::parse_str(id.as_str()).unwrap();
                 self.user_search = name;
             }
             ProjectMsg::UpdateActive(active) => {
@@ -155,7 +156,7 @@ impl Component for ProjectForm {
                     self.app_state
                         .identity
                         .clone()
-                        .map(|LoginDto { token, .. }| {
+                        .map(|Identity { token, .. }| {
                             Timeout::new(SEARCH_DELAY_MS, || {
                                 UserService::fetch_all(token, Some(q), None, None, fetch_callback)
                             })
@@ -179,7 +180,10 @@ impl Component for ProjectForm {
             ProjectMsg::FetchedUsers(list) => {
                 let mut v = vec![];
                 for u in list {
-                    v.push((u.id.unwrap(), IString::from(u.name.clone())));
+                    v.push((
+                        IString::from(u.id.unwrap().to_string()),
+                        IString::from(u.name.clone()),
+                    ));
                 }
                 self.user_list = IArray::from(v);
             }
@@ -222,7 +226,7 @@ impl Component for ProjectForm {
             let name = t.1.clone();
             html! {
                 <a class="dropdown-item" onclick={move |_| {
-                    select_user.emit((t.0, t.1.clone()));
+                    select_user.emit((t.0.clone(), t.1.clone()));
                 }}>{name}</a>
             }
         });

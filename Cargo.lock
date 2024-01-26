@@ -1554,6 +1554,7 @@ dependencies = [
  "strum",
  "syn 2.0.48",
  "tracing",
+ "uuid",
  "wasm-bindgen",
  "wasm-bindgen-test",
  "wasm-logger",
@@ -4262,12 +4263,15 @@ dependencies = [
  "chrono",
  "entity",
  "implicit-clone",
+ "log",
  "regex",
+ "sea-orm",
  "serde",
  "serde-email",
  "serde_valid",
  "serde_with 3.4.0",
  "strum",
+ "uuid",
 ]
 
 [[package]]

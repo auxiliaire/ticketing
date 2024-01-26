@@ -17,12 +17,15 @@ use axum::{
     Extension, Router,
 };
 use axum_extra::extract::WithRejection;
-use entity::{tickets, tickets::Entity as Ticket};
+use entity::{tickets, tickets::Entity as Ticket, users, users::Entity as User};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait, Order,
-    QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
+    QueryFilter, QueryOrder, QuerySelect, QueryTrait, RelationTrait, Set,
 };
-use shared::dtos::{page::Page, ticket_dto::TicketDto};
+use shared::dtos::{
+    page::Page,
+    ticket_dto::{TicketDto, TicketQueryResult},
+};
 
 pub fn router() -> Router {
     Router::new()
@@ -107,13 +110,28 @@ async fn get_ticket(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
 ) -> Result<Json<TicketDto>, ApiError> {
-    Ticket::find_by_id(id).one(&*db).await?.map_or(
-        Err(ApiError::new(
-            StatusCode::NOT_FOUND,
-            String::from("Not found"),
-        )),
-        |ticket| Ok(Json(ticket.into())),
-    )
+    Ticket::find()
+        .filter(tickets::Column::Id.eq(id))
+        .columns([
+            tickets::Column::Id,
+            tickets::Column::Title,
+            tickets::Column::Description,
+            tickets::Column::ProjectId,
+            tickets::Column::Status,
+            tickets::Column::Priority,
+        ])
+        .column_as(users::Column::PublicId, "user_id")
+        .join(sea_orm::JoinType::LeftJoin, tickets::Relation::Users.def())
+        .into_model::<TicketQueryResult>()
+        .one(&*db)
+        .await?
+        .map_or(
+            Err(ApiError::new(
+                StatusCode::NOT_FOUND,
+                String::from("Not found"),
+            )),
+            |ticket| Ok(Json(ticket.into())),
+        )
 }
 
 async fn post_ticket(
@@ -121,12 +139,21 @@ async fn post_ticket(
     WithRejection(Json(model), _): WithRejection<Json<TicketDto>, ApiError>,
 ) -> Result<Json<TicketDto>, ApiError> {
     println!("Ticket(): '{}'", model.title);
+
+    let user_id = User::find()
+        .select_only()
+        .column(users::Column::Id)
+        .filter(users::Column::PublicId.eq(model.user_id))
+        .into_tuple()
+        .one(&*db)
+        .await?;
+
     let ticket = tickets::ActiveModel {
         title: Set(model.title.to_owned()),
         description: Set(model.description.to_owned()),
         project_id: Set(model.project_id.to_owned()),
         status: Set(model.status.to_string()),
-        user_id: Set(model.user_id.to_owned()),
+        user_id: Set(user_id),
         priority: Set(Some(model.priority.0)),
         ..Default::default()
     }
@@ -141,6 +168,15 @@ async fn put_ticket(
     WithRejection(Json(update), _): WithRejection<Json<TicketDto>, ApiError>,
 ) -> Result<Json<TicketDto>, ApiError> {
     let original_result = Ticket::find_by_id(id).one(&*db).await?;
+
+    let user_id = User::find()
+        .select_only()
+        .column(users::Column::Id)
+        .filter(users::Column::PublicId.eq(update.user_id))
+        .into_tuple()
+        .one(&*db)
+        .await?;
+
     match original_result {
         Some(original) => {
             let updated = tickets::ActiveModel {
@@ -149,7 +185,7 @@ async fn put_ticket(
                 description: Set(update.description.to_owned()),
                 status: Set(update.status.to_owned().to_string()),
                 project_id: Set(update.project_id),
-                user_id: Set(update.user_id),
+                user_id: Set(user_id),
                 priority: Set(Some(update.priority.0)),
                 ..Default::default()
             }

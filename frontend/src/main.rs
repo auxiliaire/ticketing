@@ -10,6 +10,7 @@ use frontend::pages::{
     user_list_page::UserListPage, user_page::UserPage,
 };
 use frontend::route::Route;
+use implicit_clone::unsync::IString;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -72,7 +73,7 @@ fn switch(routes: Route) -> Html {
             html! { <RegistrationPage /> }
         }
         Route::User { id } => {
-            html! { <UserPage id={id} /> }
+            html! { <UserPage id={IString::from(id.to_string())} /> }
         }
         Route::Users => {
             html! { <UserListPage /> }

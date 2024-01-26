@@ -10,7 +10,7 @@ use crate::{
 };
 use shared::{
     api::error::error_response::ErrorResponse,
-    dtos::{login_dto::LoginDto, project_dto::ProjectDto, user_dto::UserDto},
+    dtos::{identity::Identity, login_dto::LoginDto, project_dto::ProjectDto, user_dto::UserDto},
 };
 use std::rc::Rc;
 use yew::prelude::*;
@@ -23,7 +23,7 @@ pub enum HomeMsg {
     OpenLoginDialog,
     SubmittedLoginForm((LoginDto, Callback<ErrorResponse>)),
     SubmittedRegistrationForm((UserDto, Callback<ErrorResponse>)),
-    LoggedIn(LoginDto),
+    LoggedIn(Identity),
 }
 
 pub struct HomePage {
@@ -89,9 +89,9 @@ impl Component for HomePage {
                 );
             }
             HomeMsg::SubmittedRegistrationForm(_) => todo!(),
-            HomeMsg::LoggedIn(creds) => {
-                log::debug!("Logged in {}", creds.username);
-                AppState::update_identity_and_close_dialog(&self.app_state, Some(creds));
+            HomeMsg::LoggedIn(identity) => {
+                log::debug!("Logged in {}", identity);
+                AppState::update_identity_and_close_dialog(&self.app_state, Some(identity));
             }
         }
         true

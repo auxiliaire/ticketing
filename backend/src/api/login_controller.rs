@@ -4,6 +4,7 @@ use super::{
     error::{ApiError, AuthError},
     jwt::encode_jwt,
     query,
+    validated_json::ValidatedJson,
 };
 use crate::api::auth_backend::AuthBackend;
 use askama::Template;
@@ -11,16 +12,25 @@ use axum::{
     extract::Query,
     response::{Html, IntoResponse, Redirect},
     routing::{get, post},
-    Extension, Form, Router,
+    Extension, Form, Json, Router,
 };
 use axum_csrf::CsrfToken;
-use axum_extra::extract::cookie::{Cookie, CookieJar};
+use axum_extra::extract::{
+    cookie::{Cookie, CookieJar},
+    WithRejection,
+};
 use axum_login::{login_required, AuthnBackend};
 use base64::{engine, Engine};
+use entity::users;
 use http::{HeaderMap, StatusCode};
 use redis::{AsyncCommands, Client};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use serde::{Deserialize, Serialize};
-use shared::{api::auth::AuthScheme, dtos::login_dto::LoginDto};
+use shared::{
+    api::auth::AuthScheme,
+    dtos::{login_dto::LoginDto, user_dto::UserDto},
+    validation::user_validation::OptionUserRole,
+};
 use uuid::Uuid;
 
 pub fn router() -> Router {
@@ -34,6 +44,7 @@ pub fn router() -> Router {
         .route("/login-success", get(login_success))
         .route("/logout", get(logout))
         // API routes
+        .route("/register", post(register))
         .route("/authenticate-cookie", post(authenticate_cookie))
         .route("/authenticate", post(authenticate_raw))
         .route("/refresh-token", get(refresh_token))
@@ -99,6 +110,23 @@ async fn logout(mut auth_session: AuthSession) -> impl IntoResponse {
         Ok(_) => Redirect::to("/login").into_response(),
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
+}
+
+async fn register(
+    db: Extension<DatabaseConnection>,
+    WithRejection(ValidatedJson(model), _): WithRejection<ValidatedJson<UserDto>, ApiError>,
+) -> Result<Json<UserDto>, ApiError> {
+    println!("User(): '{}'", model.name);
+    let user = users::ActiveModel {
+        name: Set(model.name.to_owned()),
+        username: Set(model.username.to_owned()),
+        password: Set(model.password.unwrap().to_owned()),
+        role: Set(OptionUserRole(model.role).to_string()),
+        ..Default::default()
+    }
+    .insert(&*db)
+    .await?;
+    Ok(Json(user.into()))
 }
 
 async fn authenticate_cookie(
@@ -210,7 +238,7 @@ async fn generate_token_using_auth(
         ));
     };
 
-    let token = encode_jwt(user.username.to_string())
+    let token = encode_jwt(user.public_id)
         .map_err(|status| ApiError::new(status, String::from("Token creation error")))?;
 
     Ok(token)

@@ -11,7 +11,7 @@ use crate::services::user_service::UserService;
 use crate::{app_state::AppState, dialog::Dialog, route::Route};
 use implicit_clone::sync::{IArray, IString};
 use shared::api::error::error_response::ErrorResponse;
-use shared::dtos::login_dto::LoginDto;
+use shared::dtos::identity::Identity;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::TicketDto;
 use shared::dtos::user_dto::UserDto;
@@ -73,7 +73,7 @@ impl Component for ProjectBoardPage {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+        if let Some(Identity { token, .. }) = &self.app_state.identity {
             ProjectService::fetch(
                 token.clone(),
                 ctx.props().id,
@@ -87,7 +87,7 @@ impl Component for ProjectBoardPage {
         match msg {
             ProjectBoardPageMsg::FetchedProject(project) => {
                 self.project = project;
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     UserService::fetch(
                         token.clone(),
                         self.project.user_id,
@@ -99,7 +99,7 @@ impl Component for ProjectBoardPage {
                 self.user = Some(ButtonLinkData {
                     label: IString::from(user.name),
                     to: Route::User {
-                        id: user.id.unwrap(),
+                        id: user.public_id.unwrap(),
                     },
                 });
             }
@@ -154,7 +154,7 @@ impl Component for ProjectBoardPage {
                 }
             }
             ProjectBoardPageMsg::SelectedTickets(tickets) => {
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     let callback = ctx.link().callback(ProjectBoardPageMsg::FetchedTickets);
                     ProjectService::assign_tickets(
                         token.to_string(),
@@ -167,7 +167,7 @@ impl Component for ProjectBoardPage {
             }
             ProjectBoardPageMsg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     if ticket.id.is_some() {
                         TicketService::update(
                             token.to_string(),
@@ -188,7 +188,7 @@ impl Component for ProjectBoardPage {
             ProjectBoardPageMsg::TicketCreated(ticket) => {
                 log::debug!("Created: {}", ticket);
                 AppState::close_dialog(&self.app_state);
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     ProjectService::fetch_assigned_tickets(
                         token.clone(),
                         ctx.props().id,
@@ -208,7 +208,7 @@ impl Component for ProjectBoardPage {
                 if let Ok(id_s) = get_transfer_data(e) {
                     if let Ok(id) = id_s.as_str().parse::<u64>() {
                         log::debug!("Dropped. Status: id({}) -> {}", id, status);
-                        if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                        if let Some(Identity { token, .. }) = &self.app_state.identity {
                             if let Some(ticket) = self
                                 .ticket_list
                                 .iter()
@@ -238,7 +238,7 @@ impl Component for ProjectBoardPage {
                 }
             }
             ProjectBoardPageMsg::FetchUnassigned(consumer) => {
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     TicketService::fetch_unassigned(token.to_string(), consumer);
                 }
             }
@@ -356,7 +356,7 @@ impl Component for ProjectBoardPage {
 
 impl ProjectBoardPage {
     fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
-        if let Some(LoginDto { token, .. }) = &app_state.identity {
+        if let Some(Identity { token, .. }) = &app_state.identity {
             ProjectService::fetch(
                 token.to_string(),
                 ctx.props().id,

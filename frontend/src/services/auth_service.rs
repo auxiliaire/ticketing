@@ -1,10 +1,12 @@
+use crate::app_state::{AppState, AppStateContext};
 use base64::{engine, Engine};
 use gloo_net::http::Request;
+use shared::api::auth::Claims;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
+use shared::dtos::identity::Identity;
 use shared::dtos::login_dto::LoginDto;
+use uuid::Uuid;
 use yew::{platform::spawn_local, Callback};
-
-use crate::app_state::{AppState, AppStateContext};
 
 pub const REFRESH_TOKEN_KEY: &str = "refresh-token";
 
@@ -16,7 +18,7 @@ pub struct AuthService;
 impl AuthService {
     pub fn authenticate(
         creds: LoginDto,
-        callback: Callback<LoginDto>,
+        callback: Callback<Identity>,
         callback_error: Callback<ErrorResponse>,
     ) {
         spawn_local(async move {
@@ -67,15 +69,15 @@ impl AuthService {
                 Ok(resp) => {
                     let text_result = resp.text().await;
                     match text_result {
-                        Ok(token) => {
-                            log::debug!("JWT: {}", token);
-                            callback.emit(LoginDto {
-                                username: creds.username,
-                                password: String::default(),
-                                token,
-                                redirect: creds.redirect,
-                            });
-                        }
+                        Ok(token) => match decode_userid(&token) {
+                            Ok(userid) => {
+                                callback.emit(Identity { userid, token });
+                            }
+                            Err(e) => {
+                                log::error!("Decode error: {}", e);
+                                callback_error.emit(ErrorResponse::from(e.to_string()));
+                            }
+                        },
                         Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
                     }
                 }
@@ -118,14 +120,13 @@ pub async fn try_authenticate_async(app_state: &AppStateContext) -> Result<Strin
             let text_result = resp.text().await;
             match text_result {
                 Ok(token) => {
-                    log::debug!("JWT: {}", token);
+                    let userid = decode_userid(&token)?;
+
                     AppState::update_identity(
                         app_state,
-                        Some(LoginDto {
-                            username: String::from("<Faded>"),
-                            password: String::default(),
+                        Some(Identity {
+                            userid,
                             token: token.clone(),
-                            redirect: None,
                         }),
                     );
                     Ok(token)
@@ -152,4 +153,18 @@ fn create_token(creds: &LoginDto) -> String {
     let password = creds.password.clone();
     let con = format!("{}:{}", username, password);
     engine::general_purpose::STANDARD.encode(con)
+}
+
+fn decode_userid(token: &str) -> Result<Uuid, String> {
+    let split: Vec<&str> = token.split('.').collect();
+    let Some(&input) = split.get(1) else {
+        return Err(String::from("Invalid structure"));
+    };
+    let serialized = match engine::general_purpose::URL_SAFE_NO_PAD.decode(input) {
+        Ok(vec) => String::from_utf8(vec).map_err(|e| e.to_string()),
+        Err(e) => Err(e.to_string()),
+    }?;
+    let claims: Claims = serde_json::from_str(&serialized).map_err(|e| e.to_string())?;
+
+    Ok(claims.sub)
 }

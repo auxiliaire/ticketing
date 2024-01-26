@@ -4,14 +4,17 @@ use crate::{
     route::Route,
     services::auth_service::{try_authenticate, AuthService},
 };
-use shared::{api::error::error_response::ErrorResponse, dtos::login_dto::LoginDto};
+use shared::{
+    api::error::error_response::ErrorResponse,
+    dtos::{identity::Identity, login_dto::LoginDto},
+};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 pub enum LoginMsg {
     ContextChanged(AppStateContext),
     Submitted((LoginDto, Callback<ErrorResponse>)),
-    LoggedIn(LoginDto),
+    LoggedIn(Identity),
     Authenticated(Option<String>),
 }
 
@@ -58,9 +61,9 @@ impl Component for LoginPage {
                     callback_error,
                 );
             }
-            LoginMsg::LoggedIn(creds) => {
-                log::debug!("Created: {}", creds.username);
-                AppState::update_identity(&self.app_state, Some(creds));
+            LoginMsg::LoggedIn(identity) => {
+                log::debug!("Created: {}", identity);
+                AppState::update_identity(&self.app_state, Some(identity));
             }
             LoginMsg::Authenticated(auth_res) => {
                 if auth_res.is_some() {

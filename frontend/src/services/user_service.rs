@@ -2,14 +2,16 @@ use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
 use shared::dtos::user_dto::UserDto;
+use uuid::Uuid;
 use yew::{platform::spawn_local, Callback};
 
 const USERS_ENDPOINT: &str = "users";
+const REGISTER_ENDPOINT: &str = "register";
 
 pub struct UserService;
 
 impl UserService {
-    pub fn fetch(jwt: String, id: u64, callback: Callback<UserDto>) {
+    pub fn fetch(jwt: String, id: Uuid, callback: Callback<UserDto>) {
         spawn_local(async move {
             let user: UserDto =
                 Request::get(format!("{}{}/{}", get_api_url(), USERS_ENDPOINT, id).as_str())
@@ -63,7 +65,7 @@ impl UserService {
         callback_error: Callback<ErrorResponse>,
     ) {
         spawn_local(async move {
-            let res = Request::post(format!("{}{}", get_api_url(), USERS_ENDPOINT).as_str())
+            let res = Request::post(format!("{}{}", get_api_url(), REGISTER_ENDPOINT).as_str())
                 .json(&user)
                 .unwrap()
                 .send()

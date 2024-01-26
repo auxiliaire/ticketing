@@ -12,10 +12,10 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx-user_username")
+                    .name("idx-user_public_id")
                     .unique()
                     .table(User::Table)
-                    .col(Alias::new("username"))
+                    .col(Alias::new("public_id"))
                     .to_owned(),
             )
             .await?;
@@ -28,7 +28,7 @@ impl MigrationTrait for Migration {
             .drop_index(
                 Index::drop()
                     .if_exists()
-                    .name("idx-user_username")
+                    .name("idx-user_public_id")
                     .table(User::Table)
                     .to_owned(),
             )

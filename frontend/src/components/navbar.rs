@@ -59,7 +59,7 @@ impl Component for Navbar {
             <nav class="navbar is-link" role="navigation" aria-label="main navigation">
                 <div class="navbar-brand is-size-4">
                     <div class="navbar-item pr-0">
-                        <i class="fa-solid fa-tag"></i>
+                        <i class="fa-solid fa-tag has-text-primary"></i>
                     </div>
                     <h1 class="navbar-item is-size-3">
                         { "Ticketing in Rust" }
@@ -118,10 +118,18 @@ impl Component for Navbar {
                         {
                             if self.app_state.identity.is_some() {
                                 html! {
-                                    <div class="navbar-item pl-2">
-                                        <button class={classes!("button", "is-info", "is-light")} onclick={ctx.link().callback(|_| NavbarMsg::DoLogout)}>
-                                            { "Logout" }
-                                        </button>
+                                    <div class="navbar-item has-dropdown is-hoverable">
+                                        <div class="navbar-link">
+                                            <i class="fa-solid fa-user"></i>
+                                        </div>
+                                        <div class="navbar-dropdown is-right">
+                                            <Link<Route> classes={classes!("navbar-item")} to={Route::User { id: <std::option::Option<shared::dtos::identity::Identity> as Clone>::clone(&self.app_state.identity).unwrap().userid }}>
+                                                { "Profile" }
+                                            </Link<Route>>
+                                            <a href="#" class="navbar-item" onclick={ctx.link().callback(|_| NavbarMsg::DoLogout)}>
+                                                    { "Logout" }
+                                            </a>
+                                        </div>
                                     </div>
                                 }
                             } else {

@@ -17,7 +17,7 @@ use implicit_clone::{
 };
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
-use shared::dtos::login_dto::LoginDto;
+use shared::dtos::identity::Identity;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::{TicketDto, TicketField};
 use shared::dtos::user_dto::UserDto;
@@ -29,6 +29,7 @@ use shared::validation::validation_messages::{
 use std::rc::Rc;
 use std::str::FromStr;
 use strum::{EnumCount, IntoEnumIterator};
+use uuid::Uuid;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -57,7 +58,7 @@ pub enum TicketMsg {
     UpdatePriority(AttrValue),
     UpdateStatus(AttrValue),
     UpdateOwner(AttrValue),
-    UpdateUserId((u64, IString)),
+    UpdateUserId((Uuid, IString)),
     SearchUser(AttrValue),
     ToggleSearchDropdownDelayed(bool),
     ToggleSearchDropdown(bool),
@@ -79,7 +80,7 @@ pub struct TicketForm {
     user_search: IString,
     search_timeout: Option<Timeout>,
     dropdown_enabled: bool,
-    user_list: IArray<(u64, IString)>,
+    user_list: IArray<(IString, IString)>,
     on_submit: Callback<(TicketDto, Callback<ErrorResponse>)>,
     common_error: IValidationMessages,
     title_error: IValidationMessages,
@@ -148,7 +149,7 @@ impl Component for TicketForm {
             }
             TicketMsg::FetchedTicket(ticket) => {
                 self.ticket = ticket;
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     if let Some(project_id) = self.ticket.project_id {
                         ProjectService::fetch(
                             token.clone(),
@@ -179,7 +180,7 @@ impl Component for TicketForm {
                 self.user = Some(ButtonLinkData {
                     label,
                     to: Route::User {
-                        id: user.id.unwrap(),
+                        id: user.public_id.unwrap(),
                     },
                 });
                 self.user_search = IString::from(user_name);
@@ -187,7 +188,10 @@ impl Component for TicketForm {
             TicketMsg::FetchedUsers(list) => {
                 let mut v = vec![];
                 for u in list {
-                    v.push((u.id.unwrap(), IString::from(u.name.clone())));
+                    v.push((
+                        IString::from(u.public_id.unwrap().to_string()),
+                        IString::from(u.name.clone()),
+                    ));
                 }
                 self.user_list = IArray::from(v);
             }
@@ -212,10 +216,10 @@ impl Component for TicketForm {
             }
             TicketMsg::UpdateOwner(value) => {
                 self.owner = value;
-                self.ticket.user_id = self.owner.as_str().parse::<u64>().ok();
+                self.ticket.user_id = Uuid::parse_str(self.owner.as_str()).ok();
             }
             TicketMsg::UpdateUserId((id, name)) => {
-                self.owner = IString::from(format!("{}", id));
+                self.owner = IString::from(id.to_string());
                 self.ticket.user_id = Some(id);
                 self.user_search = name;
             }
@@ -231,7 +235,7 @@ impl Component for TicketForm {
                     self.app_state
                         .identity
                         .clone()
-                        .map(|LoginDto { token, .. }| {
+                        .map(|Identity { token, .. }| {
                             Timeout::new(SEARCH_DELAY_MS, || {
                                 UserService::fetch_all(token, Some(q), None, None, fetch_callback)
                             })
@@ -329,7 +333,7 @@ impl Component for TicketForm {
 
 impl TicketForm {
     fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
-        if let Some(LoginDto { token, .. }) = &app_state.identity {
+        if let Some(Identity { token, .. }) = &app_state.identity {
             if let Some(ticket_id) = ctx.props().ticketid {
                 TicketService::fetch(
                     token.to_string(),
@@ -346,7 +350,7 @@ impl TicketForm {
             let name = t.1.clone();
             html! {
                 <a class="dropdown-item" onclick={move |_| {
-                    select_user.emit((t.0, t.1.clone()));
+                    select_user.emit((Uuid::parse_str(t.0.as_str()).unwrap(), t.1.clone()));
                 }}>{name}</a>
             }
         });
@@ -463,7 +467,7 @@ impl TicketForm {
             let name = t.1.clone();
             html! {
                 <a class="dropdown-item" onclick={move |_| {
-                    select_user.emit((t.0, t.1.clone()));
+                    select_user.emit((Uuid::parse_str(t.0.as_str()).unwrap(), t.1.clone()));
                 }}>{name}</a>
             }
         });

@@ -12,9 +12,12 @@ path = "src/lib.rs"
 chrono = { version = "0.4", default-features = false, features = [ "serde" ] }
 entity = { path = "../entity" }
 implicit-clone = "0.4"
+log = "0.4"
 regex = "1.9"
+sea-orm = "0.12"
 serde = { version = "1", features = [ "derive" ] }
 serde_valid = "0.16"
 serde_with = "3.1"
 serde-email = { version = "3.0", features = [ "sea-orm" ] }
 strum = { version = "0.25", features = [ "derive" ] }
+uuid = "1.0"

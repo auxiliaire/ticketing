@@ -1,14 +1,16 @@
 use super::getter::Getter;
 use crate::validation::project_validation::ProjectValidation;
 use chrono::serde::ts_seconds_option;
-use chrono::{DateTime, NaiveDateTime, NaiveTime, Utc};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use entity::projects::Model;
 use implicit_clone::ImplicitClone;
+use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 use std::fmt::Display;
 use std::rc::Rc;
 use strum::{EnumCount, EnumIter, EnumString};
+use uuid::Uuid;
 
 #[derive(Copy, Clone, strum::Display, EnumCount, EnumIter, EnumString, PartialEq)]
 pub enum ProjectField {
@@ -53,7 +55,18 @@ impl Display for ProjectValue {
 
 pub type IProjectDto = Rc<ProjectDto>;
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize, Validate)]
+#[derive(Debug, FromQueryResult)]
+pub struct ProjectQueryResult {
+    pub id: Option<u64>,
+    pub summary: String,
+    pub deadline: Option<NaiveDate>,
+    pub user_id: Uuid,
+    pub active: i8,
+}
+
+#[derive(
+    Clone, Debug, Default, Deserialize, Eq, FromQueryResult, PartialEq, Serialize, Validate,
+)]
 pub struct ProjectDto {
     pub id: Option<u64>,
     #[validate(min_length = 8)]
@@ -62,7 +75,7 @@ pub struct ProjectDto {
     #[serde(with = "ts_seconds_option")]
     #[validate(custom(ProjectValidation::deadline_validation))]
     pub deadline: Option<DateTime<Utc>>,
-    pub user_id: u64,
+    pub user_id: Uuid,
     #[validate(enumerate(0, 1), message = "Active can be either 0 or 1.")]
     pub active: i8,
 }
@@ -105,7 +118,7 @@ impl From<&Model> for ProjectDto {
                     .and_local_timezone(Utc)
                     .unwrap()
             }),
-            user_id: m.user_id,
+            user_id: Uuid::default(),
             active: m.active,
         }
     }
@@ -115,6 +128,22 @@ impl From<Model> for ProjectDto {
     fn from(m: Model) -> Self {
         Self {
             id: Some(m.id),
+            summary: m.summary.to_owned(),
+            deadline: m.deadline.map(|d| {
+                NaiveDateTime::new(d, NaiveTime::default())
+                    .and_local_timezone(Utc)
+                    .unwrap()
+            }),
+            user_id: Uuid::default(),
+            active: m.active,
+        }
+    }
+}
+
+impl From<ProjectQueryResult> for ProjectDto {
+    fn from(m: ProjectQueryResult) -> Self {
+        Self {
+            id: m.id,
             summary: m.summary.to_owned(),
             deadline: m.deadline.map(|d| {
                 NaiveDateTime::new(d, NaiveTime::default())

@@ -19,7 +19,7 @@ impl From<&Vec<UserDto>> for UserDataSource {
             empty_label: IString::from("There are no users yet"),
             // Override fieldset:
             fieldset: IArray::from(vec![
-                UserField::Id,
+                UserField::PublicId,
                 UserField::Name,
                 UserField::Username,
                 UserField::Role,
@@ -34,30 +34,38 @@ impl From<&Vec<UserDto>> for UserDataSource {
             has_row_head: true,
             cellrenderer: Callback::from(|celldata: CompositeCellData<UserField, IUserDto>| {
                 match celldata.data.id {
-                    Some(id) => match celldata.column {
-                        UserField::Id => Some(html! {
-                            {id}
-                        }),
-                        UserField::Name => Some(html! {
-                            <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0", "pb-0")} to={Route::User { id }}>
-                                {celldata.data.name.clone()}
-                            </Link<Route>>
-                        }),
-                        UserField::Username => Some(html! {
-                            <a classes={classes!("column", "is-full", "pl-0", "pt-0", "pb-0")} href={format!("mailto:{}", celldata.data.username.clone())}>
-                                {celldata.data.username.to_string().clone()}
-                            </a>
-                        }),
-                        UserField::Role => Some(html! {
-                            <span class="tag">{ html! {celldata.data.role.map_or("".to_owned(), |r| format!("{}", r))}}</span>
-                        }),
-                        // Hide columns:
-                        UserField::Action => None,
-                        // Add an extra column:
-                        // UserField::Action => Some(html! {
-                        //    <span class="tag">{ "Action: " }{celldata.data.id}</span>
-                        // }),
-                    },
+                    Some(id) => {
+                        let public_id = celldata.data.public_id.unwrap();
+                        let public_id_str = public_id.to_string();
+                        let slice = &public_id_str.as_str()[..8];
+                        match celldata.column {
+                            UserField::Id => Some(html! {
+                                { id }
+                            }),
+                            UserField::PublicId => Some(html! {
+                                { slice }
+                            }),
+                            UserField::Name => Some(html! {
+                                <Link<Route> classes={classes!("column", "is-full", "pl-0", "pt-0", "pb-0")} to={Route::User { id: public_id }}>
+                                    {celldata.data.name.clone()}
+                                </Link<Route>>
+                            }),
+                            UserField::Username => Some(html! {
+                                <a classes={classes!("column", "is-full", "pl-0", "pt-0", "pb-0")} href={format!("mailto:{}", celldata.data.username.clone())}>
+                                    {celldata.data.username.to_string().clone()}
+                                </a>
+                            }),
+                            UserField::Role => Some(html! {
+                                <span class="tag">{ html! {celldata.data.role.map_or("".to_owned(), |r| format!("{}", r))}}</span>
+                            }),
+                            // Hide columns:
+                            UserField::Action => None,
+                            // Add an extra column:
+                            // UserField::Action => Some(html! {
+                            //    <span class="tag">{ "Action: " }{celldata.data.id}</span>
+                            // }),
+                        }
+                    }
                     None => None,
                 }
             }),

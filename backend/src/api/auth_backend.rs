@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use axum_login::{AuthnBackend, UserId};
-use entity::users::Entity as User;
-use sea_orm::{ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
+use entity::users::{self, Entity as User};
+use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 use shared::dtos::login_dto::LoginDto;
 
 pub type AuthSession = axum_login::AuthSession<AuthBackend>;
@@ -28,9 +28,7 @@ impl AuthnBackend for AuthBackend {
         creds: Self::Credentials,
     ) -> Result<Option<Self::User>, Self::Error> {
         let user = User::find()
-            .filter(Condition::all().add(
-                <entity::prelude::Users as EntityTrait>::Column::Username.eq(creds.username.clone()),
-            ))
+            .filter(users::Column::Username.eq(creds.username.clone()))
             .one(&self.db)
             .await?;
 
@@ -46,7 +44,10 @@ impl AuthnBackend for AuthBackend {
     }
 
     async fn get_user(&self, user_id: &UserId<Self>) -> Result<Option<Self::User>, Self::Error> {
-        let user = User::find_by_id(*user_id).one(&self.db).await?;
+        let user = User::find()
+            .filter(users::Column::PublicId.eq(user_id.inner))
+            .one(&self.db)
+            .await?;
 
         Ok(user)
     }

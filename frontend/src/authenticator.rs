@@ -45,10 +45,10 @@ impl Component for Authenticator {
             AuthenticatorMsg::ContextChanged(state) => {
                 log::debug!(
                     ">>> Identity: {}",
-                    <std::option::Option<shared::dtos::login_dto::LoginDto> as Clone>::clone(
+                    <std::option::Option<shared::dtos::identity::Identity> as Clone>::clone(
                         &state.identity
                     )
-                    .map(|i| i.username)
+                    .map(|i| i.userid)
                     .unwrap_or_default()
                 );
                 self.app_state = state;

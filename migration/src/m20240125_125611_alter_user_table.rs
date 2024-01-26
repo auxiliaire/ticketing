@@ -9,27 +9,21 @@ pub struct Migration;
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .create_index(
-                Index::create()
-                    .if_not_exists()
-                    .name("idx-user_username")
-                    .unique()
+            .alter_table(
+                Table::alter()
                     .table(User::Table)
-                    .col(Alias::new("username"))
+                    .add_column(ColumnDef::new(Alias::new("public_id")).uuid().not_null())
                     .to_owned(),
             )
-            .await?;
-
-        Ok(())
+            .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_index(
-                Index::drop()
-                    .if_exists()
-                    .name("idx-user_username")
+            .alter_table(
+                Table::alter()
                     .table(User::Table)
+                    .drop_column(Alias::new("public_id"))
                     .to_owned(),
             )
             .await

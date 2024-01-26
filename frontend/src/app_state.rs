@@ -1,5 +1,5 @@
 use crate::{dialog::Dialog, route::Route};
-use shared::dtos::login_dto::LoginDto;
+use shared::dtos::identity::Identity;
 use std::rc::Rc;
 use yew::{
     function_component, html, use_reducer, ContextProvider, Html, Properties, Reducible,
@@ -10,7 +10,7 @@ use yew::{
 pub struct AppState {
     pub dialog: Rc<Dialog>,
     pub navbar_active: bool,
-    pub identity: Option<LoginDto>,
+    pub identity: Option<Identity>,
     pub referer: Option<Route>,
 }
 
@@ -27,11 +27,11 @@ impl AppState {
         ctx.dispatch(AppStateChange::ToggleNavbar);
     }
 
-    pub fn update_identity(ctx: &AppStateContext, identity: Option<LoginDto>) {
+    pub fn update_identity(ctx: &AppStateContext, identity: Option<Identity>) {
         ctx.dispatch(AppStateChange::UpdateIdentity(identity));
     }
 
-    pub fn update_identity_and_close_dialog(ctx: &AppStateContext, identity: Option<LoginDto>) {
+    pub fn update_identity_and_close_dialog(ctx: &AppStateContext, identity: Option<Identity>) {
         ctx.dispatch(AppStateChange::UpdateIdentityAndCloseDialog(identity));
     }
 
@@ -44,8 +44,8 @@ pub enum AppStateChange {
     UpdateDialog(Rc<Dialog>),
     CloseDialog,
     ToggleNavbar,
-    UpdateIdentity(Option<LoginDto>),
-    UpdateIdentityAndCloseDialog(Option<LoginDto>),
+    UpdateIdentity(Option<Identity>),
+    UpdateIdentityAndCloseDialog(Option<Identity>),
     UpdateReferer(Option<Route>),
 }
 

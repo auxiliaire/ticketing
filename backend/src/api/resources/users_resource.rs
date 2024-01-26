@@ -20,6 +20,7 @@ use sea_orm::{
     QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
 };
 use shared::{dtos::user_dto::UserDto, validation::user_validation::OptionUserRole};
+use uuid::Uuid;
 
 pub fn router() -> Router {
     Router::new()
@@ -66,9 +67,9 @@ fn sort_to_column(s: &str) -> Option<users::Column> {
 
 async fn get_user(
     db: Extension<DatabaseConnection>,
-    WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
+    WithRejection(Path(id), _): WithRejection<Path<Uuid>, ApiError>,
 ) -> Result<Json<UserDto>, ApiError> {
-    User::find_by_id(id).one(&*db).await?.map_or(
+    User::find().filter(users::Column::PublicId.eq(id)).one(&*db).await?.map_or(
         Err(ApiError::new(
             StatusCode::NOT_FOUND,
             String::from("Not found"),
@@ -84,6 +85,7 @@ async fn post_user(
     println!("User(): '{}'", model.name);
     let user = users::ActiveModel {
         name: Set(model.name.to_owned()),
+        username: Set(model.username.to_owned()),
         password: Set(model.password.unwrap().to_owned()),
         role: Set(OptionUserRole(model.role).to_string()),
         ..Default::default()
@@ -107,6 +109,7 @@ async fn put_user(
                 username: Set(original.username),
                 password: Set(update.password.unwrap().to_owned()),
                 role: Set(update.role.map_or(String::from(""), |r| r.to_string())),
+                public_id: Set(update.public_id.unwrap()),
             }
             .update(&*db)
             .await?;

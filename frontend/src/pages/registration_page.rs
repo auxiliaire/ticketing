@@ -30,7 +30,7 @@ impl Component for RegistrationPage {
                 log::debug!("Created: {}", user);
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.replace(&Route::User {
-                    id: user.id.unwrap(),
+                    id: user.public_id.unwrap(),
                 });
             }
         }

@@ -1,45 +1,36 @@
 use super::{auth_utils::extract_auth_from_header, consts::JWT_SECRET, error::AuthError};
 use chrono::{Duration, Utc};
-use entity::users::Entity as User;
+use entity::users::{self, Entity as User};
 use futures::Future;
 use http::{HeaderMap, Request, Response, StatusCode};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
-use sea_orm::{ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter};
-use serde::{Deserialize, Serialize};
-use shared::api::auth::AuthScheme;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use shared::api::auth::{AuthScheme, Claims};
 use std::pin::Pin;
 use tower::{Layer, Service};
 use tracing::Instrument;
+use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Claims {
-    pub exp: usize,
-    pub iat: usize,
-    pub uname: String,
-}
-
-impl Claims {
-    fn try_from_header(headers: &HeaderMap) -> Result<Claims, AuthError> {
-        extract_auth_from_header(headers, AuthScheme::Bearer)
-            .and_then(|token| {
-                decode_jwt(token).map_err(|_| AuthError {
-                    status: StatusCode::UNAUTHORIZED,
-                    message: String::from("Unauthorized"),
-                    code: Some(String::from("JWT")),
-                })
+pub fn try_from_header(headers: &HeaderMap) -> Result<Claims, AuthError> {
+    extract_auth_from_header(headers, AuthScheme::Bearer)
+        .and_then(|token| {
+            decode_jwt(token).map_err(|_| AuthError {
+                status: StatusCode::UNAUTHORIZED,
+                message: String::from("Unauthorized"),
+                code: Some(String::from("JWT")),
             })
-            .map(|jwt| jwt.claims)
-    }
+        })
+        .map(|jwt| jwt.claims)
 }
 
-pub fn encode_jwt(username: String) -> Result<String, StatusCode> {
+pub fn encode_jwt(userid: Uuid) -> Result<String, StatusCode> {
     let now = Utc::now();
     let expire = Duration::hours(24);
 
     let claim = Claims {
         iat: now.timestamp() as usize,
         exp: (now + expire).timestamp() as usize,
-        uname: username,
+        sub: userid,
     };
     let secret = JWT_SECRET.clone();
 
@@ -92,7 +83,7 @@ where
 
         Box::pin(
             async move {
-                let claims = match Claims::try_from_header(req.headers()) {
+                let claims = match try_from_header(req.headers()) {
                     Ok(c) => c,
                     Err(e) => {
                         tracing::error!(
@@ -111,12 +102,7 @@ where
                     return Ok(res);
                 };
                 let Ok(Some(identity)) = User::find()
-                    .filter(
-                        Condition::all().add(
-                            <entity::prelude::Users as EntityTrait>::Column::Username
-                                .eq(claims.uname.clone()),
-                        ),
-                    )
+                    .filter(users::Column::PublicId.eq(claims.sub))
                     .one(db)
                     .await
                 else {

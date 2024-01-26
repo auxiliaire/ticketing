@@ -15,14 +15,14 @@ use axum::{
 };
 use axum_extra::extract::WithRejection;
 use entity::tickets::Entity as Ticket;
-use entity::{projects, projects::Entity as Project};
+use entity::{projects, projects::Entity as Project, users, users::Entity as User};
 use migration::Expr;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
-    QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
+    QueryFilter, QueryOrder, QuerySelect, QueryTrait, RelationTrait, Set,
 };
-use shared::dtos::ticket_dto::TicketDto;
 use shared::dtos::{page::Page, project_dto::ProjectTickets as ProjectTicketsDto};
+use shared::dtos::{project_dto::ProjectQueryResult, ticket_dto::TicketDto};
 use shared::{dtos::project_dto::ProjectDto, validation::ticket_validation::TicketStatus};
 
 pub fn router() -> Router {
@@ -83,13 +83,26 @@ async fn get_project(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
 ) -> Result<Json<ProjectDto>, ApiError> {
-    Project::find_by_id(id).one(&*db).await?.map_or(
-        Err(ApiError::new(
-            StatusCode::NOT_FOUND,
-            String::from("Not found"),
-        )),
-        |project| Ok(Json(project.into())),
-    )
+    Project::find()
+        .filter(projects::Column::Id.eq(id))
+        .columns([
+            projects::Column::Id,
+            projects::Column::Summary,
+            projects::Column::Deadline,
+            projects::Column::Active,
+        ])
+        .column_as(users::Column::PublicId, "user_id")
+        .join(sea_orm::JoinType::LeftJoin, projects::Relation::Users.def())
+        .into_model::<ProjectQueryResult>()
+        .one(&*db)
+        .await?
+        .map_or(
+            Err(ApiError::new(
+                StatusCode::NOT_FOUND,
+                String::from("Not found"),
+            )),
+            |project| Ok(Json(project.into())),
+        )
 }
 
 async fn get_project_tickets(
@@ -145,10 +158,25 @@ async fn post_project(
     WithRejection(ValidatedJson(model), _): WithRejection<ValidatedJson<ProjectDto>, ApiError>,
 ) -> Result<Json<ProjectDto>, ApiError> {
     println!("Project(): '{}'", model.summary);
+
+    let Some(user_id) = User::find()
+        .select_only()
+        .column(users::Column::Id)
+        .filter(users::Column::PublicId.eq(model.user_id))
+        .into_tuple()
+        .one(&*db)
+        .await?
+    else {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            String::from("User not found"),
+        ));
+    };
+
     let project = projects::ActiveModel {
         summary: Set(model.summary.to_owned()),
         deadline: Set(model.deadline.map(|d| d.date_naive())),
-        user_id: Set(model.user_id),
+        user_id: Set(user_id),
         active: Set(model.active),
         ..Default::default()
     }

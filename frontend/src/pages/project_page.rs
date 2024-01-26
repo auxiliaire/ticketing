@@ -18,7 +18,7 @@ use implicit_clone::{
     unsync,
 };
 use shared::api::error::error_response::ErrorResponse;
-use shared::dtos::login_dto::LoginDto;
+use shared::dtos::identity::Identity;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::{ITicketDto, TicketDto, TicketField, TicketValue};
 use shared::dtos::user_dto::UserDto;
@@ -83,7 +83,7 @@ impl Component for ProjectPage {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+        if let Some(Identity { token, .. }) = &self.app_state.identity {
             ProjectService::fetch(
                 token.to_string(),
                 ctx.props().id,
@@ -97,7 +97,7 @@ impl Component for ProjectPage {
         match msg {
             ProjectPageMsg::FetchedProject(project) => {
                 self.project = project;
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     UserService::fetch(
                         token.to_string(),
                         self.project.user_id,
@@ -109,7 +109,7 @@ impl Component for ProjectPage {
                 self.user = Some(ButtonLinkData {
                     label: IString::from(user.name),
                     to: Route::User {
-                        id: user.id.unwrap(),
+                        id: user.public_id.unwrap(),
                     },
                 });
             }
@@ -144,7 +144,7 @@ impl Component for ProjectPage {
                 AppState::update_dialog(&self.app_state, dialog);
             }
             ProjectPageMsg::SelectedTickets(tickets) => {
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     let callback = ctx.link().callback(ProjectPageMsg::FetchedTickets);
                     ProjectService::assign_tickets(
                         token.to_string(),
@@ -157,7 +157,7 @@ impl Component for ProjectPage {
             }
             ProjectPageMsg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     TicketService::create(
                         token.to_string(),
                         ticket,
@@ -167,7 +167,7 @@ impl Component for ProjectPage {
                 }
             }
             ProjectPageMsg::SortTickets(sortdata) => {
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     TicketService::fetch_all(
                         token.to_string(),
                         Some(ctx.props().id),
@@ -184,7 +184,7 @@ impl Component for ProjectPage {
             ProjectPageMsg::TicketCreated(ticket) => {
                 log::debug!("Created: {}", ticket);
                 AppState::close_dialog(&self.app_state);
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     ProjectService::fetch_assigned_tickets(
                         token.to_string(),
                         ctx.props().id,
@@ -193,7 +193,7 @@ impl Component for ProjectPage {
                 }
             }
             ProjectPageMsg::FetchUnassigned(consumer) => {
-                if let Some(LoginDto { token, .. }) = &self.app_state.identity {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
                     TicketService::fetch_unassigned(token.to_string(), consumer);
                 }
             }
@@ -299,7 +299,7 @@ impl Component for ProjectPage {
 
 impl ProjectPage {
     fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
-        if let Some(LoginDto { token, .. }) = &app_state.identity {
+        if let Some(Identity { token, .. }) = &app_state.identity {
             ProjectService::fetch(
                 token.to_string(),
                 ctx.props().id,

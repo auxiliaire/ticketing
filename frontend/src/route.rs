@@ -1,3 +1,4 @@
+use uuid::Uuid;
 use yew_router::Routable;
 
 #[derive(Routable, PartialEq, Eq, Clone, Debug)]
@@ -13,7 +14,7 @@ pub enum Route {
     #[at("/register")]
     Registration,
     #[at("/users/:id")]
-    User { id: u64 },
+    User { id: Uuid },
     #[at("/users")]
     Users,
     #[at("/tickets/new")]

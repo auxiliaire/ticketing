@@ -1,6 +1,7 @@
 use crate::pages::user_page::UserPageMsg;
 use crate::route::Route;
 use crate::services::user_service::UserService;
+use uuid::Uuid;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -8,13 +9,13 @@ use yew_router::prelude::*;
 pub struct Props {
     pub name: AttrValue,
     pub username: AttrValue,
-    pub id: Option<u64>,
+    pub id: Option<Uuid>,
 }
 
 pub struct UserCard {
     name: AttrValue,
     username: AttrValue,
-    id: Option<u64>,
+    id: Option<Uuid>,
 }
 impl Component for UserCard {
     type Message = UserPageMsg;

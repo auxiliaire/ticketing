@@ -12,12 +12,7 @@ impl MigrationTrait for Migration {
             .alter_table(
                 Table::alter()
                     .table(User::Table)
-                    .add_column(
-                        ColumnDef::new(Alias::new("username"))
-                            .string()
-                            .not_null()
-                            .unique_key(),
-                    )
+                    .add_column(ColumnDef::new(Alias::new("username")).string().not_null())
                     .to_owned(),
             )
             .await
