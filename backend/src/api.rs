@@ -1,4 +1,10 @@
-use self::{auth_backend::AuthBackend, consts::CLIENT_URL, jwt::JwtLayer};
+use self::{
+    auth_backend::AuthBackend,
+    config::MailConfig,
+    consts::{ADMIN_EMAIL, CLIENT_URL},
+    jwt::JwtLayer,
+    services::notification_service::NotificationService,
+};
 use anyhow::Context;
 use axum::{Extension, Router};
 use axum_csrf::{CsrfConfig, CsrfLayer};
@@ -10,6 +16,7 @@ use http::{
     header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, ORIGIN},
     HeaderValue, Method,
 };
+use lettre::Message;
 use redis::Client;
 use sea_orm::DatabaseConnection;
 use shared::api::get_socket_address;
@@ -19,12 +26,14 @@ use tower_http::cors::CorsLayer;
 
 pub mod auth_backend;
 pub mod auth_utils;
+pub mod config;
 pub mod consts;
 pub mod error;
 pub mod jwt;
 pub mod login_controller;
 pub mod query;
 pub mod resources;
+pub mod services;
 pub mod validated_json;
 
 pub async fn serve(store: Client, db: DatabaseConnection) -> anyhow::Result<()> {
@@ -60,6 +69,17 @@ pub fn router(store: Client, db: DatabaseConnection) -> Router {
 
     let jwt_layer = JwtLayer::default();
 
+    let mail_config = MailConfig::default();
+    let notification_service = NotificationService::new(mail_config);
+    notification_service.send_email(
+        Message::builder()
+            .from("System <system@example.com>".parse().unwrap())
+            .to(ADMIN_EMAIL.parse().unwrap())
+            .subject("NotificationService initialized")
+            .body("NotificationService has just been initialized.\nApplication was probably started/restarted.".to_owned())
+            .unwrap(),
+    ).context("Test email was not successful").unwrap();
+
     Router::new()
         .merge(resources::users_resource::router())
         .merge(resources::tickets_resource::router())
@@ -70,6 +90,7 @@ pub fn router(store: Client, db: DatabaseConnection) -> Router {
         .merge(login_controller::router())
         .layer(auth_layer)
         .layer(Extension(auth_backend))
+        .layer(Extension(notification_service))
         .layer(Extension(db))
         .layer(Extension(store))
         .layer(csrf_layer)

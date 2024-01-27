@@ -6,6 +6,7 @@ lazy_static! {
     pub static ref STORE_URL: String = set_store_url();
     pub static ref DATABASE_URL: String = set_db_url();
     pub static ref JWT_SECRET: String = set_jwt_secret();
+    pub static ref ADMIN_EMAIL: String = set_admin_email();
 }
 
 pub const DEFAULT_PAGINATION_OFFSET: u64 = 0;
@@ -32,5 +33,11 @@ fn set_db_url() -> String {
 fn set_jwt_secret() -> String {
     dotenvy::var("JWT_SECRET")
         .context("JWT_SECRET must be defined in the environment file")
+        .unwrap()
+}
+
+fn set_admin_email() -> String {
+    dotenvy::var("ADMIN_EMAIL")
+        .context("ADMIN_EMAIL must be defined in the environment file")
         .unwrap()
 }
