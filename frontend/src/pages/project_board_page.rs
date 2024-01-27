@@ -425,6 +425,7 @@ impl ProjectBoardPage {
             "pb-3",
             "pl-3",
             "is-clickable",
+            "grabable",
         ];
         if !Self::is_ticket_visible(&status, &column) {
             cls.push("is-invisible");

@@ -33,3 +33,21 @@
 .ticket:not(:last-child) {
   margin-bottom: 0.75rem;
 }
+
+.grabable {
+  cursor: move;
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
+  transition: all 200ms ease-out;
+}
+
+.grabable:hover {
+  box-shadow: 0 0 6px #2793da;
+}
+
+.grabable:active {
+  cursor: grabbing;
+  cursor: -moz-grabbing;
+  cursor: -webkit-grabbing;
+}
