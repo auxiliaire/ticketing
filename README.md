@@ -15,7 +15,7 @@ This is an integrated Rust backend and frontend (with Yew) example.
 
 ### Infrastructure
 
-* Rust
+* Rust (~100%)
 * Redis
 * MySQL
 
@@ -32,6 +32,10 @@ This is an integrated Rust backend and frontend (with Yew) example.
 * Tailwind CSS
 * daisyUI
 * Bulma
+
+## Preview
+
+![Preview Image](https://raw.githubusercontent.com/auxiliaire/ticketing/testing/gallery/project-ticket-board-in-progress.jpg)
 
 ## Starting
 
