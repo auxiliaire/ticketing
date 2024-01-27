@@ -14,14 +14,18 @@ use axum::{
     Extension, Router,
 };
 use axum_extra::extract::WithRejection;
-use entity::tickets::Entity as Ticket;
-use entity::{projects, projects::Entity as Project, users, users::Entity as User};
+use entity::{
+    projects, projects::Entity as Project, tickets, tickets::Entity as Ticket, users,
+    users::Entity as User,
+};
 use migration::Expr;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait,
     QueryFilter, QueryOrder, QuerySelect, QueryTrait, RelationTrait, Set,
 };
-use shared::dtos::{page::Page, project_dto::ProjectTickets as ProjectTicketsDto};
+use shared::dtos::{
+    page::Page, project_dto::ProjectTickets as ProjectTicketsDto, ticket_dto::TicketQueryResult,
+};
 use shared::dtos::{project_dto::ProjectQueryResult, ticket_dto::TicketDto};
 use shared::{dtos::project_dto::ProjectDto, validation::ticket_validation::TicketStatus};
 
@@ -110,10 +114,18 @@ async fn get_project_tickets(
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
 ) -> Result<Json<Vec<TicketDto>>, ApiError> {
     let list = Ticket::find()
-        .filter(
-            Condition::all()
-                .add(<entity::prelude::Tickets as EntityTrait>::Column::ProjectId.eq(id)),
-        )
+        .filter(tickets::Column::ProjectId.eq(id))
+        .columns([
+            tickets::Column::Id,
+            tickets::Column::Title,
+            tickets::Column::Description,
+            tickets::Column::ProjectId,
+            tickets::Column::Status,
+            tickets::Column::Priority,
+        ])
+        .column_as(users::Column::PublicId, "user_id")
+        .join(sea_orm::JoinType::LeftJoin, tickets::Relation::Users.def())
+        .into_model::<TicketQueryResult>()
         .all(&*db)
         .await?;
     Ok(Json(

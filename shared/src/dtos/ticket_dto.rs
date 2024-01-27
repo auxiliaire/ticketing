@@ -158,6 +158,20 @@ impl From<Model> for TicketDto {
     }
 }
 
+impl From<&TicketQueryResult> for TicketDto {
+    fn from(m: &TicketQueryResult) -> Self {
+        Self {
+            id: m.id,
+            title: m.title.to_owned(),
+            description: m.description.to_owned(),
+            project_id: m.project_id,
+            status: TicketStatus::from_str(m.status.as_str()).unwrap(),
+            user_id: m.user_id,
+            priority: TicketPriority(m.priority.clone().unwrap()),
+        }
+    }
+}
+
 impl From<TicketQueryResult> for TicketDto {
     fn from(m: TicketQueryResult) -> Self {
         Self {
