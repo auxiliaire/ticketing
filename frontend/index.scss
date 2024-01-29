@@ -1,3 +1,5 @@
+@import "./assets/bulma/bulma.sass";
+
 .hero {
     &.has-background {
       position: relative;
@@ -50,4 +52,14 @@
   cursor: grabbing;
   cursor: -moz-grabbing;
   cursor: -webkit-grabbing;
+}
+
+/* DARK MODE */
+
+body {
+  background-color: $light;
+}
+
+body.dark {
+  background-color: $dark;
 }
