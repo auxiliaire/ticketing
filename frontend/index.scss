@@ -1,4 +1,7 @@
+@charset "utf-8";
+@import "./assets/bulma/themes/default/variables";
 @import "./assets/bulma/bulma.sass";
+@import "./assets/bulma/themes/default/overrides";
 
 .hero {
     &.has-background {
@@ -54,12 +57,216 @@
   cursor: -webkit-grabbing;
 }
 
-/* DARK MODE */
+/* EXTRAS */
 
 body {
-  background-color: $light;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 0 auto;
+  min-height: 100vh;
 }
 
-body.dark {
+.body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+main {
+  flex-grow: 1;
+}
+
+.field.is-one-third .control .select {
+  width: 33%;
+}
+
+.field.is-one-third .control .dropdown {
+  width: 33%;
+}
+
+.control .select select {
+  width: 100%;
+}
+
+.field.is-one-third .control .dropdown-trigger {
+  width: 100%;
+}
+
+.field.is-one-third .control .dropdown-menu {
+  width: 100%;
+}
+
+/* DARK MODE */
+
+.body.dark {
+  background-color: $black-ter;
+  color: $link-light;
+}
+
+.body.dark .navbar-dropdown {
   background-color: $dark;
+  border: 1px solid $black;
+}
+
+.body.dark a.navbar-item {
+  color: $light;
+}
+
+.body.dark a.navbar-item:hover {
+  background-color: $grey-dark;
+  color: $white;
+}
+
+.body.dark .navbar-item .button {
+  border-color: $light;
+}
+
+.body.dark .dropdown-content {
+  background-color: $grey-dark;
+  border: 1px solid $black;
+}
+
+.body.dark a.dropdown-item {
+  color: $light;
+}
+
+.body.dark a.dropdown-item:hover {
+  background-color: $grey;
+  color: $white;
+}
+
+.body.dark a {
+  color: $cyan;
+}
+
+.body.dark .card {
+  background-color: $grey-darker;
+  color: $light;
+}
+
+.body.dark .card .label {
+  color: $light;
+}
+
+.body.dark .input {
+  background-color: $grey-dark;
+  border-color: $black-ter;
+  color: $grey-lightest;
+}
+
+.body.dark .select select {
+  background-color: $grey-dark;
+  border-color: $black-ter;
+  color: $grey-lightest;
+}
+
+.body.dark .select:not(.is-multiple):not(.is-loading):hover::after {
+  border-color: $grey-lightest;
+}
+
+.body.dark .input:focus {
+  box-shadow: inset 0 0 0.0625em 0.0625em $cyan;
+  border-color: $black;
+}
+
+.body.dark .select select:focus {
+  background-color: $grey-darker;
+  border-color: $black;
+  box-shadow: none;
+}
+
+.body.dark .input::placeholder {
+  color: $grey-light;
+}
+
+.body.dark .notification.is-light {
+  background-color: $grey-darker;
+  color: $light;
+}
+
+.body.dark .notification.is-white {
+  background-color: $grey-dark;
+  color: $white;
+}
+
+.body.dark .button {
+  background-color: $grey-dark;
+  border-color: $black-ter;
+  color: $light;
+}
+
+.body.dark .button:hover {
+  border-color: $black-bis;
+  color: $white;
+}
+
+.body.dark .button.is-info {
+  background-color: $info;
+}
+
+.body.dark .button.is-link {
+  background-color: $link;
+}
+
+.body.dark .button.is-link.is-light {
+  background-color: $grey-dark;
+  color: $light;
+}
+
+.body.dark .button.is-link.is-light:hover {
+  border-color: $black-bis;
+  color: $white;
+}
+
+.body.dark .button.is-info.is-light {
+  background-color: $info-light;
+  color: $grey-dark;
+}
+
+.body.dark .button.is-info.is-light:hover {
+  color: $info;
+}
+
+.body.dark .checkbox:hover {
+  color: $white;
+}
+
+.body.dark .title {
+  color: $light;
+}
+
+.body.dark .subtitle {
+  color: $light;
+}
+
+.body.dark .box {
+  background-color: $grey-darker;
+  color: $light;
+}
+
+.body.dark .table {
+  background-color: $grey-darker;
+  color: $light;
+}
+
+.body.dark .table.is-hoverable tr:hover {
+  background-color: $grey-dark;
+  color: $white;
+}
+
+.body.dark .table.is-hoverable tr:hover a {
+  color: $white;
+}
+
+.body.dark .content table thead th {
+  color: $white;
+}
+
+.body.dark table th {
+  color: $white;
+}
+
+.body.dark .footer {
+  background-color: $grey-darker;
 }

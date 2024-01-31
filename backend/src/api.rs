@@ -81,6 +81,7 @@ pub fn router(store: Client, db: DatabaseConnection) -> Router {
     ).context("Test email was not successful").unwrap();
 
     Router::new()
+        .merge(resources::preferences_resource::router())
         .merge(resources::users_resource::router())
         .merge(resources::tickets_resource::router())
         .merge(resources::ticket_updates_resource::router())

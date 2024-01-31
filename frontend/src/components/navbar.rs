@@ -115,6 +115,9 @@ impl Component for Navbar {
                         }
                     </div>
                         <div class="navbar-end">
+                            <div class="navbar-item">
+                                <i class="fa-solid fa-moon"></i>
+                            </div>
                         {
                             if self.app_state.identity.is_some() {
                                 html! {

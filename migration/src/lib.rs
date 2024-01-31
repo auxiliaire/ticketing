@@ -15,6 +15,7 @@ mod m20240124_154353_alter_user_table;
 mod m20240124_170104_alter_user_table;
 mod m20240125_125611_alter_user_table;
 mod m20240125_130304_alter_user_table;
+mod m20240131_154943_create_preferences_table;
 
 pub struct Migrator;
 
@@ -37,6 +38,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240124_170104_alter_user_table::Migration),
             Box::new(m20240125_125611_alter_user_table::Migration),
             Box::new(m20240125_130304_alter_user_table::Migration),
+            Box::new(m20240131_154943_create_preferences_table::Migration),
         ]
     }
 }

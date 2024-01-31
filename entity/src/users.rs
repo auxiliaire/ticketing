@@ -66,6 +66,8 @@ impl AuthUser for Model {
 pub enum Relation {
     #[sea_orm(has_many = "super::comments::Entity")]
     Comments,
+    #[sea_orm(has_many = "super::preferences::Entity")]
+    Preferences,
     #[sea_orm(has_many = "super::projects::Entity")]
     Projects,
     #[sea_orm(has_many = "super::tickets::Entity")]
@@ -75,6 +77,12 @@ pub enum Relation {
 impl Related<super::comments::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Comments.def()
+    }
+}
+
+impl Related<super::preferences::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Preferences.def()
     }
 }
 

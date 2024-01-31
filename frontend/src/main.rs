@@ -29,25 +29,27 @@ impl Component for App {
             <BrowserRouter>
                 <AppStateProvider>
                     <Authenticator>
-                        <Navbar/>
+                        <div class="body">
+                            <Navbar/>
 
-                        <main>
-                            <Switch<Route> render={switch}/>
-                        </main>
+                            <main>
+                                <Switch<Route> render={switch}/>
+                            </main>
 
-                        <footer class="footer">
-                            <div class="content has-text-centered">
-                                { "Powered by " }
-                                <a href="https://crates.io/crates/axum">{ "Axum" }</a>
-                                { ", " }
-                                <a href="https://www.sea-ql.org/SeaORM/">{ "SeaORM" }</a>
-                                { ", " }
-                                <a href="https://yew.rs">{ "Yew" }</a>
-                                { " and " }
-                                <a href="https://bulma.io">{ "Bulma" }</a>
-                            </div>
-                        </footer>
-                        <AppModal/>
+                            <footer class="footer">
+                                <div class="content has-text-centered">
+                                    { "Powered by " }
+                                    <a href="https://crates.io/crates/axum">{ "Axum" }</a>
+                                    { ", " }
+                                    <a href="https://www.sea-ql.org/SeaORM/">{ "SeaORM" }</a>
+                                    { ", " }
+                                    <a href="https://yew.rs">{ "Yew" }</a>
+                                    { " and " }
+                                    <a href="https://bulma.io">{ "Bulma" }</a>
+                                </div>
+                            </footer>
+                            <AppModal/>
+                        </div>
                     </Authenticator>
                 </AppStateProvider>
             </BrowserRouter>

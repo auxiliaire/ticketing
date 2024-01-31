@@ -420,7 +420,7 @@ impl TicketForm {
                     </div>
                 </div>
                 <div class="columns">
-                    <div class="column is-one-quarter"><h6 class="title is-6">{ html! {TicketField::Status}}</h6></div>
+                    <div class="column"><h6 class="title is-6">{ html! {TicketField::Status}}</h6></div>
                     <div class="column">
                         <span class={classes!(self.span_class(TicketField::Status))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Status))}><span class="tag is-light">{ self.ticket.status.to_string() }</span></span>
                         <Field class={classes!(self.field_class(TicketField::Status))} help={&self.status_error}>
@@ -497,13 +497,13 @@ impl TicketForm {
                 <Field label="Project" help={&self.project_error}>
                     <TextInput value={self.get_project_id()} on_change={ctx.link().callback(TicketMsg::UpdateProjectId)} valid={self.project_error.is_empty()} />
                 </Field>
-                <Field label="Priority" help={&self.status_error}>
+                <Field label="Priority" help={&self.status_error} class={classes!("is-one-third")}>
                     <Select value={self.ticket.priority.to_string()} options={self.get_priorities()} on_change={ctx.link().callback(TicketMsg::UpdatePriority)} valid={self.priority_error.is_empty()} />
                 </Field>
-                <Field label="Status" help={&self.status_error}>
+                <Field label="Status" help={&self.status_error} class={classes!("is-one-third")}>
                     <Select value={self.ticket.status.to_string()} options={self.get_statuses()} on_change={ctx.link().callback(TicketMsg::UpdateStatus)} valid={self.status_error.is_empty()} />
                 </Field>
-                <Field label="Owner" help={&self.owner_error}>
+                <Field label="Owner" help={&self.owner_error} class={classes!("is-one-third")}>
                     <TextInput value={self.owner.clone()} on_change={ctx.link().callback(TicketMsg::UpdateOwner)} valid={self.owner_error.is_empty()} base_classes="input is-hidden" />
                     <div class={classes!(self.get_dropdown_classes())}>
                         <div class="dropdown-trigger">
