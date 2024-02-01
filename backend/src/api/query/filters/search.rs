@@ -1,5 +1,5 @@
-use crate::api::query::helper::empty_string_as_none;
 use serde::Deserialize;
+use shared::api::helper::empty_string_as_none;
 
 #[derive(Deserialize)]
 pub struct Search {

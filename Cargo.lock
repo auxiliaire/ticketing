@@ -4345,6 +4345,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde-email",
+ "serde_json",
  "serde_valid",
  "serde_with 3.4.0",
  "strum",

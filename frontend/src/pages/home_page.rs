@@ -197,8 +197,14 @@ impl HomePage {
     }
 
     fn view_unauthorized(&self, ctx: &Context<Self>) -> Html {
-        let on_register_click = ctx.link().callback(|_| HomeMsg::OpenRegistrationDialog);
-        let on_login_click = ctx.link().callback(|_| HomeMsg::OpenLoginDialog);
+        let on_register_click = ctx.link().callback(|e: MouseEvent| {
+            e.prevent_default();
+            HomeMsg::OpenRegistrationDialog
+        });
+        let on_login_click = ctx.link().callback(|e: MouseEvent| {
+            e.prevent_default();
+            HomeMsg::OpenLoginDialog
+        });
         html! {
             <div class="tile is-parent">
                 <div class="tile is-child box" style="display: flex; flex-direction: column">

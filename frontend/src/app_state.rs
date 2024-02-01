@@ -1,5 +1,8 @@
 use crate::{dialog::Dialog, route::Route};
-use shared::dtos::identity::Identity;
+use shared::dtos::{
+    identity::Identity,
+    preferences_dto::{PreferencesDto, Theme},
+};
 use std::rc::Rc;
 use yew::{
     function_component, html, use_reducer, ContextProvider, Html, Properties, Reducible,
@@ -12,6 +15,7 @@ pub struct AppState {
     pub navbar_active: bool,
     pub identity: Option<Identity>,
     pub referer: Option<Route>,
+    pub preferences: Option<PreferencesDto>,
 }
 
 impl AppState {
@@ -38,6 +42,14 @@ impl AppState {
     pub fn update_referer(ctx: &AppStateContext, referer: Option<Route>) {
         ctx.dispatch(AppStateChange::UpdateReferer(referer));
     }
+
+    pub fn update_preferences(ctx: &AppStateContext, preferences: Option<PreferencesDto>) {
+        ctx.dispatch(AppStateChange::UpdatePreferences(preferences));
+    }
+
+    pub fn switch_theme(ctx: &AppStateContext) {
+        ctx.dispatch(AppStateChange::SwitchTheme);
+    }
 }
 
 pub enum AppStateChange {
@@ -47,6 +59,8 @@ pub enum AppStateChange {
     UpdateIdentity(Option<Identity>),
     UpdateIdentityAndCloseDialog(Option<Identity>),
     UpdateReferer(Option<Route>),
+    UpdatePreferences(Option<PreferencesDto>),
+    SwitchTheme,
 }
 
 impl Reducible for AppState {
@@ -59,6 +73,7 @@ impl Reducible for AppState {
                 navbar_active: self.navbar_active,
                 identity: self.identity.clone(),
                 referer: self.referer.clone(),
+                preferences: self.preferences.clone(),
             },
             AppStateChange::CloseDialog => AppState {
                 // This resets the dialog (which is closed by default):
@@ -66,30 +81,58 @@ impl Reducible for AppState {
                 navbar_active: self.navbar_active,
                 identity: self.identity.clone(),
                 referer: self.referer.clone(),
+                preferences: self.preferences.clone(),
             },
             AppStateChange::ToggleNavbar => AppState {
                 dialog: self.dialog.clone(),
                 navbar_active: !self.navbar_active,
                 identity: self.identity.clone(),
                 referer: self.referer.clone(),
+                preferences: self.preferences.clone(),
             },
             AppStateChange::UpdateIdentity(identity) => AppState {
                 dialog: self.dialog.clone(),
                 navbar_active: self.navbar_active,
                 identity: identity.clone(),
                 referer: self.referer.clone(),
+                preferences: self.preferences.clone(),
             },
             AppStateChange::UpdateIdentityAndCloseDialog(identity) => AppState {
                 dialog: Dialog::default().into(),
                 navbar_active: self.navbar_active,
                 identity: identity.clone(),
                 referer: self.referer.clone(),
+                preferences: self.preferences.clone(),
             },
             AppStateChange::UpdateReferer(referer) => AppState {
                 dialog: self.dialog.clone(),
                 navbar_active: self.navbar_active,
                 identity: self.identity.clone(),
                 referer: referer.clone(),
+                preferences: self.preferences.clone(),
+            },
+            AppStateChange::UpdatePreferences(preferences) => AppState {
+                dialog: self.dialog.clone(),
+                navbar_active: self.navbar_active,
+                identity: self.identity.clone(),
+                referer: self.referer.clone(),
+                preferences,
+            },
+            AppStateChange::SwitchTheme => AppState {
+                dialog: self.dialog.clone(),
+                navbar_active: self.navbar_active,
+                identity: self.identity.clone(),
+                referer: self.referer.clone(),
+                preferences: Some(PreferencesDto {
+                    theme: Some(Theme::flip(
+                        self.preferences
+                            .clone()
+                            .unwrap_or_default()
+                            .theme
+                            .unwrap_or_default(),
+                    )),
+                    ..self.preferences.clone().unwrap_or_default()
+                }),
             },
         }
         .into()

@@ -5,3 +5,4 @@ pub mod dialog;
 pub mod pages;
 pub mod route;
 pub mod services;
+pub mod theming;

@@ -1,12 +1,14 @@
 use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
+use shared::dtos::preferences_dto::PreferencesDto;
 use shared::dtos::user_dto::UserDto;
 use uuid::Uuid;
 use yew::{platform::spawn_local, Callback};
 
 const USERS_ENDPOINT: &str = "users";
 const REGISTER_ENDPOINT: &str = "register";
+const PREFERENCES_ENDPOINT: &str = "preferences";
 
 pub struct UserService;
 
@@ -97,6 +99,22 @@ impl UserService {
                 }
                 Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
             }
+        });
+    }
+
+    pub fn fetch_preferences(jwt: String, callback: Callback<PreferencesDto>) {
+        spawn_local(async move {
+            let prefs: PreferencesDto =
+                Request::get(format!("{}{}", get_api_url(), PREFERENCES_ENDPOINT).as_str())
+                    .header("Authorization", format!("Bearer {}", jwt).as_str())
+                    .send()
+                    .await
+                    .unwrap()
+                    .json()
+                    .await
+                    .unwrap();
+
+            callback.emit(prefs);
         });
     }
 }

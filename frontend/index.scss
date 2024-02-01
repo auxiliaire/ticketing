@@ -2,25 +2,6 @@
 @import "./assets/bulma/themes/default/variables";
 @import "./assets/bulma/bulma.sass";
 @import "./assets/bulma/themes/default/overrides";
-
-.hero {
-    &.has-background {
-      position: relative;
-      overflow: hidden;
-    }
-  
-    &-background {
-      position: absolute;
-      object-fit: cover;
-      object-position: bottom;
-      width: 100%;
-      height: 100%;
-  
-      &.is-transparent {
-        opacity: 0.3;
-      }
-    }
-  }
   
   .burger {
     background-color: transparent;

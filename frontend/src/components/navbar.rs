@@ -1,5 +1,6 @@
 use crate::{
     app_state::{AppState, AppStateContext},
+    components::theme_switcher::ThemeSwitcher,
     route::Route,
     services::auth_service::REFRESH_TOKEN_KEY,
 };
@@ -54,6 +55,11 @@ impl Component for Navbar {
         } else {
             ""
         };
+
+        let on_logout_click = ctx.link().callback(|e: MouseEvent| {
+            e.prevent_default();
+            NavbarMsg::DoLogout
+        });
 
         html! {
             <nav class="navbar is-link" role="navigation" aria-label="main navigation">
@@ -115,8 +121,8 @@ impl Component for Navbar {
                         }
                     </div>
                         <div class="navbar-end">
-                            <div class="navbar-item">
-                                <i class="fa-solid fa-moon"></i>
+                            <div class="navbar-item is-hoverable">
+                                <ThemeSwitcher/>
                             </div>
                         {
                             if self.app_state.identity.is_some() {
@@ -129,7 +135,7 @@ impl Component for Navbar {
                                             <Link<Route> classes={classes!("navbar-item")} to={Route::User { id: <std::option::Option<shared::dtos::identity::Identity> as Clone>::clone(&self.app_state.identity).unwrap().userid }}>
                                                 { "Profile" }
                                             </Link<Route>>
-                                            <a href="#" class="navbar-item" onclick={ctx.link().callback(|_| NavbarMsg::DoLogout)}>
+                                            <a href="#" class="navbar-item" onclick={on_logout_click}>
                                                     { "Logout" }
                                             </a>
                                         </div>

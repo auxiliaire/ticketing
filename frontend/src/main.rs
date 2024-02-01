@@ -10,6 +10,7 @@ use frontend::pages::{
     user_list_page::UserListPage, user_page::UserPage,
 };
 use frontend::route::Route;
+use frontend::theming::Theming;
 use implicit_clone::unsync::IString;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -29,7 +30,7 @@ impl Component for App {
             <BrowserRouter>
                 <AppStateProvider>
                     <Authenticator>
-                        <div class="body">
+                        <Theming>
                             <Navbar/>
 
                             <main>
@@ -49,7 +50,7 @@ impl Component for App {
                                 </div>
                             </footer>
                             <AppModal/>
-                        </div>
+                        </Theming>
                     </Authenticator>
                 </AppStateProvider>
             </BrowserRouter>

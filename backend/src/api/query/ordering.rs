@@ -1,5 +1,5 @@
-use super::helper::empty_string_as_none;
 use serde::{de::Visitor, Deserialize, Serialize};
+use shared::api::helper::empty_string_as_none;
 
 pub struct Order(pub sea_orm::sea_query::types::Order);
 
