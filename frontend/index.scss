@@ -200,6 +200,10 @@ main {
   color: $white;
 }
 
+.body.dark .button.is-primary.is-light:hover {
+  color: $black;
+}
+
 .body.dark .button.is-info.is-light {
   background-color: $info-light;
   color: $grey-dark;
