@@ -1,12 +1,12 @@
 use self::{
     auth_backend::AuthBackend,
     config::MailConfig,
-    consts::{ADMIN_EMAIL, CLIENT_URL},
+    consts::{ADMIN_EMAIL, CLIENT_URL, MAX_UPLOAD_LIMIT},
     jwt::JwtLayer,
     services::notification_service::NotificationService,
 };
 use anyhow::Context;
-use axum::{Extension, Router};
+use axum::{extract::DefaultBodyLimit, Extension, Router};
 use axum_csrf::{CsrfConfig, CsrfLayer};
 use axum_login::{
     tower_sessions::{MemoryStore, SessionManagerLayer},
@@ -81,6 +81,8 @@ pub fn router(store: Client, db: DatabaseConnection) -> Router {
     ).context("Test email was not successful").unwrap();
 
     Router::new()
+        .merge(resources::ticket_attachments_resource::router())
+        .layer(DefaultBodyLimit::max(1024 * 1024 * (*MAX_UPLOAD_LIMIT)))
         .merge(resources::preferences_resource::router())
         .merge(resources::users_resource::router())
         .merge(resources::tickets_resource::router())
