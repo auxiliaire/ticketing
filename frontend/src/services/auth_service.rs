@@ -6,6 +6,7 @@ use shared::api::{error::error_response::ErrorResponse, get_api_url};
 use shared::dtos::identity::Identity;
 use shared::dtos::login_dto::LoginDto;
 use uuid::Uuid;
+use web_time::{SystemTime, UNIX_EPOCH};
 use yew::{platform::spawn_local, Callback};
 
 pub const REFRESH_TOKEN_KEY: &str = "refresh-token";
@@ -166,5 +167,13 @@ fn decode_userid(token: &str) -> Result<Uuid, String> {
     }?;
     let claims: Claims = serde_json::from_str(&serialized).map_err(|e| e.to_string())?;
 
-    Ok(claims.sub)
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
+    match claims.exp > now.try_into().unwrap() {
+        true => Ok(claims.sub),
+        false => Err(String::from("Token expired")),
+    }
 }
