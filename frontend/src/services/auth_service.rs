@@ -1,4 +1,5 @@
 use crate::app_state::{AppState, AppStateContext};
+use crate::helpers::storage_helper::store_in_storage;
 use base64::{engine, Engine};
 use gloo_net::http::Request;
 use shared::api::auth::Claims;
@@ -17,6 +18,12 @@ const REFRESH_TOKEN_ENDPOINT: &str = "refresh-token";
 pub struct AuthService;
 
 impl AuthService {
+    pub fn try_authenticate(app_state: AppStateContext, callback: Callback<Option<String>>) {
+        spawn_local(async move {
+            callback.emit(try_authenticate_async(&app_state.clone()).await.ok());
+        });
+    }
+
     pub fn authenticate(
         creds: LoginDto,
         callback: Callback<Identity>,
@@ -32,63 +39,91 @@ impl AuthService {
                 .send()
                 .await;
 
-            let refresh_token = match res {
+            let Ok(refresh_token) = (match res {
                 Ok(resp) => {
                     let text_result = resp.text().await;
                     match text_result {
                         Ok(token) => {
                             log::debug!("Token: {}", token);
-                            let storage =
-                                web_sys::window().unwrap().local_storage().unwrap().unwrap();
-                            storage.set(REFRESH_TOKEN_KEY, &token).unwrap();
-                            Ok(token)
+                            match token.is_empty() {
+                                true => {
+                                    callback_error
+                                        .emit(ErrorResponse::from(String::from("Check email")));
+                                    Err(String::from("Check email"))
+                                }
+                                false => {
+                                    store_in_storage(
+                                        REFRESH_TOKEN_KEY.to_string(),
+                                        token.to_string(),
+                                    );
+                                    Ok(token)
+                                }
+                            }
                         }
                         Err(e) => {
                             callback_error.emit(ErrorResponse::from(e.to_string()));
-                            Err(e)
+                            Err(e.to_string())
                         }
                     }
                 }
                 Err(e) => {
                     callback_error.emit(ErrorResponse::from(e.to_string()));
-                    Err(e)
+                    Err(e.to_string())
                 }
-            }
-            .ok()
-            .unwrap_or_default();
-
-            // Getting JWT:
-            let res = Request::get(format!("{}{}", get_api_url(), REFRESH_TOKEN_ENDPOINT).as_str())
-                .header(
-                    "Authorization",
-                    &format!("Bearer {}", refresh_token.as_str()),
-                )
-                .send()
-                .await;
-
-            match res {
-                Ok(resp) => {
-                    let text_result = resp.text().await;
-                    match text_result {
-                        Ok(token) => match decode_userid(&token) {
-                            Ok(userid) => {
-                                callback.emit(Identity { userid, token });
-                            }
-                            Err(e) => {
-                                log::error!("Decode error: {}", e);
-                                callback_error.emit(ErrorResponse::from(e.to_string()));
-                            }
-                        },
-                        Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
-                    }
-                }
-                Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
+            }) else {
+                return;
             };
+
+            match fetch_jwt_async(refresh_token).await {
+                Ok(identity) => callback.emit(identity),
+                Err(e) => callback_error.emit(ErrorResponse::from(e)),
+            }
+        });
+    }
+
+    pub fn fetch_jwt(
+        refresh_token: String,
+        callback: Callback<Identity>,
+        callback_error: Callback<ErrorResponse>,
+    ) {
+        spawn_local(async move {
+            match fetch_jwt_async(refresh_token).await {
+                Ok(identity) => callback.emit(identity),
+                Err(e) => callback_error.emit(ErrorResponse::from(e)),
+            }
         });
     }
 }
 
-pub async fn try_authenticate_async(app_state: &AppStateContext) -> Result<String, ErrorResponse> {
+pub async fn fetch_jwt_async(refresh_token: String) -> Result<Identity, String> {
+    // Getting JWT:
+    let res = Request::get(format!("{}{}", get_api_url(), REFRESH_TOKEN_ENDPOINT).as_str())
+        .header(
+            "Authorization",
+            &format!("Bearer {}", refresh_token.as_str()),
+        )
+        .send()
+        .await;
+
+    match res {
+        Ok(resp) => {
+            let text_result = resp.text().await;
+            match text_result {
+                Ok(token) => match decode_userid(&token) {
+                    Ok(userid) => Ok(Identity { userid, token }),
+                    Err(e) => {
+                        log::error!("Decode error: {}", e);
+                        Err(e.to_string())
+                    }
+                },
+                Err(e) => Err(e.to_string()),
+            }
+        }
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+async fn try_authenticate_async(app_state: &AppStateContext) -> Result<String, ErrorResponse> {
     if app_state
         .identity
         .as_ref()
@@ -141,12 +176,6 @@ pub async fn try_authenticate_async(app_state: &AppStateContext) -> Result<Strin
         }
         Err(e) => Err(ErrorResponse::from(e.to_string())),
     }
-}
-
-pub fn try_authenticate(app_state: AppStateContext, callback: Callback<Option<String>>) {
-    spawn_local(async move {
-        callback.emit(try_authenticate_async(&app_state.clone()).await.ok());
-    });
 }
 
 fn create_token(creds: &LoginDto) -> String {

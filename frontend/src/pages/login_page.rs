@@ -2,7 +2,7 @@ use crate::{
     app_state::{AppState, AppStateContext},
     components::forms::login_form::LoginForm,
     route::Route,
-    services::auth_service::{try_authenticate, AuthService},
+    services::auth_service::AuthService,
 };
 use shared::{
     api::error::error_response::ErrorResponse,
@@ -37,7 +37,7 @@ impl Component for LoginPage {
             let navigator = ctx.link().navigator().unwrap();
             navigator.replace(&referer);
         } else {
-            try_authenticate(
+            AuthService::try_authenticate(
                 app_state.clone(),
                 ctx.link().callback(LoginMsg::Authenticated),
             );

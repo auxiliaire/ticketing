@@ -96,6 +96,7 @@ fn switch(routes: Route) -> Html {
         Route::NotFound => {
             html! { <PageNotFound /> }
         }
+        Route::Verify { token: _ } => html! { <HomePage /> },
     }
 }
 

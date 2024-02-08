@@ -20,7 +20,7 @@ pub fn router() -> Router {
 }
 
 #[derive(Debug, Default, Deserialize, FromQueryResult, Serialize)]
-struct PreferencesQueryResult {
+pub struct PreferencesQueryResult {
     pub values: PreferencesDto,
 }
 

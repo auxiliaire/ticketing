@@ -1,12 +1,18 @@
 use super::{
     auth_backend::AuthSession,
     auth_utils::extract_auth_from_header,
+    consts::CLIENT_URL,
     error::{ApiError, AuthError},
     jwt::encode_jwt,
     query,
+    services::{
+        notification_service::NotificationService, preferences_service::PreferencesService,
+    },
+    template_models::mfa_email_model::MfaEmailModel,
     validated_json::ValidatedJson,
 };
 use crate::api::auth_backend::AuthBackend;
+use crate::api::template_models::login_model::LoginModel;
 use askama::Template;
 use axum::{
     extract::Query,
@@ -21,11 +27,11 @@ use axum_extra::extract::{
 };
 use axum_login::{login_required, AuthnBackend};
 use base64::{engine, Engine};
-use entity::users;
+use entity::{users, users::Model as User};
 use http::{HeaderMap, StatusCode};
+use lettre::{message::header::ContentType, Message};
 use redis::{AsyncCommands, Client};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
-use serde::{Deserialize, Serialize};
 use shared::{
     api::auth::AuthScheme,
     dtos::{login_dto::LoginDto, user_dto::UserDto},
@@ -50,13 +56,6 @@ pub fn router() -> Router {
         .route("/refresh-token", get(refresh_token))
 }
 
-#[derive(Deserialize, Serialize, Template)]
-#[template(path = "login.html")]
-struct LoginTemplate {
-    token: String,
-    redirect: String,
-}
-
 async fn sample_page() -> impl IntoResponse {
     Html("<h1>Protected Resource!</h1><p>But you have access to it.</p><p><a href=\"/logout\">Log out</a></p>")
 }
@@ -65,7 +64,7 @@ async fn login(
     token: CsrfToken,
     Query(redirect): Query<query::redirect::Redirect>,
 ) -> impl IntoResponse {
-    let template = LoginTemplate {
+    let template = LoginModel {
         token: token.authenticity_token().unwrap(),
         redirect: redirect.next.unwrap_or(String::from("/login-success")),
     };
@@ -134,7 +133,7 @@ async fn authenticate_cookie(
     Extension(auth_backend): Extension<AuthBackend>,
     jar: CookieJar,
 ) -> Result<(CookieJar, String), ApiError> {
-    let token = generate_token_using_auth(headers, auth_backend).await?;
+    let (_, token) = generate_token_using_auth(headers, auth_backend).await?;
     Ok((
         jar.add(
             Cookie::build(("api-token", token))
@@ -150,10 +149,12 @@ async fn authenticate_cookie(
 async fn authenticate_raw(
     headers: HeaderMap,
     Extension(store): Extension<Client>,
+    db: Extension<DatabaseConnection>,
     Extension(auth_backend): Extension<AuthBackend>,
+    Extension(notification_service): Extension<NotificationService>,
 ) -> Result<String, ApiError> {
     // We can just return the token in the body, or create a refresh token instead.
-    let token = generate_token_using_auth(headers, auth_backend).await?;
+    let (auth_user, token) = generate_token_using_auth(headers, auth_backend).await?;
 
     // Generate key for token:
     let key = Uuid::new_v4().to_string();
@@ -167,7 +168,36 @@ async fn authenticate_raw(
         .await
         .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(key)
+    match PreferencesService::uses_mfa(&db, auth_user.id).await {
+        true => send_mfa_message(notification_service, auth_user, key).await,
+        false => Ok(key),
+    }
+}
+
+async fn send_mfa_message(
+    notification_service: NotificationService,
+    auth_user: User,
+    token: String,
+) -> Result<String, ApiError> {
+    // Prepare email:
+    let template = MfaEmailModel {
+        client_url: CLIENT_URL.to_string(),
+        user_name: auth_user.name,
+        token,
+    };
+    // Send email:
+    notification_service
+        .send_email(
+            Message::builder()
+                .from("System <system@example.com>".parse().unwrap())
+                .to(auth_user.username.to_string().parse().unwrap())
+                .subject("Login Verification")
+                .header(ContentType::TEXT_HTML)
+                .body(template.render().unwrap())
+                .unwrap(),
+        )
+        .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+        .map(|_| String::default())
 }
 
 async fn refresh_token(
@@ -210,7 +240,7 @@ async fn refresh_token(
 async fn generate_token_using_auth(
     headers: HeaderMap,
     auth_backend: AuthBackend,
-) -> Result<String, ApiError> {
+) -> Result<(User, String), ApiError> {
     let creds_vec =
         extract_auth_from_header(&headers, AuthScheme::Basic).and_then(|base64_string| {
             engine::general_purpose::STANDARD
@@ -241,5 +271,5 @@ async fn generate_token_using_auth(
     let token = encode_jwt(user.public_id)
         .map_err(|status| ApiError::new(status, String::from("Token creation error")))?;
 
-    Ok(token)
+    Ok((user, token))
 }

@@ -1,3 +1,4 @@
+use implicit_clone::unsync::IString;
 use uuid::Uuid;
 use yew_router::Routable;
 
@@ -23,6 +24,8 @@ pub enum Route {
     Ticket { id: u64 },
     #[at("/login")]
     Login,
+    #[at("/verify/:token")]
+    Verify { token: IString },
     #[at("/")]
     Home,
     #[not_found]

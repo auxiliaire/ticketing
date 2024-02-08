@@ -1,9 +1,11 @@
 use crate::{
     app_state::{AppState, AppStateContext},
+    helpers::storage_helper::store_in_storage,
     pages::page_not_found::PageNotFound,
     route::{Route, RouteSelector},
-    services::auth_service::try_authenticate,
+    services::auth_service::{AuthService, REFRESH_TOKEN_KEY},
 };
+use shared::dtos::identity::Identity;
 use yew::{prelude::*, Children};
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -15,6 +17,7 @@ pub struct AuthenticatorProps {
 
 pub enum AuthenticatorMsg {
     ContextChanged(AppStateContext),
+    IdentityVerified(Identity),
 }
 
 pub struct Authenticator {
@@ -31,16 +34,14 @@ impl Component for Authenticator {
             .link()
             .context::<AppStateContext>(ctx.link().callback(AuthenticatorMsg::ContextChanged))
             .expect("context to be set");
-        if app_state.identity.is_none() {
-            try_authenticate(app_state.clone(), Callback::noop());
-        }
+        Authenticator::init(&app_state, ctx);
         Self {
             app_state,
             _listener,
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             AuthenticatorMsg::ContextChanged(state) => {
                 log::debug!(
@@ -52,6 +53,12 @@ impl Component for Authenticator {
                     .unwrap_or_default()
                 );
                 self.app_state = state;
+            }
+            AuthenticatorMsg::IdentityVerified(identity) => {
+                log::debug!("Identity verified");
+                AppState::update_identity(&self.app_state, Some(identity));
+                let navigator = ctx.link().navigator().unwrap();
+                navigator.replace(&Route::Home);
             }
         }
         true
@@ -76,5 +83,23 @@ impl Component for Authenticator {
                 }
             }
         }
+    }
+}
+
+impl Authenticator {
+    fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
+        log::debug!("Authenticator::init");
+        if app_state.identity.is_none() {
+            AuthService::try_authenticate(app_state.clone(), Callback::noop());
+        }
+        let route_option = ctx.link().route::<Route>();
+        if let Some(Route::Verify { token }) = route_option {
+            store_in_storage(REFRESH_TOKEN_KEY.to_string(), token.to_string());
+            AuthService::fetch_jwt(
+                token.to_string(),
+                ctx.link().callback(AuthenticatorMsg::IdentityVerified),
+                Callback::noop(),
+            );
+        };
     }
 }

@@ -28,4 +28,5 @@ pub struct PreferencesDto {
     #[serde(default, deserialize_with = "empty_string_as_default")]
     pub theme: Option<Theme>,
     pub notifications: Option<Vec<bool>>,
+    pub mfa: Option<bool>,
 }
