@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Login Verification</title>
+    </head>
+    <body>
+        <h1>Dear {{ user_name }},</h1>
+        <p>Please use this link or the token below to validate your login:</p>
+        <p><a href="{{ client_url }}/verify/{{ token }}">VERIFY</a></p>
+        <p>{{ token }}</p>
+        <p>Sincerely,<br>The Ticketing Team</p>
+    </body>
+</html>

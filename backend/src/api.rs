@@ -34,6 +34,7 @@ pub mod login_controller;
 pub mod query;
 pub mod resources;
 pub mod services;
+pub mod template_models;
 pub mod validated_json;
 
 pub async fn serve(store: Client, db: DatabaseConnection) -> anyhow::Result<()> {
