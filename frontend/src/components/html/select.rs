@@ -1,4 +1,4 @@
-use crate::components::event_helper::get_value_from_input_event;
+use crate::helpers::event_helper::get_value_from_input_event;
 use implicit_clone::unsync::{IArray, IString};
 use yew::prelude::*;
 

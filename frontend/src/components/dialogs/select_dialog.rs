@@ -1,5 +1,6 @@
-use super::{super::event_helper::get_values_from_select_change, super::option_data::OptionData};
+use super::super::option_data::OptionData;
 use crate::app_state::{AppState, AppStateContext};
+use crate::helpers::event_helper::get_values_from_select_change;
 use implicit_clone::{sync::IArray, ImplicitClone};
 use std::sync::Arc;
 use yew::{

@@ -1,4 +1,4 @@
-use crate::components::component_helper::get_icon_classes;
+use crate::helpers::component_helper::get_icon_classes;
 use implicit_clone::sync::{IArray, IString};
 use yew::{classes, html, AttrValue, Children, Component, Html, Properties};
 

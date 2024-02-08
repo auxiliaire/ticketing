@@ -1,4 +1,4 @@
-use crate::components::component_helper::get_icon_classes;
+use crate::helpers::component_helper::get_icon_classes;
 use implicit_clone::unsync::IString;
 use yew::prelude::*;
 use yew_router::prelude::*;
