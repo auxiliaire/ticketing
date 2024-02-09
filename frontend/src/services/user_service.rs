@@ -117,4 +117,47 @@ impl UserService {
             callback.emit(prefs);
         });
     }
+
+    pub fn update_preferences(
+        jwt: String,
+        preferences: PreferencesDto,
+        callback: Callback<PreferencesDto>,
+        callback_error: Callback<ErrorResponse>,
+    ) {
+        spawn_local(async move {
+            let res = Request::post(format!("{}{}", get_api_url(), PREFERENCES_ENDPOINT).as_str())
+                .header("Authorization", format!("Bearer {}", jwt).as_str())
+                .json(&preferences)
+                .unwrap()
+                .send()
+                .await;
+
+            match res {
+                Ok(resp) => {
+                    let text_result = resp.text().await;
+                    match text_result {
+                        Ok(text) => {
+                            let returned_prefs_result: Result<PreferencesDto, _> =
+                                serde_json::from_str(text.as_str());
+                            match returned_prefs_result {
+                                Ok(returned_prefs) => callback.emit(returned_prefs),
+                                Err(_) => {
+                                    let returned_error_result: Result<ErrorResponse, _> =
+                                        serde_json::from_str(text.as_str());
+                                    match returned_error_result {
+                                        Ok(error_response) => callback_error.emit(error_response),
+                                        Err(e) => {
+                                            callback_error.emit(ErrorResponse::from(e.to_string()))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
+                    }
+                }
+                Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
+            }
+        });
+    }
 }

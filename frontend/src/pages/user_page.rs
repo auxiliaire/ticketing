@@ -1,6 +1,13 @@
-use crate::{app_state::AppStateContext, services::user_service::UserService};
+use crate::{
+    app_state::{AppState, AppStateContext},
+    components::forms::preferences_form::PreferencesForm,
+    services::user_service::UserService,
+};
 use implicit_clone::unsync::IString;
-use shared::dtos::{identity::Identity, user_dto::UserDto};
+use shared::{
+    api::error::error_response::ErrorResponse,
+    dtos::{identity::Identity, preferences_dto::PreferencesDto, user_dto::UserDto},
+};
 use uuid::Uuid;
 use yew::prelude::*;
 
@@ -12,6 +19,8 @@ pub struct Props {
 pub enum UserPageMsg {
     ContextChanged(AppStateContext),
     FetchedUser(UserDto),
+    PreferencesSubmitted((PreferencesDto, Callback<ErrorResponse>)),
+    PreferencesUpdated(PreferencesDto),
 }
 
 pub struct UserPage {
@@ -41,7 +50,7 @@ impl Component for UserPage {
         true
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             UserPageMsg::ContextChanged(state) => {
                 self.app_state = state;
@@ -49,11 +58,24 @@ impl Component for UserPage {
             UserPageMsg::FetchedUser(user) => {
                 self.user = user;
             }
+            UserPageMsg::PreferencesSubmitted((prefs, callback_error)) => {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
+                    UserService::update_preferences(
+                        token.to_owned(),
+                        prefs,
+                        ctx.link().callback(UserPageMsg::PreferencesUpdated),
+                        callback_error,
+                    );
+                }
+            }
+            UserPageMsg::PreferencesUpdated(prefs) => {
+                AppState::update_preferences(&self.app_state, Some(prefs));
+            }
         }
         true
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let Self {
             user,
             app_state: _,
@@ -69,18 +91,24 @@ impl Component for UserPage {
                             <p class="subtitle">{ &user.username.to_string() }</p>
                         </article>
                     </div>
-                    <div class="tile">
-                        <div class="tile is-parent">
-                            <article class="tile is-child notification is-info">
-                                <div class="content">
-                                    <p class="title">{ "Role" }</p>
-                                    <div class="content">
-                                        { &user.role.map_or(String::from(""), |r| r.to_string()) }
-                                    </div>
-                                </div>
-                            </article>
-                        </div>
+                    <div class="section p-3">
+                        <h1 class="title px-5">{ "Role" }</h1>
+                        <h1 class="subtitle px-5">
+                            <span class="tag is-info">{ &user.role.map_or(String::from(""), |r| r.to_string()) }</span>
+                        </h1>
                     </div>
+                    {
+                        if self.is_own_profile() {
+                            html! {
+                                <div class="section p-3">
+                                    <h1 class="title px-5">{ "Preferences" }</h1>
+                                    <PreferencesForm onsubmit={ctx.link().callback(UserPageMsg::PreferencesSubmitted)} />
+                                </div>
+                            }
+                        } else {
+                            html! {}
+                        }
+                    }
                 </div>
             </div>
         }
@@ -95,6 +123,13 @@ impl UserPage {
                 Uuid::parse_str(ctx.props().id.as_str()).unwrap(),
                 ctx.link().callback(UserPageMsg::FetchedUser),
             );
+        }
+    }
+
+    fn is_own_profile(&self) -> bool {
+        match (self.user.public_id, self.app_state.clone().identity.clone()) {
+            (Some(profile_id), Some(Identity { userid, .. })) => profile_id.eq(&userid),
+            _ => false,
         }
     }
 }
