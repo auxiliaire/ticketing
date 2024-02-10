@@ -135,7 +135,14 @@ impl Component for ProjectForm {
             }
             ProjectMsg::UpdateUserId((id, name)) => {
                 self.owner = id.clone();
-                self.project.user_id = Uuid::parse_str(id.as_str()).unwrap();
+                match Uuid::parse_str(id.as_str()) {
+                    Ok(uuid) => {
+                        self.project.user_id = uuid;
+                    }
+                    Err(e) => {
+                        log::error!("Uuid parse error: '{}'", e.to_string());
+                    }
+                }
                 self.user_search = name;
             }
             ProjectMsg::UpdateActive(active) => {
@@ -181,7 +188,7 @@ impl Component for ProjectForm {
                 let mut v = vec![];
                 for u in list {
                     v.push((
-                        IString::from(u.id.unwrap().to_string()),
+                        IString::from(u.public_id.unwrap().to_string()),
                         IString::from(u.name.clone()),
                     ));
                 }
