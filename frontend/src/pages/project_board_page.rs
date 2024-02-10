@@ -430,6 +430,9 @@ impl ProjectBoardPage {
         if !Self::is_ticket_visible(&status, &column) {
             cls.push("is-invisible");
         }
+        if status.eq(&TicketStatus::Done) {
+            cls.push("done");
+        }
         cls
     }
 

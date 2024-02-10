@@ -78,6 +78,10 @@ main {
   width: 100%;
 }
 
+.ticket.done a {
+  text-decoration: line-through !important;
+}
+
 /* DARK MODE */
 
 .body.dark {
