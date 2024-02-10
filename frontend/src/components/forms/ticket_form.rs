@@ -420,7 +420,7 @@ impl TicketForm {
                     </div>
                 </div>
                 <div class="columns">
-                    <div class="column"><h6 class="title is-6">{ html! {TicketField::Status}}</h6></div>
+                    <div class="column is-one-quarter"><h6 class="title is-6">{ html! {TicketField::Status}}</h6></div>
                     <div class="column">
                         <span class={classes!(self.span_class(TicketField::Status))} onclick={ctx.link().callback(|_| TicketMsg::ToggleField(TicketField::Status))}><span class="tag is-light">{ self.ticket.status.to_string() }</span></span>
                         <Field class={classes!(self.field_class(TicketField::Status))} help={&self.status_error}>
