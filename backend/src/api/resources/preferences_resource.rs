@@ -1,4 +1,7 @@
-use crate::api::error::ApiError;
+use crate::api::{
+    error::ApiError,
+    tasks::queue_mailer::{PROJECT_SUBSCRIBER_SET, TICKET_SUBSCRIBER_SET},
+};
 use axum::{
     routing::{get, post},
     Extension, Json, Router,
@@ -6,11 +9,13 @@ use axum::{
 use axum_extra::extract::WithRejection;
 use entity::{preferences, preferences::Entity as Preferences, users};
 use http::StatusCode;
+use redis::{Client, Commands};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, FromQueryResult, QueryFilter,
     QuerySelect, Set,
 };
 use serde::{Deserialize, Serialize};
+use serde_email::Email;
 use shared::dtos::preferences_dto::PreferencesDto;
 
 pub fn router() -> Router {
@@ -46,6 +51,7 @@ async fn get_preferences(
 }
 
 async fn set_preferences(
+    Extension(store): Extension<Client>,
     db: Extension<DatabaseConnection>,
     request_user: Extension<users::Model>,
     WithRejection(Json(update), _): WithRejection<Json<PreferencesDto>, ApiError>,
@@ -76,5 +82,36 @@ async fn set_preferences(
             .await?;
         }
     }
+    update_subscriptions(store, update.clone(), request_user.username.clone());
+
     Ok(Json(update))
+}
+
+fn update_subscriptions(store: Client, prefs: PreferencesDto, subscriber: Email) {
+    tokio::spawn(async move {
+        if let (Some(notifications), Ok(mut con)) =
+            (prefs.notifications.clone(), store.get_connection())
+        {
+            let _ = match notifications.projects {
+                true => con.sadd::<String, String, i64>(
+                    PROJECT_SUBSCRIBER_SET.to_string(),
+                    subscriber.to_string(),
+                ),
+                false => con.srem::<String, String, i64>(
+                    PROJECT_SUBSCRIBER_SET.to_string(),
+                    subscriber.to_string(),
+                ),
+            };
+            let _ = match notifications.tickets {
+                true => con.sadd::<String, String, i64>(
+                    TICKET_SUBSCRIBER_SET.to_string(),
+                    subscriber.to_string(),
+                ),
+                false => con.srem::<String, String, i64>(
+                    TICKET_SUBSCRIBER_SET.to_string(),
+                    subscriber.to_string(),
+                ),
+            };
+        }
+    });
 }

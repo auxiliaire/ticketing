@@ -216,6 +216,10 @@ main {
   background-color: $link;
 }
 
+.body.dark .button.is-success {
+  background-color: $success;
+}
+
 .body.dark .button.is-link.is-light {
   background-color: $grey-dark;
   color: $light;

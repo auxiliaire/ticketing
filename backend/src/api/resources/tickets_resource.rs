@@ -8,6 +8,7 @@ use crate::api::{
         },
         ordering::Ordering,
     },
+    tasks::queue_mailer::{push_to_queue, ticket_id_subscriber_set, UpdateMessageKey},
 };
 use axum::{
     extract::{Json, Path, Query},
@@ -17,7 +18,11 @@ use axum::{
     Extension, Router,
 };
 use axum_extra::extract::WithRejection;
-use entity::{tickets, tickets::Entity as Ticket, users, users::Entity as User};
+use entity::{
+    tickets::{self, Entity as Ticket},
+    users::{self, Entity as User},
+};
+use redis::{Client, Commands};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DeleteResult, EntityTrait, Order,
     QueryFilter, QueryOrder, QuerySelect, QueryTrait, RelationTrait, Set,
@@ -35,6 +40,8 @@ pub fn router() -> Router {
         .route("/tickets/:id", get(get_ticket))
         .route("/tickets/:id", put(put_ticket))
         .route("/tickets/:id", delete(delete_ticket))
+        .route("/tickets/:id/subscribe", post(subscribe_to_ticket))
+        .route("/tickets/:id/is_subscribed", get(is_subscribed))
 }
 
 async fn get_tickets(
@@ -163,7 +170,9 @@ async fn post_ticket(
 }
 
 async fn put_ticket(
+    Extension(store): Extension<Client>,
     db: Extension<DatabaseConnection>,
+    Extension(auth_user): Extension<users::Model>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
     WithRejection(Json(update), _): WithRejection<Json<TicketDto>, ApiError>,
 ) -> Result<Json<TicketDto>, ApiError> {
@@ -191,6 +200,9 @@ async fn put_ticket(
             }
             .update(&*db)
             .await?;
+
+            notify_subscribers(store, auth_user.clone(), updated.clone());
+
             Ok(Json(updated.into()))
         }
         None => Err(ApiError::new(
@@ -221,4 +233,96 @@ async fn delete_ticket(
             }
         },
     )
+}
+
+async fn subscribe_to_ticket(
+    Extension(store): Extension<Client>,
+    Extension(auth_user): Extension<users::Model>,
+    WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
+) -> impl IntoResponse {
+    match store.get_connection() {
+        Ok(mut con) => {
+            let key = ticket_id_subscriber_set(id);
+            let member = auth_user.username.to_string();
+            match con
+                .sismember(&key, &member)
+                .and_then(|r: i64| match r {
+                    0 => con.sadd(&key, &member).map(|_: i64| StatusCode::CREATED),
+                    _ => con.srem(key, member).map(|_: i64| StatusCode::NO_CONTENT),
+                })
+                .map(|status| JsonError::from((status, String::default())).into_response())
+                .map_err(|e| {
+                    JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+                        .into_response()
+                }) {
+                Ok(r) => r,
+                Err(e) => e,
+            }
+        }
+        Err(_) => {
+            JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, String::default())).into_response()
+        }
+    }
+}
+
+async fn is_subscribed(
+    Extension(store): Extension<Client>,
+    Extension(auth_user): Extension<users::Model>,
+    WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
+) -> impl IntoResponse {
+    match store.get_connection() {
+        Ok(mut con) => {
+            con.sismember(ticket_id_subscriber_set(id), auth_user.username.to_string())
+                .map_or_else(
+                    |e| {
+                        JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+                            .into_response()
+                    },
+                    |r: i64| match r {
+                        1 => JsonError::from((StatusCode::OK, String::default())).into_response(),
+                        _ => JsonError::from((StatusCode::NOT_FOUND, String::default()))
+                            .into_response(),
+                    },
+                )
+        }
+        Err(_) => {
+            JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, String::default())).into_response()
+        }
+    }
+}
+
+fn notify_subscribers(store: Client, user: users::Model, ticket: tickets::Model) {
+    // Notify only if the updater is not the owner
+    if user.id.ne(&ticket.user_id.unwrap_or_default()) {
+        if let Ok(mut con) = store.get_connection() {
+            tokio::spawn(async move {
+                // Prepare message
+                let subject = format!("Ticket {} has been updated", ticket.id);
+                let body = format!(
+                    "Ticket update\nTitle: {}\nStatus: {}\nUpdated by: {}",
+                    ticket.title.clone(),
+                    ticket.status.clone(),
+                    user.username.to_string().clone(),
+                );
+                // Push to queue
+                match push_to_queue::<i64>(
+                    &mut con,
+                    ticket.id,
+                    &[
+                        (
+                            UpdateMessageKey::SubscriberList,
+                            ticket_id_subscriber_set(ticket.id),
+                        ),
+                        (UpdateMessageKey::Subject, subject),
+                        (UpdateMessageKey::Body, body),
+                    ],
+                ) {
+                    Ok(_) => (),
+                    Err(e) => {
+                        tracing::error!("Ticket update message queuing failed: '{}'", e.to_string())
+                    }
+                }
+            });
+        }
+    }
 }

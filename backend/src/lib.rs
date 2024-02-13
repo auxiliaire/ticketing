@@ -1,11 +1,13 @@
 use anyhow::Context;
-use api::consts::{DATABASE_URL, STORE_URL};
+use api::consts::{DATABASE_URL, POSTGRES_URL, STORE_URL};
 use migration::{Migrator, MigratorTrait};
+use scheduler::Scheduler;
 use sea_orm::{ConnectOptions, Database};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
 pub mod api;
+pub mod scheduler;
 
 pub async fn main() {
     let subscriber = FmtSubscriber::builder()
@@ -33,5 +35,7 @@ pub async fn main() {
         .context("Migration failed")
         .unwrap();
 
-    api::serve(store, pool).await.unwrap();
+    let queue = Scheduler::init(POSTGRES_URL.clone()).await;
+
+    api::serve(store, pool, queue).await.unwrap();
 }

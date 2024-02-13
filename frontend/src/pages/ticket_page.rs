@@ -12,6 +12,8 @@ use shared::dtos::user_dto::UserDto;
 use std::rc::Rc;
 use yew::prelude::*;
 
+const BUTTON_CLASS: &str = "button is-one-third";
+
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
     pub id: u64,
@@ -22,12 +24,15 @@ pub enum Msg {
     FetchedTicket(TicketDto),
     FetchedProject(ProjectDto),
     FetchedUser(UserDto),
+    Subscribe,
+    Subscribed(bool),
 }
 
 pub struct TicketPage {
     ticket: TicketDto,
     project: Option<ButtonLinkData<Route>>,
     user: Option<ButtonLinkData<Route>>,
+    has_subscribed: bool,
     app_state: AppStateContext,
     _listener: ContextHandle<AppStateContext>,
 }
@@ -47,11 +52,17 @@ impl Component for TicketPage {
                 ctx.props().id,
                 ctx.link().callback(Msg::FetchedTicket),
             );
+            TicketService::is_subscribed(
+                token.to_string(),
+                ctx.props().id,
+                ctx.link().callback(Msg::Subscribed),
+            );
         }
         Self {
             ticket: TicketDto::default(),
             project: None,
             user: None,
+            has_subscribed: false,
             app_state,
             _listener,
         }
@@ -108,17 +119,29 @@ impl Component for TicketPage {
                     },
                 });
             }
+            Msg::Subscribe => {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
+                    TicketService::subscribe(
+                        token.to_string(),
+                        ctx.props().id,
+                        ctx.link().callback(Msg::Subscribed),
+                    );
+                }
+            }
+            Msg::Subscribed(res) => {
+                self.has_subscribed = res;
+            }
         }
         true
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let Self {
             ticket,
             project,
             user,
-            app_state: _,
-            _listener,
+            has_subscribed,
+            ..
         } = self;
         let priority = Rc::new(ticket.priority.clone());
 
@@ -163,8 +186,45 @@ impl Component for TicketPage {
                             </article>
                         </div>
                     </div>
+                    <div class="tile">
+                        <div class="tile is-parent">
+                            <article class="tile is-child notification is-light">
+                                <div class="content">
+                                    <p class="title">{ "Actions" }</p>
+                                    <p class="buttons">
+                                        <button class={classes!(self.get_subscribe_button_classes())} onclick={ctx.link().callback(|_| Msg::Subscribe)}>
+                                            <span class="icon is-small"><i class="fa-solid fa-satellite-dish"></i></span>
+                                            <span>
+                                                {
+                                                    if *has_subscribed {
+                                                        html! { "Unsubscribe" }
+                                                    } else {
+                                                        html! { "Subscribe" }
+                                                    }
+                                                }
+                                            </span>
+                                        </button>
+                                        <button class="button is-one-third">
+                                            <span class="icon is-small"><i class="fa-solid fa-paperclip"></i></span>
+                                            <span>{ "Upload attachment" }</span>
+                                        </button>
+                                    </p>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
                 </div>
             </div>
         }
+    }
+}
+
+impl TicketPage {
+    fn get_subscribe_button_classes(&self) -> String {
+        let mut classes = vec![BUTTON_CLASS];
+        if self.has_subscribed {
+            classes.push("is-success");
+        }
+        classes.join(" ")
     }
 }

@@ -5,6 +5,7 @@ lazy_static! {
     pub static ref CLIENT_URL: String = set_client_url();
     pub static ref STORE_URL: String = set_store_url();
     pub static ref DATABASE_URL: String = set_db_url();
+    pub static ref POSTGRES_URL: String = set_postgres_url();
     pub static ref JWT_SECRET: String = set_jwt_secret();
     pub static ref ADMIN_EMAIL: String = set_admin_email();
     pub static ref MAX_UPLOAD_LIMIT: usize = set_upload_limit();
@@ -29,6 +30,12 @@ fn set_store_url() -> String {
 fn set_db_url() -> String {
     dotenvy::var("DATABASE_URL")
         .context("DATABASE_URL must be defined in the environment file")
+        .unwrap()
+}
+
+fn set_postgres_url() -> String {
+    dotenvy::var("POSTGRES_URL")
+        .context("POSTGRES_URL must be defined in the environment file")
         .unwrap()
 }
 

@@ -6,6 +6,8 @@ use yew::{platform::spawn_local, Callback};
 
 const TICKETS_ENDPOINT: &str = "tickets";
 const UNASSIGNED_MARKER: &str = "/unassigned";
+const SUBSCRIBE_ENDPOINT: &str = "/subscribe";
+const IS_SUBSCRIBED_ENDPOINT: &str = "/is_subscribed";
 
 pub struct TicketService;
 
@@ -171,6 +173,48 @@ impl TicketService {
                     }
                 }
                 Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
+            }
+        });
+    }
+
+    pub fn subscribe(jwt: String, id: u64, callback: Callback<bool>) {
+        spawn_local(async move {
+            if let Ok(response) = Request::post(
+                format!(
+                    "{}{}/{}{}",
+                    get_api_url(),
+                    TICKETS_ENDPOINT,
+                    id,
+                    SUBSCRIBE_ENDPOINT
+                )
+                .as_str(),
+            )
+            .header("Authorization", format!("Bearer {}", jwt).as_str())
+            .send()
+            .await
+            {
+                callback.emit(response.status().eq(&201_u16));
+            }
+        });
+    }
+
+    pub fn is_subscribed(jwt: String, id: u64, callback: Callback<bool>) {
+        spawn_local(async move {
+            if let Ok(response) = Request::get(
+                format!(
+                    "{}{}/{}{}",
+                    get_api_url(),
+                    TICKETS_ENDPOINT,
+                    id,
+                    IS_SUBSCRIBED_ENDPOINT
+                )
+                .as_str(),
+            )
+            .header("Authorization", format!("Bearer {}", jwt).as_str())
+            .send()
+            .await
+            {
+                callback.emit(response.status().eq(&200_u16));
             }
         });
     }

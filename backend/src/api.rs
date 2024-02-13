@@ -4,6 +4,7 @@ use self::{
     consts::{ADMIN_EMAIL, CLIENT_URL, MAX_UPLOAD_LIMIT},
     jwt::JwtLayer,
     services::notification_service::NotificationService,
+    tasks::queue_mailer::QueueMailer,
 };
 use anyhow::Context;
 use axum::{extract::DefaultBodyLimit, Extension, Router};
@@ -12,6 +13,9 @@ use axum_login::{
     tower_sessions::{MemoryStore, SessionManagerLayer},
     AuthManagerLayerBuilder,
 };
+use fang::AsyncQueue;
+use fang::NoTls;
+use fang::{AsyncQueueable, AsyncRunnable};
 use http::{
     header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, ORIGIN},
     HeaderValue, Method,
@@ -34,19 +38,27 @@ pub mod login_controller;
 pub mod query;
 pub mod resources;
 pub mod services;
+pub mod tasks;
 pub mod template_models;
 pub mod validated_json;
 
-pub async fn serve(store: Client, db: DatabaseConnection) -> anyhow::Result<()> {
+pub async fn serve(
+    store: Client,
+    db: DatabaseConnection,
+    queue: AsyncQueue<NoTls>,
+) -> anyhow::Result<()> {
     let listener = TcpListener::bind(&get_socket_address())
         .await
         .context("failed to bind listener");
-    axum::serve(listener.unwrap(), router(store, db).into_make_service())
-        .await
-        .context("failed to serve API")
+    axum::serve(
+        listener.unwrap(),
+        router(store, db, queue).into_make_service(),
+    )
+    .await
+    .context("failed to serve API")
 }
 
-pub fn router(store: Client, db: DatabaseConnection) -> Router {
+pub fn router(store: Client, db: DatabaseConnection, queue: AsyncQueue<NoTls>) -> Router {
     let cors = CorsLayer::new()
         .allow_methods([
             Method::POST,
@@ -81,6 +93,12 @@ pub fn router(store: Client, db: DatabaseConnection) -> Router {
             .unwrap(),
     ).context("Test email was not successful").unwrap();
 
+    let mut q = queue.clone();
+    let task = QueueMailer {};
+    tokio::spawn(async move {
+        q.schedule_task(&task as &dyn AsyncRunnable).await.unwrap();
+    });
+
     Router::new()
         .merge(resources::ticket_attachments_resource::router())
         .layer(DefaultBodyLimit::max(1024 * 1024 * (*MAX_UPLOAD_LIMIT)))
@@ -95,6 +113,7 @@ pub fn router(store: Client, db: DatabaseConnection) -> Router {
         .layer(auth_layer)
         .layer(Extension(auth_backend))
         .layer(Extension(notification_service))
+        .layer(Extension(queue))
         .layer(Extension(db))
         .layer(Extension(store))
         .layer(csrf_layer)
