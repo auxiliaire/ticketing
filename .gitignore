@@ -4,6 +4,6 @@
 /.pytest_cache
 /.vscode
 /.VSCodeCounter
-.env
+*.env
 __pycache__
 node_modules

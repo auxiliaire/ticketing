@@ -290,7 +290,7 @@ impl TicketPage {
 
     fn get_file_input_classes(&self) -> String {
         let mut classes = vec![FILE_INPUT_CLASS];
-        if self.is_subscribed {
+        if self.is_uploaded {
             classes.push("is-success");
         }
         if !self.file_name.is_empty() {

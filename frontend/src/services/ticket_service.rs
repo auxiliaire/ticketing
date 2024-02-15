@@ -9,7 +9,7 @@ const TICKETS_ENDPOINT: &str = "tickets";
 const UNASSIGNED_MARKER: &str = "/unassigned";
 const SUBSCRIBE_ENDPOINT: &str = "/subscribe";
 const IS_SUBSCRIBED_ENDPOINT: &str = "/is_subscribed";
-const UPLOAD_ENDPOINT: &str = "ticket_attachments";
+const UPLOAD_ENDPOINT: &str = "/attachments";
 
 pub struct TicketService;
 
@@ -221,17 +221,25 @@ impl TicketService {
         });
     }
 
-    pub fn upload_attachment(jwt: String, _id: u64, file: File, callback: Callback<bool>) {
+    pub fn upload_attachment(jwt: String, id: u64, file: File, callback: Callback<bool>) {
         spawn_local(async move {
             let payload = FormData::new().unwrap();
             let _ = payload.append_with_blob_and_filename("file", &file, &file.name());
-            if let Ok(response) =
-                Request::post(format!("{}{}", get_api_url(), UPLOAD_ENDPOINT).as_str())
-                    .header("Authorization", format!("Bearer {}", jwt).as_str())
-                    .body(payload)
-                    .unwrap()
-                    .send()
-                    .await
+            if let Ok(response) = Request::post(
+                format!(
+                    "{}{}/{}{}",
+                    get_api_url(),
+                    TICKETS_ENDPOINT,
+                    id,
+                    UPLOAD_ENDPOINT
+                )
+                .as_str(),
+            )
+            .header("Authorization", format!("Bearer {}", jwt).as_str())
+            .body(payload)
+            .unwrap()
+            .send()
+            .await
             {
                 callback.emit(response.status().eq(&200_u16));
             }

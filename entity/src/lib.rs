@@ -6,6 +6,7 @@ pub mod comments;
 pub mod preferences;
 pub mod projects;
 pub mod sea_orm_active_enums;
+pub mod ticket_attachments;
 pub mod ticket_updates;
 pub mod tickets;
 pub mod users;
