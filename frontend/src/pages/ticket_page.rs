@@ -1,6 +1,7 @@
 use crate::app_state::AppStateContext;
 use crate::components::button_link::{ButtonLink, ButtonLinkData};
 use crate::components::priority_tag::PriorityTag;
+use crate::helpers::event_helper::get_file_from_change_event;
 use crate::route::Route;
 use crate::services::project_service::ProjectService;
 use crate::services::{ticket_service::TicketService, user_service::UserService};
@@ -13,6 +14,8 @@ use std::rc::Rc;
 use yew::prelude::*;
 
 const BUTTON_CLASS: &str = "button is-one-third";
+const UPLOAD_ICON_CLASS: &str = "fas";
+const FILE_INPUT_CLASS: &str = "file mb-2";
 
 #[derive(Clone, Debug, Eq, PartialEq, Properties)]
 pub struct Props {
@@ -26,13 +29,18 @@ pub enum Msg {
     FetchedUser(UserDto),
     Subscribe,
     Subscribed(bool),
+    Upload(Event),
+    Uploaded(bool),
 }
 
 pub struct TicketPage {
     ticket: TicketDto,
     project: Option<ButtonLinkData<Route>>,
     user: Option<ButtonLinkData<Route>>,
-    has_subscribed: bool,
+    is_subscribed: bool,
+    is_loading: bool,
+    is_uploaded: bool,
+    file_name: IString,
     app_state: AppStateContext,
     _listener: ContextHandle<AppStateContext>,
 }
@@ -62,7 +70,10 @@ impl Component for TicketPage {
             ticket: TicketDto::default(),
             project: None,
             user: None,
-            has_subscribed: false,
+            is_subscribed: false,
+            is_loading: false,
+            is_uploaded: false,
+            file_name: IString::default(),
             app_state,
             _listener,
         }
@@ -129,7 +140,25 @@ impl Component for TicketPage {
                 }
             }
             Msg::Subscribed(res) => {
-                self.has_subscribed = res;
+                self.is_subscribed = res;
+            }
+            Msg::Upload(e) => {
+                if let (Some(Identity { token, .. }), Some(file)) =
+                    (&self.app_state.identity, get_file_from_change_event(e))
+                {
+                    self.is_loading = true;
+                    self.file_name = IString::from(file.name());
+                    TicketService::upload_attachment(
+                        token.to_string(),
+                        ctx.props().id,
+                        file,
+                        ctx.link().callback(Msg::Uploaded),
+                    );
+                }
+            }
+            Msg::Uploaded(res) => {
+                self.is_loading = false;
+                self.is_uploaded = res;
             }
         }
         true
@@ -140,7 +169,7 @@ impl Component for TicketPage {
             ticket,
             project,
             user,
-            has_subscribed,
+            is_subscribed: has_subscribed,
             ..
         } = self;
         let priority = Rc::new(ticket.priority.clone());
@@ -204,10 +233,30 @@ impl Component for TicketPage {
                                                 }
                                             </span>
                                         </button>
-                                        <button class="button is-one-third">
-                                            <span class="icon is-small"><i class="fa-solid fa-paperclip"></i></span>
-                                            <span>{ "Upload attachment" }</span>
-                                        </button>
+                                        <div class={classes!(self.get_file_input_classes())}>
+                                            <label class="file-label">
+                                                <input class="file-input" type="file" name="file" onchange={ctx.link().callback(Msg::Upload)} />
+                                                <span class="file-cta">
+                                                    <span class="file-icon">
+                                                        <i class={classes!(self.get_upload_icon_classes())}></i>
+                                                    </span>
+                                                    <span class="file-label">
+                                                        { "Upload a file…" }
+                                                    </span>
+                                                </span>
+                                                {
+                                                    if !self.file_name.is_empty() {
+                                                        html! {
+                                                            <span class="file-name">
+                                                                { self.file_name.to_string() }
+                                                            </span>
+                                                        }
+                                                    } else {
+                                                        html! { <></> }
+                                                    }
+                                                }
+                                            </label>
+                                        </div>
                                     </p>
                                 </div>
                             </article>
@@ -222,8 +271,30 @@ impl Component for TicketPage {
 impl TicketPage {
     fn get_subscribe_button_classes(&self) -> String {
         let mut classes = vec![BUTTON_CLASS];
-        if self.has_subscribed {
+        if self.is_subscribed {
             classes.push("is-success");
+        }
+        classes.join(" ")
+    }
+
+    fn get_upload_icon_classes(&self) -> String {
+        let mut classes = vec![UPLOAD_ICON_CLASS];
+        if self.is_loading {
+            classes.push("fa-spinner");
+            classes.push("fa-pulse");
+        } else {
+            classes.push("fa-upload");
+        }
+        classes.join(" ")
+    }
+
+    fn get_file_input_classes(&self) -> String {
+        let mut classes = vec![FILE_INPUT_CLASS];
+        if self.is_subscribed {
+            classes.push("is-success");
+        }
+        if !self.file_name.is_empty() {
+            classes.push("has-name")
         }
         classes.join(" ")
     }

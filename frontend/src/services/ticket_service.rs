@@ -2,12 +2,14 @@ use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
 use shared::api::{error::error_response::ErrorResponse, get_api_url};
 use shared::dtos::ticket_dto::TicketDto;
+use web_sys::{File, FormData};
 use yew::{platform::spawn_local, Callback};
 
 const TICKETS_ENDPOINT: &str = "tickets";
 const UNASSIGNED_MARKER: &str = "/unassigned";
 const SUBSCRIBE_ENDPOINT: &str = "/subscribe";
 const IS_SUBSCRIBED_ENDPOINT: &str = "/is_subscribed";
+const UPLOAD_ENDPOINT: &str = "ticket_attachments";
 
 pub struct TicketService;
 
@@ -213,6 +215,23 @@ impl TicketService {
             .header("Authorization", format!("Bearer {}", jwt).as_str())
             .send()
             .await
+            {
+                callback.emit(response.status().eq(&200_u16));
+            }
+        });
+    }
+
+    pub fn upload_attachment(jwt: String, _id: u64, file: File, callback: Callback<bool>) {
+        spawn_local(async move {
+            let payload = FormData::new().unwrap();
+            let _ = payload.append_with_blob_and_filename("file", &file, &file.name());
+            if let Ok(response) =
+                Request::post(format!("{}{}", get_api_url(), UPLOAD_ENDPOINT).as_str())
+                    .header("Authorization", format!("Bearer {}", jwt).as_str())
+                    .body(payload)
+                    .unwrap()
+                    .send()
+                    .await
             {
                 callback.emit(response.status().eq(&200_u16));
             }

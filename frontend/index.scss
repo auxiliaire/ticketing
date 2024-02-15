@@ -243,6 +243,24 @@ main {
   color: $info;
 }
 
+.body.dark .file-cta {
+  background-color: $grey-dark;
+  border-color: $black-ter;
+  color: $light;
+}
+
+.body.dark .file-cta:hover {
+  border-color: $black-bis;
+}
+
+.body.dark .file.is-success .file-cta {
+  background-color: $success;
+}
+
+.body.dark .file-name {
+  border-color: $black-ter;
+}
+
 .body.dark .checkbox:hover {
   color: $white;
 }

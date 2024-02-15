@@ -12,9 +12,10 @@ path = "src/lib.rs"
 base64 = "0.21"
 chrono = { version = "0.4", default-features = false, features = [ "serde" ] }
 entity = { path = "../entity" }
-gloo = "0.10"
-gloo-net = "0.4"
+gloo = "0.11"
+gloo-net = "0.5"
 gloo-timers = "0.3"
+gloo-utils = "0.2"
 implicit-clone = "0.4"
 instant = { version = "0.1", features = ["wasm-bindgen"] }
 log = "0.4"
@@ -38,7 +39,7 @@ features = ["csr"]
 
 [dependencies.web-sys]
 version = "0.3"
-features = [ "DataTransfer", "Document", "DomStringMap", "DragEvent", "Element", "Event", "EventTarget", "HtmlCollection", "HtmlDivElement", "HtmlSelectElement", "InputEvent", "MouseEvent", "Storage", "Window" ]
+features = [ "Blob", "DataTransfer", "Document", "DomStringMap", "DragEvent", "Element", "Event", "EventTarget", "File", "FileList", "FormData", "HtmlCollection", "HtmlDivElement", "HtmlSelectElement", "InputEvent", "MouseEvent", "Storage", "Window" ]
 
 [dev-dependencies]
 gloo-utils = "0.2"
