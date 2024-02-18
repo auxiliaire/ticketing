@@ -23,7 +23,7 @@ use strum::EnumString;
 #[derive(Clone, Debug, Display, EnumString, Eq, PartialEq)]
 #[strum(serialize_all = "lowercase")]
 pub enum UpdateMessageKey {
-    SubscriberList,
+    SubscriberSet,
     Subject,
     Body,
 }
@@ -77,8 +77,8 @@ impl AsyncRunnable for QueueMailer {
         while let Ok(update_key) = con.lpop::<&str, String>(TICKET_UPDATES_QUEUE, None) {
             if let Ok(update) = con.hgetall::<String, HashMap<String, String>>(update_key) {
                 let single_ticket_subscriber_set = update
-                    .get(&UpdateMessageKey::SubscriberList.to_string())
-                    .ok_or(UpdateMessageKey::SubscriberList)?;
+                    .get(&UpdateMessageKey::SubscriberSet.to_string())
+                    .ok_or(UpdateMessageKey::SubscriberSet)?;
                 let subject = update
                     .get(&UpdateMessageKey::Subject.to_string())
                     .ok_or(UpdateMessageKey::Subject)?;
@@ -131,18 +131,17 @@ pub fn ticket_id_subscriber_set(id: u64) -> String {
 
 pub fn push_to_queue<RV>(
     con: &mut Connection,
-    id: u64,
-    map: &[(UpdateMessageKey, String)],
+    key: String,
+    value: &[(UpdateMessageKey, String)],
 ) -> RedisResult<RV>
 where
     RV: FromRedisValue,
 {
-    let key = ticket_update_id(id);
-    con.hset_multiple::<String, UpdateMessageKey, String, _>(key.clone(), map)?;
+    con.hset_multiple::<String, UpdateMessageKey, String, _>(key.clone(), value)?;
     con.rpush(TICKET_UPDATES_QUEUE, key)
 }
 
-fn ticket_update_id(id: u64) -> String {
+pub fn ticket_update_id(id: u64) -> String {
     let ts = Utc::now().timestamp_millis();
     TICKET_UPDATE_ID.replace('?', format!("{}:{}", id, ts).as_str())
 }

@@ -8,7 +8,9 @@ use crate::api::{
         },
         ordering::Ordering,
     },
-    tasks::queue_mailer::{push_to_queue, ticket_id_subscriber_set, UpdateMessageKey},
+    tasks::queue_mailer::{
+        push_to_queue, ticket_id_subscriber_set, ticket_update_id, UpdateMessageKey,
+    },
 };
 use axum::{
     extract::{Json, Path, Query},
@@ -307,10 +309,10 @@ fn notify_subscribers(store: Client, user: users::Model, ticket: tickets::Model)
                 // Push to queue
                 match push_to_queue::<i64>(
                     &mut con,
-                    ticket.id,
+                    ticket_update_id(ticket.id),
                     &[
                         (
-                            UpdateMessageKey::SubscriberList,
+                            UpdateMessageKey::SubscriberSet,
                             ticket_id_subscriber_set(ticket.id),
                         ),
                         (UpdateMessageKey::Subject, subject),
