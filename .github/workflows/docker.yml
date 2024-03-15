@@ -52,4 +52,4 @@ jobs:
                     context: .
                     file: ./Dockerfile.frontend
                     push: true
-                    tags: ${{ secrets.DOCKERHUB_USERNAME }}/ticketing:latest
+                    tags: ${{ secrets.DOCKERHUB_USERNAME }}/ticketing-frontend:latest
