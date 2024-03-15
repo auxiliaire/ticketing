@@ -1,9 +1,10 @@
+use super::get_api_url;
 use crate::app_state::{AppState, AppStateContext};
 use crate::helpers::storage_helper::store_in_storage;
 use base64::{engine, Engine};
 use gloo_net::http::Request;
 use shared::api::auth::Claims;
-use shared::api::{error::error_response::ErrorResponse, get_api_url};
+use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::identity::Identity;
 use shared::dtos::login_dto::LoginDto;
 use uuid::Uuid;

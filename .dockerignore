@@ -1,0 +1,10 @@
+.github
+.env
+.docker.env
+.idea
+.pytest_cache
+.vscode
+.VSCodeCounter
+gallery
+target
+frontend/dist

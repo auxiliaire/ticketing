@@ -1,0 +1,150 @@
+networks:
+    ticketing-net:
+        driver: overlay
+        driver_opts:
+            encrypted: 'yes'
+volumes:
+    ticketing-mariadb:
+    ticketing-postgres:
+    ticketing-redis:
+services:
+    mariadb:
+        image: mariadb
+        command: --init-file /data/init.sql
+        env_file: ./.docker-compose.env
+        environment:
+            - MARIADB_DATABASE=ticketing
+        deploy:
+            replicas: 1
+            placement:
+                constraints:
+                    - 'node.role == worker'
+            update_config:
+                parallelism: 1
+                delay: 10s
+                failure_action: rollback
+            restart_policy:
+                condition: on-failure
+                max_attempts: 3
+                delay: 5s
+                window: 120s
+        networks:
+            - ticketing-net
+        ports:
+            - published: 3306
+              target: 3306
+        volumes:
+            - ticketing-mariadb:/var/lib/mysql
+            - type: bind
+              source: ./extra_migrations/mariadb
+              target: /data
+    postgres:
+        image: postgres:14-alpine
+        env_file:
+            - path: ./.docker-compose.env
+        environment:
+            - POSTGRES_DB=fang
+            - POSTGRES_HOST_AUTH_METHOD=password
+            - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            - PGDATA=/var/lib/postgresql/data
+        deploy:
+            replicas: 1
+            placement:
+                constraints:
+                    - 'node.role == worker'
+            update_config:
+                parallelism: 1
+                delay: 10s
+                failure_action: rollback
+            restart_policy:
+                condition: on-failure
+                max_attempts: 3
+                delay: 5s
+                window: 120s
+        networks:
+            - ticketing-net
+        ports:
+            - published: 5432
+              target: 5432
+        volumes:
+            - ticketing-postgres:/var/lib/postgresql/data
+            - type: bind
+              source: ./extra_migrations/postgres
+              target: /docker-entrypoint-initdb.d
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready"]
+            interval: 1s
+            timeout: 5s
+            retries: 10
+    redis:
+        image: redis:7-alpine
+        command: redis-server --save 60 1 --loglevel warning
+        deploy:
+            placement:
+                constraints:
+                    - 'node.role == worker'
+        networks:
+            - ticketing-net
+        volumes:
+            - type: volume
+              source: ticketing-redis
+              target: /data
+    mailhog:
+        image: mailhog/mailhog:latest
+        deploy:
+            placement:
+                constraints:
+                    - 'node.role == worker'
+        networks:
+            - ticketing-net
+        ports:
+            - published: 1025
+              target: 1025
+            - published: 8025
+              target: 8025
+    backend:
+        image: ticketing
+        hostname: ticketing-backend
+        env_file: ./.docker-compose.env
+        deploy:
+            replicas: 1
+            placement:
+                constraints:
+                    - 'node.role == worker'
+            update_config:
+                parallelism: 2
+                delay: 10s
+                failure_action: rollback
+            restart_policy:
+                condition: on-failure
+                max_attempts: 3
+                delay: 5s
+                window: 120s
+        networks:
+            - ticketing-net
+        ports:
+            - published: 8000
+              target: 8000
+    frontend:
+        image: ticketing_client
+        hostname: ticketing-frontend
+        env_file: ./.docker-compose.env
+        deploy:
+            replicas: 1
+            placement:
+                constraints:
+                    - 'node.role == worker'
+            update_config:
+                parallelism: 2
+                delay: 10s
+                failure_action: rollback
+            restart_policy:
+                condition: on-failure
+                max_attempts: 3
+                delay: 5s
+                window: 120s
+        networks:
+            - ticketing-net
+        ports:
+            - published: 8080
+              target: 8080

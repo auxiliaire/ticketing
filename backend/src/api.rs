@@ -1,7 +1,7 @@
 use self::{
     auth_backend::AuthBackend,
     config::MailConfig,
-    consts::{ADMIN_EMAIL, CLIENT_URL, MAX_UPLOAD_LIMIT},
+    consts::{ADMIN_EMAIL, CLIENT_URL, MAX_UPLOAD_LIMIT, SERVER_IP, SERVER_PORT},
     jwt::JwtLayer,
     services::notification_service::NotificationService,
     tasks::queue_mailer::QueueMailer,
@@ -23,7 +23,7 @@ use http::{
 use lettre::Message;
 use redis::Client;
 use sea_orm::DatabaseConnection;
-use shared::api::get_socket_address;
+use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
@@ -47,7 +47,7 @@ pub async fn serve(
     db: DatabaseConnection,
     queue: AsyncQueue<NoTls>,
 ) -> anyhow::Result<()> {
-    let listener = TcpListener::bind(&get_socket_address())
+    let listener = TcpListener::bind(&SocketAddr::new(SERVER_IP, *SERVER_PORT))
         .await
         .context("failed to bind listener");
     axum::serve(

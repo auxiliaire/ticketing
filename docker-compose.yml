@@ -1,0 +1,72 @@
+name: ticketing
+version: '3.9'
+services:
+    mariadb:
+        container_name: ticketing-mariadb
+        image: mariadb
+        command: --init-file /data/init.sql
+        restart: always
+        env_file: ./.docker-compose.env
+        environment:
+            - MARIADB_DATABASE=ticketing
+        volumes:
+            - /var/lib/mysql
+            - type: bind
+              source: ./extra_migrations/mariadb
+              target: /data
+        ports:
+          - 3306:3306
+    adminer:
+        container_name: ticketing-mariadb-adminer
+        image: adminer
+        restart: always
+        ports:
+          - 8088:8080
+    postgres:
+        container_name: ticketing-postgres
+        env_file:
+            - path: ./.docker-compose.env
+        environment:
+            - POSTGRES_DB=fang
+            - POSTGRES_HOST_AUTH_METHOD=password
+            - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            - PGDATA=/var/lib/postgresql/data
+        volumes:
+            - /var/lib/postgresql/data
+            - type: bind
+              source: ./extra_migrations/postgres
+              target: /docker-entrypoint-initdb.d
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready"]
+            interval: 1s
+            timeout: 5s
+            retries: 10
+        restart: always
+        ports:
+            - 5432:5432
+        image: postgres:14-alpine
+    redis:
+        container_name: ticketing-redis
+        image: redis:7-alpine
+        command: redis-server --save 60 1 --loglevel warning
+    mailhog:
+        container_name: ticketing-mailhog
+        ports:
+            - 1025:1025
+            - 8025:8025
+        restart: always
+        image: mailhog/mailhog:latest
+    ticketing-backend:
+        hostname: ticketing-backend
+        env_file: ./.docker-compose.env
+        ports:
+            - 8000:8000
+        restart: always
+        image: ticketing
+    ticketing-frontend:
+        hostname: ticketing-frontend
+        env_file: ./.docker-compose.env
+        ports:
+          - 8080:8080
+        restart: always
+        image: ticketing_client

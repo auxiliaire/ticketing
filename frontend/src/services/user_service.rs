@@ -1,6 +1,7 @@
+use super::get_api_url;
 use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
-use shared::api::{error::error_response::ErrorResponse, get_api_url};
+use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::preferences_dto::PreferencesDto;
 use shared::dtos::user_dto::UserDto;
 use uuid::Uuid;
