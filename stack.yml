@@ -103,7 +103,7 @@ services:
             - published: 8025
               target: 8025
     backend:
-        image: ticketing
+        image: viktordaroczi/ticketing
         hostname: ticketing-backend
         env_file: ./.docker-compose.env
         deploy:
@@ -126,7 +126,7 @@ services:
             - published: 8000
               target: 8000
     frontend:
-        image: ticketing_client
+        image: viktordaroczi/ticketing-frontend
         hostname: ticketing-frontend
         env_file: ./.docker-compose.env
         deploy:

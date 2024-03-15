@@ -62,11 +62,11 @@ services:
         ports:
             - 8000:8000
         restart: always
-        image: ticketing
+        image: viktordaroczi/ticketing
     ticketing-frontend:
         hostname: ticketing-frontend
         env_file: ./.docker-compose.env
         ports:
           - 8080:8080
         restart: always
-        image: ticketing_client
+        image: viktordaroczi/ticketing-frontend
