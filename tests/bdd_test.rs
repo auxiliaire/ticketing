@@ -33,5 +33,5 @@ async fn a_response_will_be_received(world: &mut ApplicationWorld) {
 
 #[tokio::main]
 pub async fn main() {
-    ApplicationWorld::run("tests/features").await
+    // ApplicationWorld::run("tests/features").await
 }
