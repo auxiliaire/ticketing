@@ -33,5 +33,6 @@ async fn a_response_will_be_received(world: &mut ApplicationWorld) {
 
 #[tokio::main]
 pub async fn main() {
+    // Disabled because starting the application requires environment:
     // ApplicationWorld::run("tests/features").await
 }
