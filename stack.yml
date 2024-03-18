@@ -169,6 +169,9 @@ services:
     frontend:
         image: viktordaroczi/ticketing-frontend
         hostname: ticketing-frontend
+        environment:
+            BACKEND_HOST: ticketing-backend
+            BACKEND_PORT: 8000
         deploy:
             replicas: 1
             placement:
