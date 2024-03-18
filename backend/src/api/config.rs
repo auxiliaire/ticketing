@@ -1,4 +1,4 @@
-use anyhow::Context;
+use super::consts::{SMTP_HOST, SMTP_PASSWORD, SMTP_PORT, SMTP_TLS_OFF, SMTP_USERNAME};
 
 #[derive(Clone, Debug)]
 pub struct MailConfig {
@@ -11,29 +11,12 @@ pub struct MailConfig {
 
 impl Default for MailConfig {
     fn default() -> Self {
-        let host = dotenvy::var("SMTP_HOST")
-            .context("SMTP_HOST must be defined in the environment file")
-            .unwrap();
-        let port = dotenvy::var("SMTP_PORT")
-            .context("SMTP_PORT must be defined in the environment file")
-            .unwrap();
-        let tls_off = dotenvy::var("SMTP_TLS_OFF").is_ok();
-        let username = dotenvy::var("SMTP_USERNAME")
-            .context("SMTP_USERNAME must be defined in the environment file")
-            .unwrap();
-        let password = dotenvy::var("SMTP_PASSWORD")
-            .context("SMTP_PASSWORD must be defined in the environment file")
-            .unwrap();
-
         Self {
-            host,
-            port: port
-                .parse::<u16>()
-                .context("Port must be a valid u16 number")
-                .unwrap(),
-            tls_off,
-            username,
-            password,
+            host: SMTP_HOST.to_string(),
+            port: *SMTP_PORT,
+            tls_off: *SMTP_TLS_OFF,
+            username: SMTP_USERNAME.to_string(),
+            password: SMTP_PASSWORD.to_string(),
         }
     }
 }

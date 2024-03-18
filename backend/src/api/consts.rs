@@ -16,6 +16,11 @@ lazy_static! {
     pub static ref ADMIN_EMAIL: String = set_admin_email();
     pub static ref MAX_UPLOAD_LIMIT: usize = set_upload_limit();
     pub static ref BUCKET_NAME: String = set_bucket_name();
+    pub static ref SMTP_HOST: String = set_smtp_host();
+    pub static ref SMTP_PORT: u16 = set_smtp_port();
+    pub static ref SMTP_USERNAME: String = set_smtp_username();
+    pub static ref SMTP_PASSWORD: String = set_smtp_password();
+    pub static ref SMTP_TLS_OFF: bool = set_smtp_tls_off();
 }
 
 pub const SERVER_IP: IpAddr = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
@@ -99,6 +104,35 @@ fn set_upload_limit() -> usize {
 fn set_bucket_name() -> String {
     dotenvy::var("BUCKET_NAME")
         .context("BUCKET_NAME must be defined in the environment file")
+        .unwrap()
+}
+
+fn set_smtp_host() -> String {
+    dotenvy::var("SMTP_HOST")
+        .context("SMTP_HOST must be defined in the environment file")
+        .unwrap()
+}
+
+fn set_smtp_port() -> u16 {
+    dotenvy::var("SMTP_PORT")
+        .context("SMTP_PORT must be defined in the environment file")
+        .and_then(|s| s.parse().map_err(|e: ParseIntError| Error::new(e)))
+        .unwrap()
+}
+
+fn set_smtp_tls_off() -> bool {
+    dotenvy::var("SMTP_TLS_OFF").is_ok()
+}
+
+fn set_smtp_username() -> String {
+    dotenvy::var("SMTP_USERNAME")
+        .context("SMTP_USERNAME must be defined in the environment file")
+        .unwrap()
+}
+
+fn set_smtp_password() -> String {
+    get_from_env_or_file_env("SMTP_PASSWORD")
+        .context("SMTP_PASSWORD must be defined in the environment file")
         .unwrap()
 }
 

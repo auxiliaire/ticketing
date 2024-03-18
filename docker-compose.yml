@@ -54,6 +54,11 @@ services:
         image: mailhog/mailhog:latest
     ticketing-backend:
         hostname: ticketing-backend
+        depends_on:
+            - mariadb
+            - postgres
+            - redis
+            - mailhog
         env_file: ./.docker-compose.env
         ports:
             - 8000:8000
@@ -61,6 +66,8 @@ services:
         image: viktordaroczi/ticketing
     ticketing-frontend:
         hostname: ticketing-frontend
+        depends_on:
+            - ticketing-backend
         env_file: ./.docker-compose.env
         environment:
             - BACKEND_HOST=ticketing-backend
