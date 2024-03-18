@@ -69,13 +69,17 @@ async fn get_user(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<Uuid>, ApiError>,
 ) -> Result<Json<UserDto>, ApiError> {
-    User::find().filter(users::Column::PublicId.eq(id)).one(&*db).await?.map_or(
-        Err(ApiError::new(
-            StatusCode::NOT_FOUND,
-            String::from("Not found"),
-        )),
-        |user| Ok(Json(user.into())),
-    )
+    User::find()
+        .filter(users::Column::PublicId.eq(id))
+        .one(&*db)
+        .await?
+        .map_or(
+            Err(ApiError::new(
+                StatusCode::NOT_FOUND,
+                String::from("Not found"),
+            )),
+            |user| Ok(Json(user.into())),
+        )
 }
 
 async fn post_user(
