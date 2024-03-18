@@ -1,5 +1,5 @@
 ARG BASE_IMAGE=rustlang/rust:nightly
-ARG SERVER_URL=http://127.0.0.1:8000
+ARG SERVER_URL=/backend
 FROM ${BASE_IMAGE} AS base
 ENV SRCDIR=/src
 WORKDIR $SRCDIR
@@ -8,6 +8,7 @@ COPY shared ./shared/
 COPY frontend ./frontend/
 
 FROM base AS build-client
+ARG SERVER_URL
 ENV SERVER_URL=$SERVER_URL
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y build-essential libssl-dev cmake clang pkg-config openssl

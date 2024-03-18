@@ -8,7 +8,7 @@ COPY migration ./migration/
 COPY shared ./shared/
 COPY src ./src/
 COPY tests ./tests/
-COPY Cargo.lock Cargo.toml .
+COPY Cargo.lock Cargo.toml ./
 
 FROM base AS build-server
 RUN cargo build --release

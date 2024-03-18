@@ -10,10 +10,16 @@ volumes:
 services:
     mariadb:
         image: mariadb
+        hostname: mariadb
         command: --init-file /data/init.sql
-        env_file: ./.docker-compose.env
         environment:
-            - MARIADB_DATABASE=ticketing
+            MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+            MARIADB_DATABASE: ticketing
+            MARIADB_USER: ticketing
+            MARIADB_PASSWORD_FILE: /run/secrets/mariadb_password
+        secrets:
+            - mariadb_root_password
+            - mariadb_password
         deploy:
             replicas: 1
             placement:
@@ -40,13 +46,13 @@ services:
               target: /data
     postgres:
         image: postgres:14-alpine
-        env_file:
-            - path: ./.docker-compose.env
+        hostname: postgres
         environment:
-            - POSTGRES_DB=fang
-            - POSTGRES_HOST_AUTH_METHOD=password
-            - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-            - PGDATA=/var/lib/postgresql/data
+            POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+            POSTGRES_DB: fang
+            POSTGRES_HOST_AUTH_METHOD: password
+            PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            PGDATA: /var/lib/postgresql/data
         deploy:
             replicas: 1
             placement:
@@ -78,6 +84,7 @@ services:
             retries: 10
     redis:
         image: redis:7-alpine
+        hostname: redis
         command: redis-server --save 60 1 --loglevel warning
         deploy:
             placement:
@@ -91,6 +98,7 @@ services:
               target: /data
     mailhog:
         image: mailhog/mailhog:latest
+        hostname: mailhog
         deploy:
             placement:
                 constraints:
@@ -105,7 +113,33 @@ services:
     backend:
         image: viktordaroczi/ticketing
         hostname: ticketing-backend
-        env_file: ./.docker-compose.env
+        depends_on:
+            - mariadb
+            - postgres
+            - redis
+            - mailhog
+        environment:
+            SERVER_PORT: 8000
+            CLIENT_URL: http://127.0.0.1:8080
+            REDIS_URL: redis://redis/
+            MARIADB_HOST: mariadb
+            MARIADB_DATABASE: ticketing
+            POSTGRES_USER: postgres
+            POSTGRES_HOST: postgres
+            POSTGRES_DB: fang
+            SQLX_OFFLINE: true
+            ADMIN_EMAIL: admin@example.com
+            SMTP_HOST: mailhog
+            SMTP_PORT: 1025
+            SMTP_USERNAME: notset
+            SMTP_TLS_OFF: true
+            MAX_BODY_LIMIT: 5
+            BUCKET_NAME: dv-rust-ticketing-s3-bucket
+        secrets:
+            - jwt_secret
+            - mariadb_password
+            - postgres_password
+            - smtp_password
         deploy:
             replicas: 1
             placement:
@@ -148,3 +182,15 @@ services:
         ports:
             - published: 8080
               target: 8080
+
+secrets:
+    mariadb_root_password:
+        file: secret_mariadb_root_password.txt
+    mariadb_password:
+        file: secret_mariadb_password.txt
+    postgres_password:
+        file: secret_postgres_password.txt
+    jwt_secret:
+        file: secret_jwt_secret.txt
+    smtp_password:
+        file: secret_smtp_password.txt
