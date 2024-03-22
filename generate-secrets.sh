@@ -8,10 +8,27 @@ Files=(
     'secret_smtp_password.txt'
 )
 
-for i in "${Files[@]}"; do
+K8sFiles=(
+    'mariadb-root-password-secret.yaml'
+    'mariadb-password-secret.yaml'
+    'postgres-password-secret.yaml'
+    'jwt-secret-secret.yaml'
+    'smtp-password-secret.yaml'
+)
 
-    if [[ ! -e $i ]]; then
-        openssl rand -base64 20 > $i
+SAMPLE_EXT=".sample"
+
+echo "Generating secrets..."
+
+for ((i = 0 ; i < ${#Files[@]} ; i++)); do
+
+    if [[ ! -e ${Files[$i]} ]]; then
+        SECRET=`openssl rand -base64 20`
+        echo $SECRET > ${Files[$i]}
+        sed -r "s/<GENERATED_SECRET>/$SECRET/g" ./k8s/${K8sFiles[$i]}${SAMPLE_EXT} > ./k8s/${K8sFiles[$i]}
+        echo "...${Files[$i]}, ${K8sFiles[$i]}"
     fi
 
 done
+
+echo "Done!"

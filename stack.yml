@@ -94,6 +94,9 @@ services:
                     - 'node.role == worker'
         networks:
             - ticketing-net
+        ports:
+            - published: 6379
+              target: 6379
         volumes:
             - type: volume
               source: ticketing-redis

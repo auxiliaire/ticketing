@@ -1,0 +1,47 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: postgres-local-storage
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+spec:
+  capacity:
+    storage: 100Mi
+  volumeMode: FileSystem
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: postgres-local-storage
+  local:
+    path: /mnt/c/temp/data/db/postgres
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - docker-desktop
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    io.kompose.service: postgres-claim1
+  name: postgres-claim1
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: postgres-local-storage
+  resources:
+    requests:
+      storage: 100Mi

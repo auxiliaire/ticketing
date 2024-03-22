@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.network/ticketing-ticketing-net: "true"
+    io.kompose.service: backend
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: backend
+  template:
+    metadata:
+      labels:
+        io.kompose.service: backend
+    spec:
+      containers:
+        - env:
+            - name: ADMIN_EMAIL
+              value: admin@example.com
+            - name: BUCKET_NAME
+              value: dv-rust-ticketing-s3-bucket
+            - name: CLIENT_URL
+              value: http://127.0.0.1:8080
+            - name: JWT_SECRET_FILE
+              value: /run/secrets/jwt_secret
+            - name: MARIADB_DATABASE
+              value: ticketing
+            - name: MARIADB_HOST
+              value: mariadb
+            - name: MARIADB_PASSWORD_FILE
+              value: /run/secrets/mariadb_password
+            - name: MARIADB_USER
+              value: ticketing
+            - name: MAX_BODY_LIMIT
+              value: "5"
+            - name: POSTGRES_DB
+              value: fang
+            - name: POSTGRES_HOST
+              value: postgres
+            - name: POSTGRES_PASSWORD_FILE
+              value: /run/secrets/postgres_password
+            - name: POSTGRES_USER
+              value: postgres
+            - name: REDIS_URL
+              value: redis://redis/
+            - name: SERVER_PORT
+              value: "8000"
+            - name: SMTP_HOST
+              value: mailhog
+            - name: SMTP_PASSWORD_FILE
+              value: /run/secrets/smtp_password
+            - name: SMTP_PORT
+              value: "1025"
+            - name: SMTP_TLS_OFF
+              value: "1"
+            - name: SMTP_USERNAME
+              value: notset
+            - name: SQLX_OFFLINE
+              value: "1"
+          image: viktordaroczi/ticketing
+          name: backend
+          ports:
+            - containerPort: 8000
+              hostPort: 8000
+          volumeMounts:
+            - mountPath: /run/secrets/jwt_secret
+              name: jwt_secret
+            - mountPath: /run/secrets/mariadb_password
+              name: mariadb_password
+            - mountPath: /run/secrets/postgres_password
+              name: postgres_password
+            - mountPath: /run/secrets/smtp_password
+              name: smtp_password
+      hostname: ticketing-backend
+      restartPolicy: OnFailure
+      volumes:
+        - name: jwt_secret
+          secret:
+            items:
+              - key: jwt_secret
+                path: jwt_secret
+            secretName: jwt_secret
+        - name: mariadb_password
+          secret:
+            items:
+              - key: mariadb_password
+                path: mariadb_password
+            secretName: mariadb_password
+        - name: postgres_password
+          secret:
+            items:
+              - key: postgres_password
+                path: postgres_password
+            secretName: postgres_password
+        - name: smtp_password
+          secret:
+            items:
+              - key: smtp_password
+                path: smtp_password
+            secretName: smtp_password

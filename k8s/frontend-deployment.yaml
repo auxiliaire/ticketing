@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.network/ticketing-ticketing-net: "true"
+    io.kompose.service: frontend
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: frontend
+  template:
+    metadata:
+      labels:
+        io.kompose.service: frontend
+    spec:
+      containers:
+        - env:
+            - name: BACKEND_HOST
+              value: ticketing-backend
+            - name: BACKEND_PORT
+              value: "8000"
+          image: viktordaroczi/ticketing-frontend
+          name: frontend
+          ports:
+            - containerPort: 8080
+              hostPort: 8080
+      hostname: ticketing-frontend
+      restartPolicy: OnFailure
