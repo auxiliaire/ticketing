@@ -40,9 +40,9 @@ spec:
             - mountPath: /run/secrets/mariadb_password
               name: mariadb_password
             - mountPath: /var/lib/mysql
-              name: ticketing-mariadb
+              name: mariadb-data
             - mountPath: /data
-              name: mariadb-claim1
+              name: mariadb-init
       hostname: mariadb
       restartPolicy: OnFailure
       volumes:
@@ -58,9 +58,9 @@ spec:
               - key: mariadb_password
                 path: mariadb_password
             secretName: mariadb_password
-        - name: ticketing-mariadb
+        - name: mariadb-data
           persistentVolumeClaim:
-            claimName: ticketing-mariadb
-        - name: mariadb-claim1
+            claimName: mariadb-data-pvc
+        - name: mariadb-init
           persistentVolumeClaim:
-            claimName: mariadb-claim1
+            claimName: mariadb-init-pvc

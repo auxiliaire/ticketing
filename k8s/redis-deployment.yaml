@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   annotations:
     kompose.cmd: /home/vezir/go/bin/kompose convert -f stack.yml
@@ -12,8 +12,6 @@ spec:
   selector:
     matchLabels:
       io.kompose.service: redis
-  strategy:
-    type: Recreate
   template:
     metadata:
       annotations:
@@ -38,10 +36,10 @@ spec:
               hostPort: 6379
           volumeMounts:
             - mountPath: /data
-              name: ticketing-redis
+              name: redis-data
       hostname: redis
       restartPolicy: Always
       volumes:
-        - name: ticketing-redis
+        - name: redis-data
           persistentVolumeClaim:
-            claimName: ticketing-redis
+            claimName: redis-data-pvc

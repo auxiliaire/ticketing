@@ -1,7 +1,7 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: postgres-local-storage
+  name: mariadb-init-storage
 provisioner: kubernetes.io/no-provisioner
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
@@ -11,24 +11,24 @@ volumeBindingMode: WaitForFirstConsumer
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: postgres-pv
+  name: mariadb-init-pv
 spec:
   capacity:
-    storage: 100Mi
-  volumeMode: FileSystem
+    storage: 1Mi
+  volumeMode: Filesystem
   accessModes:
-    - ReadWriteOnce
-  storageClassName: postgres-local-storage
+    - ReadOnlyMany
+  storageClassName: mariadb-init-storage
   local:
-    path: /mnt/c/temp/data/db/postgres
+    path: /data/mariadb
   nodeAffinity:
     required:
       nodeSelectorTerms:
         - matchExpressions:
-            - key: kubernetes.io/hostname
+            - key: node-role.kubernetes.io/worker
               operator: In
               values:
-                - docker-desktop
+                - worker
 
 ---
 
@@ -36,12 +36,12 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   labels:
-    io.kompose.service: postgres-claim1
-  name: postgres-claim1
+    io.kompose.service: mariadb-init-pvc
+  name: mariadb-init-pvc
 spec:
   accessModes:
-    - ReadWriteOnce
-  storageClassName: postgres-local-storage
+    - ReadOnlyMany
+  storageClassName: mariadb-init-storage
   resources:
     requests:
-      storage: 100Mi
+      storage: 1Mi

@@ -42,23 +42,23 @@ spec:
               hostPort: 5432
           volumeMounts:
             - mountPath: /run/secrets/postgres_password
-              name: postgres_password
+              name: postgres-password
             - mountPath: /var/lib/postgresql/data
-              name: ticketing-postgres
+              name: postgres-data
             - mountPath: /docker-entrypoint-initdb.d
-              name: postgres-claim1
+              name: postgres-init
       hostname: postgres
-      restartPolicy: OnFailure
+      restartPolicy: Always
       volumes:
-        - name: postgres_password
+        - name: postgres-password
           secret:
             items:
               - key: postgres_password
                 path: postgres_password
             secretName: postgres_password
-        - name: ticketing-postgres
+        - name: postgres-data
           persistentVolumeClaim:
-            claimName: ticketing-postgres
-        - name: postgres-claim1
+            claimName: postgres-data-pvc
+        - name: postgres-init
           persistentVolumeClaim:
-            claimName: postgres-claim1
+            claimName: postgres-init-pvc
