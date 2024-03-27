@@ -36,28 +36,28 @@ spec:
               hostPort: 3306
           volumeMounts:
             - mountPath: /run/secrets/mariadb_root_password
-              name: mariadb_root_password
+              name: mariadb-root-password
             - mountPath: /run/secrets/mariadb_password
-              name: mariadb_password
+              name: mariadb-password
             - mountPath: /var/lib/mysql
               name: mariadb-data
             - mountPath: /data
               name: mariadb-init
       hostname: mariadb
-      restartPolicy: OnFailure
+      restartPolicy: Always
       volumes:
-        - name: mariadb_root_password
+        - name: mariadb-root-password
           secret:
             items:
               - key: mariadb_root_password
                 path: mariadb_root_password
-            secretName: mariadb_root_password
-        - name: mariadb_password
+            secretName: mariadb-root-password
+        - name: mariadb-password
           secret:
             items:
               - key: mariadb_password
                 path: mariadb_password
-            secretName: mariadb_password
+            secretName: mariadb-password
         - name: mariadb-data
           persistentVolumeClaim:
             claimName: mariadb-data-pvc

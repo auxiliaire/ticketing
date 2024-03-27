@@ -24,8 +24,9 @@ for ((i = 0 ; i < ${#Files[@]} ; i++)); do
 
     if [[ ! -e ${Files[$i]} ]]; then
         SECRET=`openssl rand -base64 20`
+        SECRET_ENC=`echo ${SECRET} | base64`
         echo $SECRET > ${Files[$i]}
-        sed -r "s/<GENERATED_SECRET>/$SECRET/g" ./k8s/${K8sFiles[$i]}${SAMPLE_EXT} > ./k8s/${K8sFiles[$i]}
+        sed -r "s,<GENERATED_SECRET>,$SECRET_ENC,g" ./k8s/${K8sFiles[$i]}${SAMPLE_EXT} > ./k8s/${K8sFiles[$i]}
         echo "...${Files[$i]}, ${K8sFiles[$i]}"
     fi
 

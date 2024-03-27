@@ -26,8 +26,11 @@ spec:
               value: fang
             - name: POSTGRES_HOST_AUTH_METHOD
               value: password
-            - name: POSTGRES_PASSWORD_FILE
-              value: /run/secrets/postgres_password
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-password
+                  key: postgres_password
           image: postgres:14-alpine
           livenessProbe:
             exec:
@@ -41,8 +44,6 @@ spec:
             - containerPort: 5432
               hostPort: 5432
           volumeMounts:
-            - mountPath: /run/secrets/postgres_password
-              name: postgres-password
             - mountPath: /var/lib/postgresql/data
               name: postgres-data
             - mountPath: /docker-entrypoint-initdb.d
@@ -50,12 +51,6 @@ spec:
       hostname: postgres
       restartPolicy: Always
       volumes:
-        - name: postgres-password
-          secret:
-            items:
-              - key: postgres_password
-                path: postgres_password
-            secretName: postgres_password
         - name: postgres-data
           persistentVolumeClaim:
             claimName: postgres-data-pvc
