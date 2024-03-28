@@ -27,4 +27,4 @@ spec:
             - containerPort: 8080
               hostPort: 8080
       hostname: ticketing-frontend
-      restartPolicy: OnFailure
+      restartPolicy: Always

@@ -23,10 +23,16 @@ spec:
           env:
             - name: MARIADB_DATABASE
               value: ticketing
-            - name: MARIADB_PASSWORD_FILE
-              value: /run/secrets/mariadb_password
-            - name: MARIADB_ROOT_PASSWORD_FILE
-              value: /run/secrets/mariadb_root_password
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-password
+                  key: mariadb_password
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-root-password
+                  key: mariadb_root_password
             - name: MARIADB_USER
               value: ticketing
           image: mariadb
@@ -35,10 +41,6 @@ spec:
             - containerPort: 3306
               hostPort: 3306
           volumeMounts:
-            - mountPath: /run/secrets/mariadb_root_password
-              name: mariadb-root-password
-            - mountPath: /run/secrets/mariadb_password
-              name: mariadb-password
             - mountPath: /var/lib/mysql
               name: mariadb-data
             - mountPath: /data
@@ -46,18 +48,6 @@ spec:
       hostname: mariadb
       restartPolicy: Always
       volumes:
-        - name: mariadb-root-password
-          secret:
-            items:
-              - key: mariadb_root_password
-                path: mariadb_root_password
-            secretName: mariadb-root-password
-        - name: mariadb-password
-          secret:
-            items:
-              - key: mariadb_password
-                path: mariadb_password
-            secretName: mariadb-password
         - name: mariadb-data
           persistentVolumeClaim:
             claimName: mariadb-data-pvc

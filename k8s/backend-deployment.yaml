@@ -23,14 +23,20 @@ spec:
               value: dv-rust-ticketing-s3-bucket
             - name: CLIENT_URL
               value: http://127.0.0.1:8080
-            - name: JWT_SECRET_FILE
-              value: /run/secrets/jwt_secret
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: jwt_secret
             - name: MARIADB_DATABASE
               value: ticketing
             - name: MARIADB_HOST
-              value: mariadb
-            - name: MARIADB_PASSWORD_FILE
-              value: /run/secrets/mariadb_password
+              value: $(MARIADB_SERVICE_HOST)
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-password
+                  key: mariadb_password
             - name: MARIADB_USER
               value: ticketing
             - name: MAX_BODY_LIMIT
@@ -38,19 +44,25 @@ spec:
             - name: POSTGRES_DB
               value: fang
             - name: POSTGRES_HOST
-              value: postgres
-            - name: POSTGRES_PASSWORD_FILE
-              value: /run/secrets/postgres_password
+              value: $(POSTGRES_SERVICE_HOST)
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-password
+                  key: postgres_password
             - name: POSTGRES_USER
               value: postgres
             - name: REDIS_URL
-              value: redis://redis/
+              value: redis://$(REDIS_SERVICE_HOST)/
             - name: SERVER_PORT
               value: "8000"
             - name: SMTP_HOST
-              value: mailhog
-            - name: SMTP_PASSWORD_FILE
-              value: /run/secrets/smtp_password
+              value: $(MAILHOG_SERVICE_HOST)
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-password
+                  key: smtp_password
             - name: SMTP_PORT
               value: "1025"
             - name: SMTP_TLS_OFF
@@ -64,39 +76,5 @@ spec:
           ports:
             - containerPort: 8000
               hostPort: 8000
-          volumeMounts:
-            - mountPath: /run/secrets/jwt_secret
-              name: jwt_secret
-            - mountPath: /run/secrets/mariadb_password
-              name: mariadb_password
-            - mountPath: /run/secrets/postgres_password
-              name: postgres_password
-            - mountPath: /run/secrets/smtp_password
-              name: smtp_password
       hostname: ticketing-backend
-      restartPolicy: OnFailure
-      volumes:
-        - name: jwt_secret
-          secret:
-            items:
-              - key: jwt_secret
-                path: jwt_secret
-            secretName: jwt_secret
-        - name: mariadb_password
-          secret:
-            items:
-              - key: mariadb_password
-                path: mariadb_password
-            secretName: mariadb_password
-        - name: postgres_password
-          secret:
-            items:
-              - key: postgres_password
-                path: postgres_password
-            secretName: postgres_password
-        - name: smtp_password
-          secret:
-            items:
-              - key: smtp_password
-                path: smtp_password
-            secretName: smtp_password
+      restartPolicy: Always
