@@ -9,9 +9,9 @@ nodes:
     protocol: TCP
 - role: worker
   extraMounts:
-  - hostPath: /home/vezir/data
+  - hostPath: /data
     containerPath: /data
 - role: worker
   extraMounts:
-  - hostPath: /home/vezir/data
+  - hostPath: /data
     containerPath: /data
