@@ -1,8 +1,8 @@
 use crate::m20230627_000003_create_ticket_table::Ticket;
-use sea_orm::DeriveActiveEnum;
+use sea_orm::{DeriveActiveEnum, EnumIter};
 use sea_orm_migration::prelude::*;
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumIter, EnumString};
+use strum_macros::{Display, EnumString};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;

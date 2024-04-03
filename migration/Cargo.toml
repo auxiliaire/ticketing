@@ -12,9 +12,9 @@ path = "src/lib.rs"
 async-std = { version = "1", features = ["attributes", "tokio1"] }
 chrono = { version = "0.4", default-features = false }
 sea-orm = { version = "0.12" }
-serde = { version = "1", features = [ "derive" ] }
-strum = "0.25"
-strum_macros = "0.25"
+serde = { version = "1", features = ["derive"] }
+strum = "0.26"
+strum_macros = "0.26"
 
 [dependencies.sea-orm-migration]
 version = "0.12"
@@ -25,5 +25,5 @@ features = [
   # "runtime-tokio-rustls",  # `ASYNC_RUNTIME` feature
   # "sqlx-postgres",         # `DATABASE_DRIVER` feature
   "sqlx-mysql",
-  "runtime-tokio-rustls"
+  "runtime-tokio-rustls",
 ]

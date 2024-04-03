@@ -6,7 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
-members = [".", "backend", "entity", "migration", "shared", "frontend"]
+# Add "frontend" for local cargo builds, keep it commented out for Docker builds:
+members = [".", "backend", "entity", "migration", "shared"] # , "frontend"]
 
 [dependencies]
 # Modules
