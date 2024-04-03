@@ -24,7 +24,8 @@ serde_json = "1.0"
 serde_valid = "0.19"
 serde-email = { version = "3.0", features = ["sea-orm"] }
 shared = { path = "../shared" }
-strum = "0.25"
+strum = "0.26"
+strum_macros = "0.26"
 syn = "2.0"
 tracing = "0.1"
 uuid = "1.0"

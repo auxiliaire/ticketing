@@ -3,12 +3,13 @@ use axum::{
     http::{header, HeaderValue, StatusCode},
     response::IntoResponse,
 };
-use sea_orm::{strum::Display, DbErr};
+use sea_orm::DbErr;
 use serde::Serialize;
 use serde_json::json;
 use serde_valid::validation::Errors;
 use shared::api::error::{error_detail::ErrorDetail, error_response::ErrorResponse};
 use std::fmt::Display;
+use strum_macros::Display as StrumDisplay;
 use thiserror::Error;
 
 #[derive(Debug, Error, Serialize)]
@@ -148,7 +149,7 @@ impl Default for AuthError {
     }
 }
 
-#[derive(Debug, Display, Error)]
+#[derive(Debug, StrumDisplay, Error)]
 pub enum ApiError {
     #[error(transparent)]
     JsonExtractorRejection(#[from] JsonRejection),

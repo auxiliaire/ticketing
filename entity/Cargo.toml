@@ -12,7 +12,8 @@ path = "src/lib.rs"
 axum-login = "0.12"
 sea-orm = { version = "0.12" }
 serde-email = { version = "3.0", features = [ "sea-orm" ] }
-strum = "0.25"
+strum = "0.26"
+strum_macros = "0.26"
 
 [dependencies.serde]
 version = "1"

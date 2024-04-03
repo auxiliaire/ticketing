@@ -20,5 +20,5 @@ serde_json = "1.0"
 serde_valid = "0.19"
 serde_with = "3.1"
 serde-email = { version = "3.0", features = [ "sea-orm" ] }
-strum = { version = "0.25", features = [ "derive" ] }
+strum = { version = "0.26", features = [ "derive" ] }
 uuid = "1.0"

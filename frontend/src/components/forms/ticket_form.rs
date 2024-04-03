@@ -543,9 +543,16 @@ impl TicketForm {
     }
 
     fn get_priorities(&self) -> IArray<IString> {
-        Priority::iter()
-            .map(|v| IString::from(TicketPriority(v).to_string()))
-            .collect::<IArray<IString>>()
+        // TODO: SeaORM is not updated to Strum 0.26, so the iterator does not work yet. Use commented out code once updated:
+        // Priority::iter()
+        //    .map(|v| IString::from(TicketPriority(v).to_string()))
+        //    .collect::<IArray<IString>>()
+        IArray::from(vec![
+            IString::from(TicketPriority(Priority::Critical).to_string()),
+            IString::from(TicketPriority(Priority::High).to_string()),
+            IString::from(TicketPriority(Priority::Low).to_string()),
+            IString::from(TicketPriority(Priority::Normal).to_string()),
+        ])
     }
 
     fn get_statuses(&self) -> IArray<IString> {
