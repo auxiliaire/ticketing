@@ -9,12 +9,13 @@ name = "entity"
 path = "src/lib.rs"
 
 [dependencies]
-axum-login = "0.12"
+axum-login = "0.13"
 sea-orm = { version = "0.12" }
-serde-email = { version = "3.0", features = [ "sea-orm" ] }
+serde-email = { version = "3.0", features = ["sea-orm"] }
 strum = "0.26"
 strum_macros = "0.26"
+uuid = { version = "1.8", features = ["v4"] }
 
 [dependencies.serde]
 version = "1"
-features = [ "derive" ]
+features = ["derive"]

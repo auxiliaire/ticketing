@@ -545,9 +545,9 @@ dependencies = [
 
 [[package]]
 name = "axum-login"
-version = "0.12.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fff85d5ba21f2063b3e8e47ba7192f7d2b73760e3d413db8e7c9b9bea3095b2"
+checksum = "df12ed681d759ff9c466e7dda53e34bf7f28d20edd3f66a5d9e1173e8eaf0257"
 dependencies = [
  "async-trait",
  "axum",
@@ -1496,6 +1496,7 @@ dependencies = [
  "serde-email",
  "strum 0.26.2",
  "strum_macros 0.26.2",
+ "uuid",
 ]
 
 [[package]]
@@ -5718,42 +5719,48 @@ checksum = "b6bc1c9ce2b5135ac7f93c72918fc37feb872bdc6a5533a8b85eb4b86bfdae52"
 
 [[package]]
 name = "tower-sessions"
-version = "0.9.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "201aa0cccd55f565d89086d231328877fb897ba01163a224b6b917e2361a6db6"
-dependencies = [
- "tower-sessions-core",
- "tower-sessions-memory-store",
-]
-
-[[package]]
-name = "tower-sessions-core"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12564616434c7c811a229a223552b984f272e772d5dec4f71e61ca5bea7d3a3f"
+checksum = "f3db9ccda3dabcbaad83dda82d9486eaa0a6983fe0cecfe113087a990cd240e1"
 dependencies = [
  "async-trait",
- "axum-core",
- "futures",
  "http 1.0.0",
- "parking_lot",
- "serde",
- "serde_json",
- "thiserror",
  "time 0.3.31",
  "tokio",
  "tower-cookies",
  "tower-layer",
  "tower-service",
+ "tower-sessions-core",
+ "tower-sessions-memory-store",
  "tracing",
- "uuid",
+]
+
+[[package]]
+name = "tower-sessions-core"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc792f6a4179356f9093447edebe14bb73dbc99be636886281313cb98b47201b"
+dependencies = [
+ "async-trait",
+ "axum-core",
+ "base64 0.21.7",
+ "futures",
+ "http 1.0.0",
+ "parking_lot",
+ "rand",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "time 0.3.31",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
 name = "tower-sessions-memory-store"
-version = "0.9.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6800cb4ae79785b1bb413e48813306950902ef902f8ea93fce0a25032e2c254"
+checksum = "4d780288cc38a7f001b39a22392c29b1398bda163c846f07b1253713042bc549"
 dependencies = [
  "async-trait",
  "time 0.3.31",
@@ -6003,9 +6010,9 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 
 [[package]]
 name = "uuid"
-version = "1.7.0"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f00cc9702ca12d3c81455259621e676d0f7251cec66a21e98fe2e9a37db93b2a"
+checksum = "a183cf7feeba97b4dd1c0d46788634f6221d87fa961b305bed08c851829efcc0"
 dependencies = [
  "getrandom",
  "serde",
