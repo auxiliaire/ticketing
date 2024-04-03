@@ -1,5 +1,6 @@
 /target
 /frontend/dist
+/frontend/target
 /.idea
 /.pytest_cache
 /.vscode
