@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
-members = [ ".", "backend", "entity",  "migration", "shared", "frontend" ]
+members = [".", "backend", "entity", "migration", "shared", "frontend"]
 
 [dependencies]
 # Modules
@@ -16,7 +16,7 @@ entity = { path = "entity" }
 migration = { path = "migration" }
 shared = { path = "shared" }
 # Core dependencies
-tokio = { version = "1.28", features = [ "full" ] }
+tokio = { version = "1.28", features = ["full"] }
 
 [dev-dependencies]
 cucumber = "0.20"
@@ -24,7 +24,7 @@ futures = "0.3"
 playwright = "0.0.20"
 reqwest = "0.11"
 thirtyfour = "0.31"
-tokio = { version = "1.28", features = [ "macros", "rt-multi-thread", "time" ] }
+tokio = { version = "1.28", features = ["macros", "rt-multi-thread", "time"] }
 
 [[test]]
 name = "bdd_test"

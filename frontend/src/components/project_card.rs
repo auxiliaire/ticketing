@@ -27,7 +27,7 @@ impl Component for ProjectCard {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        if let Some(id) = ctx.props().id {
+        if let Some(_id) = ctx.props().id {
             todo!("Check whether this fetch is really needed");
             //ProjectService::fetch(
             //    token,

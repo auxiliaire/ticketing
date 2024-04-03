@@ -1,6 +1,5 @@
 use crate::pages::user_page::UserPageMsg;
 use crate::route::Route;
-use crate::services::user_service::UserService;
 use uuid::Uuid;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -30,7 +29,7 @@ impl Component for UserCard {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        if let Some(id) = ctx.props().id {
+        if let Some(_id) = ctx.props().id {
             todo!("Check whether this fetch is really needed");
             // UserService::fetch(id, ctx.link().callback(UserPageMsg::FetchedUser));
         }

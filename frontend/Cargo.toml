@@ -10,7 +10,7 @@ path = "src/lib.rs"
 
 [dependencies]
 base64 = "0.21"
-chrono = { version = "0.4", default-features = false, features = [ "serde" ] }
+chrono = { version = "0.4", default-features = false, features = ["serde"] }
 entity = { path = "../entity" }
 gloo = "0.11"
 gloo-net = "0.5"
@@ -19,10 +19,10 @@ gloo-utils = "0.2"
 implicit-clone = "0.4"
 instant = { version = "0.1", features = ["wasm-bindgen"] }
 log = "0.4"
-serde = { version = "1", features = [ "derive" ] }
+serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
-serde_valid = "0.16"
-serde-email = { version = "3.0", features = [ "sea-orm" ] }
+serde_valid = "0.19"
+serde-email = { version = "3.0", features = ["sea-orm"] }
 shared = { path = "../shared" }
 strum = "0.25"
 syn = "2.0"
@@ -39,7 +39,26 @@ features = ["csr"]
 
 [dependencies.web-sys]
 version = "0.3"
-features = [ "Blob", "DataTransfer", "Document", "DomStringMap", "DragEvent", "Element", "Event", "EventTarget", "File", "FileList", "FormData", "HtmlCollection", "HtmlDivElement", "HtmlSelectElement", "InputEvent", "MouseEvent", "Storage", "Window" ]
+features = [
+    "Blob",
+    "DataTransfer",
+    "Document",
+    "DomStringMap",
+    "DragEvent",
+    "Element",
+    "Event",
+    "EventTarget",
+    "File",
+    "FileList",
+    "FormData",
+    "HtmlCollection",
+    "HtmlDivElement",
+    "HtmlSelectElement",
+    "InputEvent",
+    "MouseEvent",
+    "Storage",
+    "Window",
+]
 
 [dev-dependencies]
 gloo-utils = "0.2"

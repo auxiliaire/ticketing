@@ -997,7 +997,7 @@ dependencies = [
  "anstream",
  "anstyle",
  "clap_lex",
- "strsim",
+ "strsim 0.10.0",
  "terminal_size",
 ]
 
@@ -1309,7 +1309,7 @@ dependencies = [
  "ident_case",
  "proc-macro2",
  "quote",
- "strsim",
+ "strsim 0.10.0",
  "syn 1.0.109",
 ]
 
@@ -1323,7 +1323,7 @@ dependencies = [
  "ident_case",
  "proc-macro2",
  "quote",
- "strsim",
+ "strsim 0.10.0",
  "syn 2.0.48",
 ]
 
@@ -2361,9 +2361,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.22"
+version = "0.3.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d6250322ef6e60f93f9a2162799302cd6f68f79f6e5d85c8c16f14d1d958178"
+checksum = "4fbd2820c5e49886948654ab546d0688ff24530286bdcf8fca3cefb16d4618eb"
 dependencies = [
  "bytes",
  "fnv",
@@ -2380,9 +2380,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.4.1"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "991910e35c615d8cab86b5ab04be67e6ad24d2bf5f4f11fdbbed26da999bbeab"
+checksum = "51ee2dd2e4f378392eeff5d51618cd9a63166a2513846bbc55f21cfacd9199d4"
 dependencies = [
  "bytes",
  "fnv",
@@ -2577,7 +2577,7 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-util",
- "h2 0.3.22",
+ "h2 0.3.25",
  "http 0.2.11",
  "http-body 0.4.6",
  "httparse",
@@ -2600,7 +2600,7 @@ dependencies = [
  "bytes",
  "futures-channel",
  "futures-util",
- "h2 0.4.1",
+ "h2 0.4.3",
  "http 1.0.0",
  "http-body 1.0.0",
  "httparse",
@@ -3975,7 +3975,7 @@ dependencies = [
  "encoding_rs",
  "futures-core",
  "futures-util",
- "h2 0.3.22",
+ "h2 0.3.25",
  "http 0.2.11",
  "http-body 0.4.6",
  "hyper 0.14.28",
@@ -4549,12 +4549,12 @@ dependencies = [
 
 [[package]]
 name = "serde_valid"
-version = "0.16.3"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0adc7a19d45e581abc6d169c865a0b14b84bb43a9e966d1cca4d733e70f7f35a"
+checksum = "823830f2cbd079b394334566fb500f987deda4369ee20987bb7602b86538c6bf"
 dependencies = [
- "indexmap 1.9.3",
- "itertools 0.10.5",
+ "indexmap 2.1.0",
+ "itertools 0.12.0",
  "num-traits",
  "once_cell",
  "paste",
@@ -4569,23 +4569,23 @@ dependencies = [
 
 [[package]]
 name = "serde_valid_derive"
-version = "0.16.3"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "071237362e267e2a76ffe4434094e089dcd8b5e9d8423ada499e5550dcb0181d"
+checksum = "c8f516303a9e42c725f7e4f81bd7076219995e809e3de095318252a39c61d8fe"
 dependencies = [
  "paste",
  "proc-macro-error",
  "proc-macro2",
  "quote",
- "strsim",
- "syn 1.0.109",
+ "strsim 0.11.1",
+ "syn 2.0.48",
 ]
 
 [[package]]
 name = "serde_valid_literal"
-version = "0.16.3"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f57df292b1d64449f90794fc7a67efca0b21acca91493e64a46418a29bbe36b4"
+checksum = "2eead3603fc2a15619aa393664afa7950f3ae80f276b8c4f0af7e98f8866eb13"
 dependencies = [
  "paste",
  "regex",
@@ -5123,6 +5123,12 @@ name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
+
+[[package]]
+name = "strsim"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "strum"
