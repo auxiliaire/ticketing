@@ -13,7 +13,7 @@ COPY Cargo.lock Cargo.toml ./
 FROM base AS build-server
 RUN cargo build --release
 
-FROM debian:bookworm-slim as prod
+FROM debian:bookworm-slim AS prod
 RUN apt-get update && apt install -y openssl
 COPY --from=build-server /src/target/release/ticketing /bin/
 ENTRYPOINT [ "/bin/ticketing" ]

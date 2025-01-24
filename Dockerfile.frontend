@@ -18,7 +18,7 @@ RUN rustup toolchain install stable \
 WORKDIR $SRCDIR/frontend
 RUN trunk build --release
 
-FROM jitesoft/lighttpd as prod
+FROM jitesoft/lighttpd AS prod
 ENV PORT=8080
 COPY --from=build-client /src/frontend/dist /var/www/html/
 COPY --from=build-client /src/frontend/lighttpd.conf /etc/lighttpd/lighttpd.conf
