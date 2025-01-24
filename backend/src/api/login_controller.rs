@@ -165,7 +165,8 @@ async fn authenticate_raw(
         .get_multiplexed_tokio_connection()
         .await
         .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    con.set(key.as_str(), token)
+    let _: () = con
+        .set(key.as_str(), token)
         .await
         .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 

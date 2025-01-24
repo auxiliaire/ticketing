@@ -137,7 +137,7 @@ pub fn push_to_queue<RV>(
 where
     RV: FromRedisValue,
 {
-    con.hset_multiple::<String, UpdateMessageKey, String, _>(key.clone(), value)?;
+    con.hset_multiple::<String, UpdateMessageKey, String, ()>(key.clone(), value)?;
     con.rpush(TICKET_UPDATES_QUEUE, key)
 }
 
