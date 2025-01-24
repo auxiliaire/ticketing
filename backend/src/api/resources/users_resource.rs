@@ -26,9 +26,9 @@ pub fn router() -> Router {
     Router::new()
         .route("/users", post(post_user))
         .route("/users", get(get_users))
-        .route("/users/:id", get(get_user))
-        .route("/users/:id", put(put_user))
-        .route("/users/:id", delete(delete_user))
+        .route("/users/{id}", get(get_user))
+        .route("/users/{id}", put(put_user))
+        .route("/users/{id}", delete(delete_user))
 }
 
 async fn get_users(

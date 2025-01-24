@@ -39,11 +39,11 @@ pub fn router() -> Router {
         .route("/tickets", post(post_ticket))
         .route("/tickets", get(get_tickets))
         .route("/tickets/unassigned", get(get_unassigned_tickets))
-        .route("/tickets/:id", get(get_ticket))
-        .route("/tickets/:id", put(put_ticket))
-        .route("/tickets/:id", delete(delete_ticket))
-        .route("/tickets/:id/subscribe", post(subscribe_to_ticket))
-        .route("/tickets/:id/is_subscribed", get(is_subscribed))
+        .route("/tickets/{id}", get(get_ticket))
+        .route("/tickets/{id}", put(put_ticket))
+        .route("/tickets/{id}", delete(delete_ticket))
+        .route("/tickets/{id}/subscribe", post(subscribe_to_ticket))
+        .route("/tickets/{id}/is_subscribed", get(is_subscribed))
 }
 
 async fn get_tickets(

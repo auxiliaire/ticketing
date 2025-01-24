@@ -33,11 +33,11 @@ pub fn router() -> Router {
     Router::new()
         .route("/projects", post(post_project))
         .route("/projects", get(get_projects))
-        .route("/projects/:id", get(get_project))
-        .route("/projects/:id/tickets", get(get_project_tickets))
-        .route("/projects/:id/tickets", post(post_project_tickets))
-        .route("/projects/:id", put(put_project))
-        .route("/projects/:id", delete(delete_project))
+        .route("/projects/{id}", get(get_project))
+        .route("/projects/{id}/tickets", get(get_project_tickets))
+        .route("/projects/{id}/tickets", post(post_project_tickets))
+        .route("/projects/{id}", put(put_project))
+        .route("/projects/{id}", delete(delete_project))
 }
 
 async fn get_projects(

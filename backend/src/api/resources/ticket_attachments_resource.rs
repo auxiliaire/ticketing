@@ -29,8 +29,8 @@ use tempfile::NamedTempFile;
 
 pub fn router() -> Router {
     Router::new()
-        .route("/tickets/:id/attachments", post(upload_file))
-        .route("/tickets/:id/attachments/:filename", get(download_file))
+        .route("/tickets/{id}/attachments", post(upload_file))
+        .route("/tickets/{id}/attachments/{filename}", get(download_file))
 }
 
 #[derive(TryFromMultipart)]
