@@ -46,6 +46,8 @@ This is an integrated Rust backend and frontend (with Yew) application sample im
 
 ![Preview Image](https://raw.githubusercontent.com/auxiliaire/ticketing/testing/gallery/project-ticket-board-in-progress.jpg)
 
+![Preview Image](https://raw.githubusercontent.com/auxiliaire/ticketing/testing/gallery/project-ticket-board-dark.png)
+
 ## Starting
 
 ### Prerequisites
