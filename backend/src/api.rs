@@ -84,14 +84,16 @@ pub fn router(store: Client, db: DatabaseConnection, queue: AsyncQueue<NoTls>) -
 
     let mail_config = MailConfig::default();
     let notification_service = NotificationService::new(mail_config);
-    notification_service.send_email(
+    if let Err(e) = notification_service.send_email(
         Message::builder()
             .from("System <system@example.com>".parse().unwrap())
             .to(ADMIN_EMAIL.parse().unwrap())
             .subject("NotificationService initialized")
             .body("NotificationService has just been initialized.\nApplication was probably started/restarted.".to_owned())
             .unwrap(),
-    ).context("Test email was not successful").unwrap();
+    ).context("Test email was not successful") {
+        tracing::warn!("Unable to initialize Notification Service. Reason: {}", e);
+    }
 
     let mut q = queue.clone();
     let task = QueueMailer {};
