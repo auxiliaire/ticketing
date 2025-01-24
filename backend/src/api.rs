@@ -98,7 +98,9 @@ pub fn router(store: Client, db: DatabaseConnection, queue: AsyncQueue<NoTls>) -
     let mut q = queue.clone();
     let task = QueueMailer {};
     tokio::spawn(async move {
-        q.schedule_task(&task as &dyn AsyncRunnable).await.unwrap();
+        if let Err(e) = q.schedule_task(&task as &dyn AsyncRunnable).await {
+            tracing::warn!("Unable to schedule task. Reason: {}", e);
+        }
     });
 
     Router::new()
