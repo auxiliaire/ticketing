@@ -1,4 +1,4 @@
-use super::consts::ICON_CLASS;
+use crate::components::consts::ICON_CLASS;
 use implicit_clone::unsync::IString;
 
 pub fn get_icon_classes(icon: IString) -> String {

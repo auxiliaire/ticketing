@@ -1,18 +1,24 @@
+use super::get_api_url;
 use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
-use shared::api::{error::error_response::ErrorResponse, get_api_url};
+use shared::api::error::error_response::ErrorResponse;
+use shared::dtos::preferences_dto::PreferencesDto;
 use shared::dtos::user_dto::UserDto;
+use uuid::Uuid;
 use yew::{platform::spawn_local, Callback};
 
 const USERS_ENDPOINT: &str = "users";
+const REGISTER_ENDPOINT: &str = "register";
+const PREFERENCES_ENDPOINT: &str = "preferences";
 
 pub struct UserService;
 
 impl UserService {
-    pub fn fetch(id: u64, callback: Callback<UserDto>) {
+    pub fn fetch(jwt: String, id: Uuid, callback: Callback<UserDto>) {
         spawn_local(async move {
             let user: UserDto =
                 Request::get(format!("{}{}/{}", get_api_url(), USERS_ENDPOINT, id).as_str())
+                    .header("Authorization", format!("Bearer {}", jwt).as_str())
                     .send()
                     .await
                     .unwrap()
@@ -25,6 +31,7 @@ impl UserService {
     }
 
     pub fn fetch_all(
+        jwt: String,
         search: Option<IString>,
         sort: Option<IString>,
         order: Option<IString>,
@@ -42,7 +49,14 @@ impl UserService {
             if let Some(o) = order {
                 request_builder = request_builder.query([("order", o.as_str())]);
             }
-            let list: Vec<UserDto> = request_builder.send().await.unwrap().json().await.unwrap();
+            let list: Vec<UserDto> = request_builder
+                .header("Authorization", format!("Bearer {}", jwt).as_str())
+                .send()
+                .await
+                .unwrap()
+                .json()
+                .await
+                .unwrap();
 
             callback.emit(list);
         });
@@ -54,7 +68,7 @@ impl UserService {
         callback_error: Callback<ErrorResponse>,
     ) {
         spawn_local(async move {
-            let res = Request::post(format!("{}{}", get_api_url(), USERS_ENDPOINT).as_str())
+            let res = Request::post(format!("{}{}", get_api_url(), REGISTER_ENDPOINT).as_str())
                 .json(&user)
                 .unwrap()
                 .send()
@@ -69,6 +83,65 @@ impl UserService {
                                 serde_json::from_str(text.as_str());
                             match returned_user_result {
                                 Ok(returned_user) => callback.emit(returned_user),
+                                Err(_) => {
+                                    let returned_error_result: Result<ErrorResponse, _> =
+                                        serde_json::from_str(text.as_str());
+                                    match returned_error_result {
+                                        Ok(error_response) => callback_error.emit(error_response),
+                                        Err(e) => {
+                                            callback_error.emit(ErrorResponse::from(e.to_string()))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
+                    }
+                }
+                Err(e) => callback_error.emit(ErrorResponse::from(e.to_string())),
+            }
+        });
+    }
+
+    pub fn fetch_preferences(jwt: String, callback: Callback<PreferencesDto>) {
+        spawn_local(async move {
+            let prefs: PreferencesDto =
+                Request::get(format!("{}{}", get_api_url(), PREFERENCES_ENDPOINT).as_str())
+                    .header("Authorization", format!("Bearer {}", jwt).as_str())
+                    .send()
+                    .await
+                    .unwrap()
+                    .json()
+                    .await
+                    .unwrap();
+
+            callback.emit(prefs);
+        });
+    }
+
+    pub fn update_preferences(
+        jwt: String,
+        preferences: PreferencesDto,
+        callback: Callback<PreferencesDto>,
+        callback_error: Callback<ErrorResponse>,
+    ) {
+        spawn_local(async move {
+            let res = Request::post(format!("{}{}", get_api_url(), PREFERENCES_ENDPOINT).as_str())
+                .header("Authorization", format!("Bearer {}", jwt).as_str())
+                .json(&preferences)
+                .unwrap()
+                .send()
+                .await;
+
+            match res {
+                Ok(resp) => {
+                    let text_result = resp.text().await;
+                    match text_result {
+                        Ok(text) => {
+                            let returned_prefs_result: Result<PreferencesDto, _> =
+                                serde_json::from_str(text.as_str());
+                            match returned_prefs_result {
+                                Ok(returned_prefs) => callback.emit(returned_prefs),
                                 Err(_) => {
                                     let returned_error_result: Result<ErrorResponse, _> =
                                         serde_json::from_str(text.as_str());

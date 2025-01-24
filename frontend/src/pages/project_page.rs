@@ -1,3 +1,4 @@
+use crate::app_state::AppStateContext;
 use crate::components::bulma::tables::data_sources::ticket_data_source::TicketDataSource;
 use crate::components::bulma::tables::table::Table;
 use crate::components::bulma::tables::table_data_source::ITableDataSource;
@@ -9,14 +10,15 @@ use crate::components::dialogs::select_dialog::SelectDialog;
 use crate::components::forms::ticket_form::TicketForm;
 use crate::components::option_data::OptionData;
 use crate::services::project_service::ProjectService;
+use crate::services::ticket_service::TicketService;
 use crate::services::user_service::UserService;
-use crate::{AppState, Dialog, Route};
-use frontend::services::ticket_service::TicketService;
+use crate::{app_state::AppState, dialog::Dialog, route::Route};
 use implicit_clone::{
     sync::{IArray, IString},
     unsync,
 };
 use shared::api::error::error_response::ErrorResponse;
+use shared::dtos::identity::Identity;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::{ITicketDto, TicketDto, TicketField, TicketValue};
 use shared::dtos::user_dto::UserDto;
@@ -30,7 +32,7 @@ impl OptionData for TicketDto {
     }
 
     fn get_label(&self) -> implicit_clone::unsync::IString {
-        implicit_clone::unsync::IString::from(format!("{}", self.title.as_str()))
+        implicit_clone::unsync::IString::from(self.title.as_str().to_string())
     }
 }
 
@@ -40,10 +42,11 @@ pub struct Props {
 }
 
 pub enum ProjectPageMsg {
+    ContextChanged(AppStateContext),
     FetchedProject(ProjectDto),
     FetchedUser(UserDto),
     FetchedTickets(Vec<TicketDto>),
-    ContextChanged(Rc<AppState>),
+    FetchUnassigned(Callback<Vec<TicketDto>>),
     OpenSelectDialog(),
     OpenFormDialog(),
     SelectedTickets(IArray<u64>),
@@ -56,26 +59,20 @@ pub struct ProjectPage {
     project: ProjectDto,
     user: Option<ButtonLinkData<Route>>,
     ticket_list: Vec<TicketDto>,
-    app_state: Rc<AppState>,
-    _listener: ContextHandle<Rc<AppState>>,
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
 }
+
 impl Component for ProjectPage {
     type Message = ProjectPageMsg;
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        ProjectService::fetch(
-            ctx.props().id,
-            ctx.link().callback(ProjectPageMsg::FetchedProject),
-        );
-        ProjectService::fetch_assigned_tickets(
-            ctx.props().id,
-            ctx.link().callback(ProjectPageMsg::FetchedTickets),
-        );
         let (app_state, _listener) = ctx
             .link()
-            .context::<Rc<AppState>>(ctx.link().callback(ProjectPageMsg::ContextChanged))
+            .context::<AppStateContext>(ctx.link().callback(ProjectPageMsg::ContextChanged))
             .expect("context to be set");
+        ProjectPage::init(&app_state, ctx);
         Self {
             project: ProjectDto::default(),
             user: None,
@@ -86,10 +83,13 @@ impl Component for ProjectPage {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        ProjectService::fetch(
-            ctx.props().id,
-            ctx.link().callback(ProjectPageMsg::FetchedProject),
-        );
+        if let Some(Identity { token, .. }) = &self.app_state.identity {
+            ProjectService::fetch(
+                token.to_string(),
+                ctx.props().id,
+                ctx.link().callback(ProjectPageMsg::FetchedProject),
+            );
+        }
         true
     }
 
@@ -97,16 +97,19 @@ impl Component for ProjectPage {
         match msg {
             ProjectPageMsg::FetchedProject(project) => {
                 self.project = project;
-                UserService::fetch(
-                    self.project.user_id,
-                    ctx.link().callback(ProjectPageMsg::FetchedUser),
-                );
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
+                    UserService::fetch(
+                        token.to_string(),
+                        self.project.user_id,
+                        ctx.link().callback(ProjectPageMsg::FetchedUser),
+                    );
+                }
             }
             ProjectPageMsg::FetchedUser(user) => {
                 self.user = Some(ButtonLinkData {
                     label: IString::from(user.name),
                     to: Route::User {
-                        id: user.id.unwrap(),
+                        id: user.public_id.unwrap(),
                     },
                 });
             }
@@ -118,7 +121,7 @@ impl Component for ProjectPage {
             }
             ProjectPageMsg::OpenSelectDialog() => {
                 let optionsapi: Callback<Callback<Vec<TicketDto>>> =
-                    Callback::from(TicketService::fetch_unassigned);
+                    ctx.link().callback(ProjectPageMsg::FetchUnassigned);
                 let onselect: Callback<IArray<u64>> =
                     ctx.link().callback(ProjectPageMsg::SelectedTickets);
                 let dialog = Rc::new(Dialog {
@@ -127,7 +130,7 @@ impl Component for ProjectPage {
                         <SelectDialog<u64, TicketDto> {optionsapi} {onselect} />
                     },
                 });
-                self.app_state.update_dialog.emit(dialog);
+                AppState::update_dialog(&self.app_state, dialog);
             }
             ProjectPageMsg::OpenFormDialog() => {
                 let dialog = Rc::new(Dialog {
@@ -138,42 +141,61 @@ impl Component for ProjectPage {
                         </FormDialog>
                     },
                 });
-                self.app_state.update_dialog.emit(dialog);
+                AppState::update_dialog(&self.app_state, dialog);
             }
             ProjectPageMsg::SelectedTickets(tickets) => {
-                let callback = ctx.link().callback(ProjectPageMsg::FetchedTickets);
-                ProjectService::assign_tickets(
-                    ctx.props().id,
-                    tickets.iter().collect::<Vec<u64>>(),
-                    callback,
-                );
-                self.app_state.close_dialog.emit(());
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
+                    let callback = ctx.link().callback(ProjectPageMsg::FetchedTickets);
+                    ProjectService::assign_tickets(
+                        token.to_string(),
+                        ctx.props().id,
+                        tickets.iter().collect::<Vec<u64>>(),
+                        callback,
+                    );
+                }
+                AppState::close_dialog(&self.app_state);
             }
             ProjectPageMsg::SubmittedForm((ticket, callback_error)) => {
                 log::debug!("Form submitted: {}", ticket);
-                TicketService::create(
-                    ticket,
-                    ctx.link().callback(ProjectPageMsg::TicketCreated),
-                    callback_error,
-                );
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
+                    TicketService::create(
+                        token.to_string(),
+                        ticket,
+                        ctx.link().callback(ProjectPageMsg::TicketCreated),
+                        callback_error,
+                    );
+                }
             }
-            ProjectPageMsg::SortTickets(sortdata) => TicketService::fetch_all(
-                Some(ctx.props().id),
-                None,
-                sortdata.sort.as_ref().map(|s| s.sort.clone()),
-                sortdata
-                    .sort
-                    .as_ref()
-                    .map(|s| unsync::IString::from(s.order.to_string())),
-                ctx.link().callback(ProjectPageMsg::FetchedTickets),
-            ),
+            ProjectPageMsg::SortTickets(sortdata) => {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
+                    TicketService::fetch_all(
+                        token.to_string(),
+                        Some(ctx.props().id),
+                        None,
+                        sortdata.sort.as_ref().map(|s| s.sort.clone()),
+                        sortdata
+                            .sort
+                            .as_ref()
+                            .map(|s| unsync::IString::from(s.order.to_string())),
+                        ctx.link().callback(ProjectPageMsg::FetchedTickets),
+                    );
+                }
+            }
             ProjectPageMsg::TicketCreated(ticket) => {
                 log::debug!("Created: {}", ticket);
-                self.app_state.close_dialog.emit(());
-                ProjectService::fetch_assigned_tickets(
-                    ctx.props().id,
-                    ctx.link().callback(ProjectPageMsg::FetchedTickets),
-                );
+                AppState::close_dialog(&self.app_state);
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
+                    ProjectService::fetch_assigned_tickets(
+                        token.to_string(),
+                        ctx.props().id,
+                        ctx.link().callback(ProjectPageMsg::FetchedTickets),
+                    );
+                }
+            }
+            ProjectPageMsg::FetchUnassigned(consumer) => {
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
+                    TicketService::fetch_unassigned(token.to_string(), consumer);
+                }
             }
         }
         true
@@ -271,6 +293,23 @@ impl Component for ProjectPage {
                     </div>
                 </div>
             </div>
+        }
+    }
+}
+
+impl ProjectPage {
+    fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
+        if let Some(Identity { token, .. }) = &app_state.identity {
+            ProjectService::fetch(
+                token.to_string(),
+                ctx.props().id,
+                ctx.link().callback(ProjectPageMsg::FetchedProject),
+            );
+            ProjectService::fetch_assigned_tickets(
+                token.to_string(),
+                ctx.props().id,
+                ctx.link().callback(ProjectPageMsg::FetchedTickets),
+            );
         }
     }
 }

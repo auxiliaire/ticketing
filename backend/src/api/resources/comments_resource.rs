@@ -23,9 +23,9 @@ pub fn router() -> Router {
     Router::new()
         .route("/comments", post(post_comment))
         .route("/comments", get(get_comments))
-        .route("/comments/:id", get(get_comment))
-        .route("/comments/:id", put(put_comment))
-        .route("/comments/:id", delete(delete_comment))
+        .route("/comments/{id}", get(get_comment))
+        .route("/comments/{id}", put(put_comment))
+        .route("/comments/{id}", delete(delete_comment))
 }
 
 async fn get_comments(

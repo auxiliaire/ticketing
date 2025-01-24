@@ -1,5 +1,5 @@
-use super::helper::empty_string_as_none;
 use serde::{de::Visitor, Deserialize, Serialize};
+use shared::api::helper::empty_string_as_none;
 
 pub struct Order(pub sea_orm::sea_query::types::Order);
 
@@ -19,7 +19,7 @@ impl Serialize for Order {
 
 struct OrderingVisitor;
 
-impl<'de> Visitor<'de> for OrderingVisitor {
+impl Visitor<'_> for OrderingVisitor {
     type Value = Order;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {

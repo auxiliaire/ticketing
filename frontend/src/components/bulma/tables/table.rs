@@ -127,7 +127,10 @@ where
         });
 
         match self.datasource.data.is_empty() {
-            true => html! { <em>{ self.datasource.empty_label.clone() }</em> },
+            true => {
+                let label = self.datasource.empty_label.clone();
+                html! { <em>{ label.as_str() }</em> }
+            }
             false => html! {
                 <table class={classes!(self.get_table_classes(ctx))}>
                     { header }

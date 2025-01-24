@@ -43,6 +43,14 @@ impl UserValidation {
         let numbers = "0123456789";
         let special_chars = ".:?!{}%#*-_+";
         let lower = "abcdefghijklmnopqrstuvwxyz";
+        log::debug!("len: {}", password.len());
+        log::debug!("num: {}", password.contains(|c| numbers.contains(c)));
+        log::debug!("spc: {}", password.contains(|c| special_chars.contains(c)));
+        log::debug!("low: {}", password.contains(|c| lower.contains(c)));
+        log::debug!(
+            "upp: {}",
+            password.contains(|c| lower.to_uppercase().contains(c))
+        );
         password.len() > 8
             && password.len() < 20
             && password.contains(|c| numbers.contains(c))

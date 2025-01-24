@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    io.kompose.network/ticketing-ticketing-net: "true"
+    io.kompose.service: mariadb
+  name: mariadb
+spec:
+  serviceName: mariadb
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: mariadb
+  template:
+    metadata:
+      labels:
+        io.kompose.service: mariadb
+    spec:
+      containers:
+        - args:
+            - --init-file
+            - /data/init.sql
+          env:
+            - name: MARIADB_DATABASE
+              value: ticketing
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-password
+                  key: mariadb_password
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-root-password
+                  key: mariadb_root_password
+            - name: MARIADB_USER
+              value: ticketing
+          image: mariadb
+          name: mariadb
+          ports:
+            - containerPort: 3306
+              hostPort: 3306
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mariadb-data
+            - mountPath: /data
+              name: mariadb-init
+      hostname: mariadb
+      restartPolicy: Always
+      volumes:
+        - name: mariadb-data
+          persistentVolumeClaim:
+            claimName: mariadb-data-pvc
+        - name: mariadb-init
+          persistentVolumeClaim:
+            claimName: mariadb-init-pvc

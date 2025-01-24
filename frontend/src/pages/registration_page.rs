@@ -1,5 +1,7 @@
-use crate::{components::forms::registration_form::RegistrationForm, Route};
-use frontend::services::user_service::UserService;
+use crate::{
+    components::forms::registration_form::RegistrationForm, route::Route,
+    services::user_service::UserService,
+};
 use shared::{api::error::error_response::ErrorResponse, dtos::user_dto::UserDto};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -28,7 +30,7 @@ impl Component for RegistrationPage {
                 log::debug!("Created: {}", user);
                 let navigator = ctx.link().navigator().unwrap();
                 navigator.replace(&Route::User {
-                    id: user.id.unwrap(),
+                    id: user.public_id.unwrap(),
                 });
             }
         }

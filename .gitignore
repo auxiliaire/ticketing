@@ -1,5 +1,13 @@
 /target
 /frontend/dist
+/frontend/target
+/.idea
+/.pytest_cache
 /.vscode
 /.VSCodeCounter
-.env
+/k8s/*-secret.yaml
+*.env
+__pycache__
+node_modules
+mysqldump.sql
+secret_*.txt

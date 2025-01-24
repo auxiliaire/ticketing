@@ -1,16 +1,18 @@
-use super::{super::event_helper::get_values_from_select_change, super::option_data::OptionData};
-use crate::AppState;
+use super::super::option_data::OptionData;
+use crate::app_state::{AppState, AppStateContext};
+use crate::helpers::event_helper::get_values_from_select_change;
 use implicit_clone::{sync::IArray, ImplicitClone};
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
 use yew::{
     html, html::onchange::Event, Callback, Component, Context, ContextHandle, Html, Properties,
 };
 
 pub enum SelectDialogMsg<V> {
     FetchedOptions(Vec<V>),
-    ContextChanged(Rc<AppState>),
+    ContextChanged(AppStateContext),
     ToggleOption(Event),
     SelectOptions(),
+    CloseDialog,
 }
 
 #[derive(Clone, PartialEq, Properties)]
@@ -29,8 +31,8 @@ where
 {
     options: Vec<V>,
     selected_keys: IArray<K>,
-    app_state: Rc<AppState>,
-    _listener: ContextHandle<Rc<AppState>>,
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
 }
 
 impl<K, V> Component for SelectDialog<K, V>
@@ -52,7 +54,7 @@ where
             .emit(ctx.link().callback(SelectDialogMsg::FetchedOptions));
         let (app_state, _listener) = ctx
             .link()
-            .context::<Rc<AppState>>(ctx.link().callback(SelectDialogMsg::ContextChanged))
+            .context::<AppStateContext>(ctx.link().callback(SelectDialogMsg::ContextChanged))
             .expect("context to be set");
         Self {
             options: vec![],
@@ -83,6 +85,7 @@ where
             SelectDialogMsg::SelectOptions() => {
                 ctx.props().onselect.emit(self.selected_keys.clone());
             }
+            SelectDialogMsg::CloseDialog => AppState::close_dialog(&self.app_state),
         }
         true
     }
@@ -92,6 +95,7 @@ where
             html! { <option value={v.get_key()}>{v.get_label()}</option> }
         });
 
+        let on_close_click = ctx.link().callback(|_| SelectDialogMsg::CloseDialog);
         let on_select_change = ctx.link().callback(SelectDialogMsg::ToggleOption);
         let on_select = |_| SelectDialogMsg::SelectOptions();
 
@@ -99,7 +103,7 @@ where
             <>
                 <header class="modal-card-head">
                     <p class="modal-card-title">{ "Select tickets to assign" }</p>
-                    <button class="delete" aria-label="close" onclick={self.app_state.close_dialog.reform(move |_| ())}></button>
+                    <button class="delete" aria-label="close" onclick={on_close_click.clone()}></button>
                 </header>
                 <section class="modal-card-body">
                     <div class="select is-multiple is-fullwidth">
@@ -110,7 +114,7 @@ where
                 </section>
                 <footer class="modal-card-foot">
                     <button class="button is-link" onclick={ctx.link().callback(on_select)}>{ "Save changes" }</button>
-                    <button class="button is-link is-light" onclick={self.app_state.close_dialog.reform(move |_| ())}>{ "Cancel" }</button>
+                    <button class="button is-link is-light" onclick={on_close_click}>{ "Cancel" }</button>
                 </footer>
             </>
         }

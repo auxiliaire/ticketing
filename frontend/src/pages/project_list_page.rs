@@ -1,4 +1,5 @@
 use crate::{
+    app_state::AppStateContext,
     components::bulma::{
         pagination::Pagination,
         tables::{
@@ -6,8 +7,8 @@ use crate::{
             table_data_source::ITableDataSource, table_head_data::TableHeadData,
         },
     },
+    route::Route,
     services::project_service::ProjectService,
-    Route,
 };
 use implicit_clone::unsync::IString;
 use shared::dtos::{
@@ -21,6 +22,7 @@ const DEFAULT_LIMIT: u64 = 5;
 const DEFAULT_OFFSET: u64 = 0;
 
 pub enum Msg {
+    ContextChanged(AppStateContext),
     FetchedProjects(Page<ProjectDto>),
     SortProjects(TableHeadData),
     UpdateOffset(u64),
@@ -33,22 +35,29 @@ pub struct ProjectListPage {
     order: Option<IString>,
     limit: u64,
     offset: u64,
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
 }
 impl Component for ProjectListPage {
     type Message = Msg;
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<AppStateContext>(ctx.link().callback(Msg::ContextChanged))
+            .expect("context to be set");
         let sort = None;
         let order = None;
         let limit = DEFAULT_LIMIT;
         let offset = DEFAULT_OFFSET;
-        ProjectService::fetch_all(
+        ProjectListPage::init(
+            &app_state,
+            ctx,
             sort.clone(),
             order.clone(),
             Some(limit),
             Some(offset),
-            ctx.link().callback(Msg::FetchedProjects),
         );
         Self {
             total: 0,
@@ -57,11 +66,16 @@ impl Component for ProjectListPage {
             order,
             limit,
             offset,
+            app_state,
+            _listener,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::ContextChanged(state) => {
+                self.app_state = state;
+            }
             Msg::FetchedProjects(project_page) => {
                 self.total = project_page.total;
                 self.list = project_page.list;
@@ -74,22 +88,24 @@ impl Component for ProjectListPage {
                     .sort
                     .as_ref()
                     .map(|s| IString::from(s.order.to_string()));
-                ProjectService::fetch_all(
+                ProjectListPage::init(
+                    &self.app_state,
+                    ctx,
                     self.sort.clone(),
                     self.order.clone(),
                     Some(self.limit),
                     Some(self.offset),
-                    ctx.link().callback(Msg::FetchedProjects),
                 )
             }
             Msg::UpdateOffset(offset) => {
                 self.offset = offset;
-                ProjectService::fetch_all(
+                ProjectListPage::init(
+                    &self.app_state,
+                    ctx,
                     self.sort.clone(),
                     self.order.clone(),
                     Some(self.limit),
                     Some(self.offset),
-                    ctx.link().callback(Msg::FetchedProjects),
                 )
             }
         }
@@ -135,6 +151,28 @@ impl Component for ProjectListPage {
                     </div>
                 </div>
             </div>
+        }
+    }
+}
+
+impl ProjectListPage {
+    fn init(
+        app_state: &AppStateContext,
+        ctx: &Context<Self>,
+        sort: Option<IString>,
+        order: Option<IString>,
+        limit: Option<u64>,
+        offset: Option<u64>,
+    ) {
+        if app_state.identity.is_some() {
+            ProjectService::fetch_all(
+                app_state.identity.clone().unwrap().token.clone(),
+                sort,
+                order,
+                limit,
+                offset,
+                ctx.link().callback(Msg::FetchedProjects),
+            );
         }
     }
 }

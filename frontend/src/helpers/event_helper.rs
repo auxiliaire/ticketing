@@ -1,8 +1,17 @@
 use implicit_clone::sync::IArray;
 use std::sync::Arc;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
-use web_sys::{DragEvent, Event, HtmlInputElement, HtmlSelectElement};
+use web_sys::{DragEvent, Event, File, HtmlInputElement, HtmlSelectElement};
 use yew::AttrValue;
+
+pub fn get_file_from_change_event(e: Event) -> Option<File> {
+    let event: Event = e.dyn_into().unwrap_throw();
+    let event_target = event.target().unwrap_throw();
+    if let Some(target) = event_target.dyn_ref::<HtmlInputElement>() {
+        return target.files().and_then(|files| files.get(0));
+    }
+    None
+}
 
 pub fn get_value_from_input_event(e: Event) -> AttrValue {
     let event: Event = e.dyn_into().unwrap_throw();

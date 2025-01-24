@@ -1,6 +1,5 @@
 use crate::pages::project_page::ProjectPageMsg;
-use crate::services::project_service::ProjectService;
-use crate::Route;
+use crate::route::Route;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -8,12 +7,14 @@ use yew_router::prelude::*;
 pub struct Props {
     pub name: AttrValue,
     pub id: Option<u64>,
+    // pub on_change: Callback<u64>,
 }
 
 pub struct ProjectCard {
     name: AttrValue,
     id: Option<u64>,
 }
+
 impl Component for ProjectCard {
     type Message = ProjectPageMsg;
     type Properties = Props;
@@ -26,14 +27,19 @@ impl Component for ProjectCard {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        if let Some(id) = ctx.props().id {
-            ProjectService::fetch(id, ctx.link().callback(ProjectPageMsg::FetchedProject));
+        if let Some(_id) = ctx.props().id {
+            todo!("Check whether this fetch is really needed");
+            //ProjectService::fetch(
+            //    token,
+            //    id,
+            //    ctx.link().callback(ProjectPageMsg::FetchedProject),
+            //);
         }
         true
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        let Self { name, id } = self;
+        let Self { name, id, .. } = self;
         html! {
             <div class="card">
                 <div class="card-content">

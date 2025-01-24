@@ -1,14 +1,15 @@
+use crate::app_state::AppStateContext;
 use crate::components::button_link::ButtonLinkData;
 use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
 use crate::components::icon_link::{IconLink, IconLinkData};
 use crate::components::priority_tag::PriorityTag;
+use crate::route::Route;
 use crate::services::project_service::ProjectService;
-use crate::Route;
+use crate::services::user_service::UserService;
 use crate::{components::bulma::field::Field, services::ticket_service::TicketService};
 use entity::sea_orm_active_enums::Priority;
-use frontend::services::user_service::UserService;
 use gloo_timers::callback::Timeout;
 use implicit_clone::{
     sync,
@@ -16,6 +17,7 @@ use implicit_clone::{
 };
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
+use shared::dtos::identity::Identity;
 use shared::dtos::project_dto::ProjectDto;
 use shared::dtos::ticket_dto::{TicketDto, TicketField};
 use shared::dtos::user_dto::UserDto;
@@ -27,6 +29,7 @@ use shared::validation::validation_messages::{
 use std::rc::Rc;
 use std::str::FromStr;
 use strum::{EnumCount, IntoEnumIterator};
+use uuid::Uuid;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -43,6 +46,7 @@ pub struct Props {
 }
 
 pub enum TicketMsg {
+    ContextChanged(AppStateContext),
     DialogContextChanged(Rc<DialogContext>),
     FetchedTicket(TicketDto),
     FetchedProject(ProjectDto),
@@ -54,7 +58,7 @@ pub enum TicketMsg {
     UpdatePriority(AttrValue),
     UpdateStatus(AttrValue),
     UpdateOwner(AttrValue),
-    UpdateUserId((u64, IString)),
+    UpdateUserId((Uuid, IString)),
     SearchUser(AttrValue),
     ToggleSearchDropdownDelayed(bool),
     ToggleSearchDropdown(bool),
@@ -65,6 +69,8 @@ pub enum TicketMsg {
 }
 
 pub struct TicketForm {
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
     dialog_context: Option<Rc<DialogContext>>,
     ticket: TicketDto,
     project: Option<ButtonLinkData<Route>>,
@@ -74,7 +80,7 @@ pub struct TicketForm {
     user_search: IString,
     search_timeout: Option<Timeout>,
     dropdown_enabled: bool,
-    user_list: IArray<(u64, IString)>,
+    user_list: IArray<(IString, IString)>,
     on_submit: Callback<(TicketDto, Callback<ErrorResponse>)>,
     common_error: IValidationMessages,
     title_error: IValidationMessages,
@@ -90,6 +96,10 @@ impl Component for TicketForm {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<AppStateContext>(ctx.link().callback(TicketMsg::ContextChanged))
+            .expect("context to be set");
         let option_dialog_context = ctx
             .link()
             .context::<Rc<DialogContext>>(ctx.link().callback(TicketMsg::DialogContextChanged));
@@ -99,10 +109,10 @@ impl Component for TicketForm {
             false => TicketStatus::Created,
         };
 
-        if let Some(ticket_id) = ctx.props().ticketid {
-            TicketService::fetch(ticket_id, ctx.link().callback(TicketMsg::FetchedTicket));
-        }
+        TicketForm::init(&app_state, ctx);
         Self {
+            app_state,
+            _listener,
             dialog_context,
             ticket: TicketDto {
                 project_id: ctx.props().projectid,
@@ -131,19 +141,29 @@ impl Component for TicketForm {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            TicketMsg::ContextChanged(state) => {
+                self.app_state = state;
+            }
             TicketMsg::DialogContextChanged(context) => {
                 self.dialog_context = Some(context);
             }
             TicketMsg::FetchedTicket(ticket) => {
                 self.ticket = ticket;
-                if let Some(project_id) = self.ticket.project_id {
-                    ProjectService::fetch(
-                        project_id,
-                        ctx.link().callback(TicketMsg::FetchedProject),
-                    );
-                }
-                if let Some(user_id) = self.ticket.user_id {
-                    UserService::fetch(user_id, ctx.link().callback(TicketMsg::FetchedUser));
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
+                    if let Some(project_id) = self.ticket.project_id {
+                        ProjectService::fetch(
+                            token.clone(),
+                            project_id,
+                            ctx.link().callback(TicketMsg::FetchedProject),
+                        );
+                    }
+                    if let Some(user_id) = &self.ticket.user_id {
+                        UserService::fetch(
+                            token.clone(),
+                            *user_id,
+                            ctx.link().callback(TicketMsg::FetchedUser),
+                        );
+                    }
                 }
             }
             TicketMsg::FetchedProject(project) => {
@@ -160,7 +180,7 @@ impl Component for TicketForm {
                 self.user = Some(ButtonLinkData {
                     label,
                     to: Route::User {
-                        id: user.id.unwrap(),
+                        id: user.public_id.unwrap(),
                     },
                 });
                 self.user_search = IString::from(user_name);
@@ -168,7 +188,10 @@ impl Component for TicketForm {
             TicketMsg::FetchedUsers(list) => {
                 let mut v = vec![];
                 for u in list {
-                    v.push((u.id.unwrap(), IString::from(u.name.clone())));
+                    v.push((
+                        IString::from(u.public_id.unwrap().to_string()),
+                        IString::from(u.name.clone()),
+                    ));
                 }
                 self.user_list = IArray::from(v);
             }
@@ -193,10 +216,10 @@ impl Component for TicketForm {
             }
             TicketMsg::UpdateOwner(value) => {
                 self.owner = value;
-                self.ticket.user_id = self.owner.as_str().parse::<u64>().ok();
+                self.ticket.user_id = Uuid::parse_str(self.owner.as_str()).ok();
             }
             TicketMsg::UpdateUserId((id, name)) => {
-                self.owner = IString::from(format!("{}", id));
+                self.owner = IString::from(id.to_string());
                 self.ticket.user_id = Some(id);
                 self.user_search = name;
             }
@@ -208,9 +231,15 @@ impl Component for TicketForm {
                 if let Some(timeout) = self.search_timeout.take() {
                     timeout.cancel();
                 }
-                self.search_timeout = Some(Timeout::new(SEARCH_DELAY_MS, || {
-                    UserService::fetch_all(Some(q), None, None, fetch_callback)
-                }));
+                self.search_timeout =
+                    self.app_state
+                        .identity
+                        .clone()
+                        .map(|Identity { token, .. }| {
+                            Timeout::new(SEARCH_DELAY_MS, || {
+                                UserService::fetch_all(token, Some(q), None, None, fetch_callback)
+                            })
+                        })
             }
             TicketMsg::ToggleSearchDropdownDelayed(value) => {
                 let toggle_search_dropdown = ctx.link().callback(TicketMsg::ToggleSearchDropdown);
@@ -303,13 +332,25 @@ impl Component for TicketForm {
 }
 
 impl TicketForm {
+    fn init(app_state: &AppStateContext, ctx: &Context<Self>) {
+        if let Some(Identity { token, .. }) = &app_state.identity {
+            if let Some(ticket_id) = ctx.props().ticketid {
+                TicketService::fetch(
+                    token.to_string(),
+                    ticket_id,
+                    ctx.link().callback(TicketMsg::FetchedTicket),
+                );
+            }
+        }
+    }
+
     fn soft_body(&self, ctx: &Context<Self>) -> Html {
         let users = self.user_list.iter().map(|t| {
             let select_user = ctx.link().callback(TicketMsg::UpdateUserId);
             let name = t.1.clone();
             html! {
                 <a class="dropdown-item" onclick={move |_| {
-                    select_user.emit((t.0, t.1.clone()));
+                    select_user.emit((Uuid::parse_str(t.0.as_str()).unwrap(), t.1.clone()));
                 }}>{name}</a>
             }
         });
@@ -426,7 +467,7 @@ impl TicketForm {
             let name = t.1.clone();
             html! {
                 <a class="dropdown-item" onclick={move |_| {
-                    select_user.emit((t.0, t.1.clone()));
+                    select_user.emit((Uuid::parse_str(t.0.as_str()).unwrap(), t.1.clone()));
                 }}>{name}</a>
             }
         });
@@ -456,13 +497,13 @@ impl TicketForm {
                 <Field label="Project" help={&self.project_error}>
                     <TextInput value={self.get_project_id()} on_change={ctx.link().callback(TicketMsg::UpdateProjectId)} valid={self.project_error.is_empty()} />
                 </Field>
-                <Field label="Priority" help={&self.status_error}>
+                <Field label="Priority" help={&self.status_error} class={classes!("is-one-third")}>
                     <Select value={self.ticket.priority.to_string()} options={self.get_priorities()} on_change={ctx.link().callback(TicketMsg::UpdatePriority)} valid={self.priority_error.is_empty()} />
                 </Field>
-                <Field label="Status" help={&self.status_error}>
+                <Field label="Status" help={&self.status_error} class={classes!("is-one-third")}>
                     <Select value={self.ticket.status.to_string()} options={self.get_statuses()} on_change={ctx.link().callback(TicketMsg::UpdateStatus)} valid={self.status_error.is_empty()} />
                 </Field>
-                <Field label="Owner" help={&self.owner_error}>
+                <Field label="Owner" help={&self.owner_error} class={classes!("is-one-third")}>
                     <TextInput value={self.owner.clone()} on_change={ctx.link().callback(TicketMsg::UpdateOwner)} valid={self.owner_error.is_empty()} base_classes="input is-hidden" />
                     <div class={classes!(self.get_dropdown_classes())}>
                         <div class="dropdown-trigger">
@@ -502,9 +543,16 @@ impl TicketForm {
     }
 
     fn get_priorities(&self) -> IArray<IString> {
-        Priority::iter()
-            .map(|v| IString::from(TicketPriority(v).to_string()))
-            .collect::<IArray<IString>>()
+        // TODO: SeaORM is not updated to Strum 0.26, so the iterator does not work yet. Use commented out code once updated:
+        // Priority::iter()
+        //    .map(|v| IString::from(TicketPriority(v).to_string()))
+        //    .collect::<IArray<IString>>()
+        IArray::from(vec![
+            IString::from(TicketPriority(Priority::Critical).to_string()),
+            IString::from(TicketPriority(Priority::High).to_string()),
+            IString::from(TicketPriority(Priority::Low).to_string()),
+            IString::from(TicketPriority(Priority::Normal).to_string()),
+        ])
     }
 
     fn get_statuses(&self) -> IArray<IString> {

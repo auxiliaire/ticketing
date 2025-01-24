@@ -6,7 +6,7 @@ use crate::{
         },
         priority_tag::PriorityTag,
     },
-    Route,
+    route::Route,
 };
 use implicit_clone::unsync::{IArray, IString};
 use shared::dtos::ticket_dto::{ITicketDto, TicketDto, TicketField, TicketValue};

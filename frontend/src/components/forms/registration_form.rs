@@ -1,7 +1,9 @@
 use crate::components::bulma::field::Field;
+use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::select::Select;
 use crate::components::html::text_input::TextInput;
 use implicit_clone::unsync::{IArray, IString};
+use serde_email::Email;
 use serde_valid::validation::{Error, Errors, ObjectErrors, PropertyErrorsMap};
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
@@ -11,6 +13,7 @@ use shared::validation::user_validation::{OptionUserRole, UserRole, UserValidati
 use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
 };
+use std::rc::Rc;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 use yew::prelude::*;
@@ -22,7 +25,9 @@ pub struct Props {
 }
 
 pub enum RegistrationMsg {
+    DialogContextChanged(Rc<DialogContext>),
     UpdateName(AttrValue),
+    UpdateUsername(AttrValue),
     UpdatePassword(AttrValue),
     UpdatePasswordVerification(AttrValue),
     UpdateRole(AttrValue),
@@ -32,12 +37,14 @@ pub enum RegistrationMsg {
 }
 
 pub struct RegistrationForm {
+    dialog_context: Option<Rc<DialogContext>>,
     user: UserDto,
     password: IString,
     password_repeat: IString,
     on_submit: Callback<(UserDto, Callback<ErrorResponse>)>,
     common_error: IValidationMessages,
     name_error: IValidationMessages,
+    username_error: IValidationMessages,
     password_error: IValidationMessages,
     role_error: IValidationMessages,
 }
@@ -46,13 +53,19 @@ impl Component for RegistrationForm {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
+        let option_dialog_context = ctx.link().context::<Rc<DialogContext>>(
+            ctx.link().callback(RegistrationMsg::DialogContextChanged),
+        );
+        let dialog_context = option_dialog_context.map(|(context, _listener)| context);
         Self {
+            dialog_context,
             user: UserDto::default(),
             password: IString::from(""),
             password_repeat: IString::from(""),
             on_submit: ctx.props().onsubmit.to_owned(),
             common_error: None,
             name_error: None,
+            username_error: None,
             password_error: None,
             role_error: None,
         }
@@ -64,8 +77,15 @@ impl Component for RegistrationForm {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            RegistrationMsg::DialogContextChanged(context) => {
+                self.dialog_context = Some(context);
+            }
             RegistrationMsg::UpdateName(name) => {
                 self.user.name = String::from(name.as_str());
+            }
+            RegistrationMsg::UpdateUsername(username) => {
+                self.user.username =
+                    Email::from_str(username.as_str()).expect("a valid email address");
             }
             RegistrationMsg::UpdatePassword(password) => {
                 log::debug!("password update");
@@ -94,10 +114,15 @@ impl Component for RegistrationForm {
                     self.update_errors(errors);
                 }
             }
-            RegistrationMsg::Cancel() => {
-                let navigator = ctx.link().navigator().unwrap();
-                navigator.back();
-            }
+            RegistrationMsg::Cancel() => match self.dialog_context.clone() {
+                Some(context) => {
+                    context.closehandler.emit(());
+                }
+                None => {
+                    let navigator = ctx.link().navigator().unwrap();
+                    navigator.back();
+                }
+            },
         }
         true
     }
@@ -121,6 +146,9 @@ impl Component for RegistrationForm {
                     }
                     <Field label="Name" help={&self.name_error}>
                         <TextInput value={self.user.name.clone()} on_change={ctx.link().callback(RegistrationMsg::UpdateName)} valid={self.name_error.is_empty()} />
+                    </Field>
+                    <Field label="Email" help={&self.username_error}>
+                        <TextInput value={self.user.username.to_string().clone()} on_change={ctx.link().callback(RegistrationMsg::UpdateUsername)} valid={self.username_error.is_empty()} />
                     </Field>
                     <Field label="Password" help={&self.password_error}>
                         <TextInput value={self.password.clone()} on_change={ctx.link().callback(RegistrationMsg::UpdatePassword)} mask={true} valid={self.password_error.is_empty()} />

@@ -1,0 +1,78 @@
+name: ticketing
+services:
+    mariadb:
+        container_name: ticketing-mariadb
+        image: mariadb
+        command: --init-file /data/init.sql
+        restart: always
+        env_file: ./.docker-compose.env
+        volumes:
+            - /var/lib/mysql
+            - type: bind
+              source: ./extra_migrations/mariadb
+              target: /data
+        ports:
+          - 3306:3306
+    adminer:
+        container_name: ticketing-mariadb-adminer
+        image: adminer
+        restart: always
+        ports:
+          - 8088:8080
+    postgres:
+        container_name: ticketing-postgres
+        env_file:
+            - path: ./.docker-compose.env
+        environment:
+            - POSTGRES_HOST_AUTH_METHOD=password
+            - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            - PGDATA=/var/lib/postgresql/data
+        volumes:
+            - /var/lib/postgresql/data
+            - type: bind
+              source: ./extra_migrations/postgres
+              target: /docker-entrypoint-initdb.d
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready"]
+            interval: 1s
+            timeout: 5s
+            retries: 10
+        restart: always
+        ports:
+            - 5432:5432
+        image: postgres:14-alpine
+    redis:
+        container_name: ticketing-redis
+        image: redis:7-alpine
+        command: redis-server --save 60 1 --loglevel warning
+    mailhog:
+        container_name: ticketing-mailhog
+        ports:
+            - 1025:1025
+            - 8025:8025
+        restart: always
+        image: mailhog/mailhog:latest
+    ticketing-backend:
+        hostname: ticketing-backend
+        depends_on:
+            - mariadb
+            - postgres
+            - redis
+            - mailhog
+        env_file: ./.docker-compose.env
+        ports:
+            - 8000:8000
+        restart: always
+        image: viktordaroczi/ticketing
+    ticketing-frontend:
+        hostname: ticketing-frontend
+        depends_on:
+            - ticketing-backend
+        env_file: ./.docker-compose.env
+        environment:
+            - BACKEND_HOST=ticketing-backend
+            - BACKEND_PORT=8000
+        ports:
+          - 8080:8080
+        restart: always
+        image: viktordaroczi/ticketing-frontend

@@ -3,12 +3,13 @@ use axum::{
     http::{header, HeaderValue, StatusCode},
     response::IntoResponse,
 };
-use sea_orm::{strum::Display, DbErr};
+use sea_orm::DbErr;
 use serde::Serialize;
 use serde_json::json;
 use serde_valid::validation::Errors;
 use shared::api::error::{error_detail::ErrorDetail, error_response::ErrorResponse};
 use std::fmt::Display;
+use strum_macros::Display as StrumDisplay;
 use thiserror::Error;
 
 #[derive(Debug, Error, Serialize)]
@@ -43,6 +44,18 @@ impl From<(StatusCode, String)> for JsonError {
     }
 }
 
+impl From<(StatusCode, String, Option<String>)> for JsonError {
+    fn from((status, message, code): (StatusCode, String, Option<String>)) -> Self {
+        JsonError {
+            status,
+            code,
+            message,
+            origin: Option::None,
+            details: Option::None,
+        }
+    }
+}
+
 impl From<(StatusCode, String, String)> for JsonError {
     fn from((status, message, origin): (StatusCode, String, String)) -> Self {
         JsonError {
@@ -67,6 +80,24 @@ impl From<(StatusCode, String, String, Errors)> for JsonError {
     }
 }
 
+impl From<AuthError> for JsonError {
+    fn from(
+        AuthError {
+            status,
+            message,
+            code,
+        }: AuthError,
+    ) -> Self {
+        JsonError {
+            status,
+            code,
+            message,
+            origin: Option::None,
+            details: Option::None,
+        }
+    }
+}
+
 impl IntoResponse for JsonError {
     fn into_response(self) -> axum::response::Response {
         (
@@ -87,7 +118,38 @@ impl IntoResponse for JsonError {
     }
 }
 
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Error, Serialize)]
+pub struct AuthError {
+    #[serde(skip_serializing)]
+    pub(crate) status: StatusCode,
+    pub code: Option<String>,
+    pub message: String,
+}
+
+impl Display for AuthError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "(status = {}, message = '{}', code = '{}')",
+            self.status,
+            self.message,
+            <std::option::Option<std::string::String> as Clone>::clone(&self.code)
+                .unwrap_or_default()
+        )
+    }
+}
+
+impl Default for AuthError {
+    fn default() -> Self {
+        Self {
+            status: StatusCode::UNAUTHORIZED,
+            code: Default::default(),
+            message: String::from("Authentication/Authorization Error"),
+        }
+    }
+}
+
+#[derive(Debug, StrumDisplay, Error)]
 pub enum ApiError {
     #[error(transparent)]
     JsonExtractorRejection(#[from] JsonRejection),
@@ -95,6 +157,7 @@ pub enum ApiError {
     ValidationRejection(#[from] Errors),
     DbAppError(#[from] DbErr),
     HandlerError(#[from] JsonError),
+    AuthError(#[from] AuthError),
 }
 
 impl ApiError {
@@ -128,6 +191,7 @@ impl IntoResponse for ApiError {
                 String::from("db_error"),
             )),
             ApiError::HandlerError(handler_error) => handler_error,
+            ApiError::AuthError(auth_error) => JsonError::from(auth_error),
         }
         .into_response()
     }

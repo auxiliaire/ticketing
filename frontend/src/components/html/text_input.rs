@@ -1,6 +1,5 @@
+use crate::helpers::event_helper::get_value_from_input_event;
 use yew::prelude::*;
-
-use crate::components::event_helper::get_value_from_input_event;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {

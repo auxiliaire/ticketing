@@ -1,11 +1,11 @@
 use super::dialog_context::DialogContext;
-use crate::AppState;
+use crate::app_state::{AppState, AppStateContext};
 use implicit_clone::unsync::IString;
 use std::rc::Rc;
-use yew::{html, Children, Component, Context, ContextHandle, ContextProvider, Html, Properties};
+use yew::{html, Children, Component, Context, ContextProvider, Html, Properties};
 
 pub enum FormDialogMsg {
-    ContextChanged(Rc<AppState>),
+    ContextChanged(AppStateContext),
     CloseDialog,
 }
 
@@ -16,8 +16,7 @@ pub struct FormDialogProps {
 }
 
 pub struct FormDialog {
-    app_state: Rc<AppState>,
-    _listener: ContextHandle<Rc<AppState>>,
+    app_state: AppStateContext,
     dialog_context: Rc<DialogContext>,
 }
 
@@ -28,14 +27,13 @@ impl Component for FormDialog {
     fn create(ctx: &yew::Context<Self>) -> Self {
         let (app_state, _listener) = ctx
             .link()
-            .context::<Rc<AppState>>(ctx.link().callback(FormDialogMsg::ContextChanged))
+            .context::<AppStateContext>(ctx.link().callback(FormDialogMsg::ContextChanged))
             .expect("context to be set");
         let dialog_context = Rc::new(DialogContext {
             closehandler: ctx.link().callback(|_| FormDialogMsg::CloseDialog),
         });
         Self {
             app_state,
-            _listener,
             dialog_context,
         }
     }
@@ -49,9 +47,7 @@ impl Component for FormDialog {
             FormDialogMsg::ContextChanged(state) => {
                 self.app_state = state;
             }
-            FormDialogMsg::CloseDialog => {
-                self.app_state.close_dialog.emit(());
-            }
+            FormDialogMsg::CloseDialog => AppState::close_dialog(&self.app_state),
         }
         true
     }
@@ -62,7 +58,7 @@ impl Component for FormDialog {
             <>
                 <header class="modal-card-head">
                     <p class="modal-card-title">{ ctx.props().title.clone() }</p>
-                    <button class="delete" aria-label="close" onclick={self.app_state.close_dialog.reform(move |_| ())}></button>
+                    <button class="delete" aria-label="close" onclick={ctx.link().callback(|_| FormDialogMsg::CloseDialog)}></button>
                 </header>
                 <ContextProvider<Rc<DialogContext>> {context}>
                     { for ctx.props().children.iter() }

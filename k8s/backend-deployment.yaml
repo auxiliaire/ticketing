@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.network/ticketing-ticketing-net: "true"
+    io.kompose.service: backend
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: backend
+  template:
+    metadata:
+      labels:
+        io.kompose.service: backend
+    spec:
+      containers:
+        - env:
+            - name: ADMIN_EMAIL
+              value: admin@example.com
+            - name: BUCKET_NAME
+              value: dv-rust-ticketing-s3-bucket
+            - name: CLIENT_URL
+              value: http://127.0.0.1:8080
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: jwt_secret
+            - name: MARIADB_DATABASE
+              value: ticketing
+            - name: MARIADB_HOST
+              value: $(MARIADB_SERVICE_HOST)
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-password
+                  key: mariadb_password
+            - name: MARIADB_USER
+              value: ticketing
+            - name: MAX_BODY_LIMIT
+              value: "5"
+            - name: POSTGRES_DB
+              value: fang
+            - name: POSTGRES_HOST
+              value: $(POSTGRES_SERVICE_HOST)
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-password
+                  key: postgres_password
+            - name: POSTGRES_USER
+              value: postgres
+            - name: REDIS_URL
+              value: redis://$(REDIS_SERVICE_HOST)/
+            - name: SERVER_PORT
+              value: "8000"
+            - name: SMTP_HOST
+              value: $(MAILHOG_SERVICE_HOST)
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-password
+                  key: smtp_password
+            - name: SMTP_PORT
+              value: "1025"
+            - name: SMTP_TLS_OFF
+              value: "1"
+            - name: SMTP_USERNAME
+              value: notset
+            - name: SQLX_OFFLINE
+              value: "1"
+          image: viktordaroczi/ticketing
+          name: backend
+          ports:
+            - containerPort: 8000
+              hostPort: 8000
+      hostname: ticketing-backend
+      restartPolicy: Always

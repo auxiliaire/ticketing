@@ -1,31 +1,55 @@
-use crate::{components::forms::project_form::ProjectForm, Route};
-use frontend::services::project_service::ProjectService;
+use crate::app_state::AppStateContext;
+use crate::services::project_service::ProjectService;
+use crate::{components::forms::project_form::ProjectForm, route::Route};
+use shared::dtos::identity::Identity;
 use shared::{api::error::error_response::ErrorResponse, dtos::project_dto::ProjectDto};
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 pub enum ProjectMsg {
+    ContextChanged(AppStateContext),
     Submitted((ProjectDto, Callback<ErrorResponse>)),
     Created(ProjectDto),
 }
 
-pub struct ProjectNewPage {}
+pub struct ProjectNewPage {
+    app_state: AppStateContext,
+    _listener: ContextHandle<AppStateContext>,
+}
+
 impl Component for ProjectNewPage {
     type Message = ProjectMsg;
     type Properties = ();
 
-    fn create(_: &Context<Self>) -> Self {
-        Self {}
+    fn create(ctx: &Context<Self>) -> Self {
+        let (app_state, _listener) = ctx
+            .link()
+            .context::<AppStateContext>(ctx.link().callback(ProjectMsg::ContextChanged))
+            .expect("context to be set");
+        if app_state.identity.is_none() {
+            let navigator = ctx.link().navigator().unwrap();
+            navigator.replace(&Route::Login);
+        }
+        Self {
+            app_state,
+            _listener,
+        }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            ProjectMsg::ContextChanged(state) => {
+                self.app_state = state;
+            }
             ProjectMsg::Submitted((project, callback_error)) => {
-                ProjectService::create(
-                    project,
-                    ctx.link().callback(ProjectMsg::Created),
-                    callback_error,
-                );
+                if let Some(Identity { token, .. }) = &self.app_state.identity {
+                    ProjectService::create(
+                        token.to_string(),
+                        project,
+                        ctx.link().callback(ProjectMsg::Created),
+                        callback_error,
+                    );
+                }
             }
             ProjectMsg::Created(project) => {
                 let navigator = ctx.link().navigator().unwrap();

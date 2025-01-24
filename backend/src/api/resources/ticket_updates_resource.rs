@@ -14,7 +14,7 @@ pub fn router() -> Router {
     Router::new()
         .route("/ticket_updates", post(post_ticket_update))
         .route("/ticket_updates", get(get_ticket_updates))
-        .route("/ticket_updates/:id", get(get_ticket_update))
+        .route("/ticket_updates/{id}", get(get_ticket_update))
 }
 
 async fn get_ticket_updates(
