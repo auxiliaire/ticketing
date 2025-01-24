@@ -19,7 +19,7 @@ impl Serialize for Order {
 
 struct OrderingVisitor;
 
-impl<'de> Visitor<'de> for OrderingVisitor {
+impl Visitor<'_> for OrderingVisitor {
     type Value = Order;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
