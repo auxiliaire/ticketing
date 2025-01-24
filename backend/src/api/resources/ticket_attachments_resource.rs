@@ -4,9 +4,9 @@ use crate::api::{
     services::notification_service::NotificationService,
 };
 use anyhow::Context;
-use askama_axum::IntoResponse;
 use axum::{
     extract::Path,
+    response::IntoResponse,
     routing::{get, post},
     Extension, Json, Router,
 };
@@ -20,13 +20,12 @@ use http::StatusCode;
 use lettre::Message;
 use object_store::{
     aws::{AmazonS3, AmazonS3Builder},
-    ObjectStore,
+    ObjectStore, WriteMultipart,
 };
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use serde::{Deserialize, Serialize};
 use std::path;
 use tempfile::NamedTempFile;
-use tokio::io::AsyncWriteExt;
 
 pub fn router() -> Router {
     Router::new()
@@ -65,15 +64,16 @@ pub async fn upload_file(
                     .unwrap();
                 let raw_path = format!("tickets/{}/attachments/{}", ticket_id, file_name);
                 let obj_path = object_store::path::Path::from(raw_path.clone());
-                let (_multipart_id, mut writer) = bucket
+                let bytes = tokio::fs::read(path.clone()).await.unwrap();
+
+                let upload = bucket
                     .put_multipart(&obj_path)
                     .await
                     .context("Multipart upload failed")
                     .unwrap();
-                let bytes = tokio::fs::read(path.clone()).await.unwrap();
-                writer.write_all(&bytes).await.unwrap();
-                writer.flush().await.unwrap();
-                writer.shutdown().await.unwrap();
+                let mut writer = WriteMultipart::new(upload);
+                writer.write(&bytes);
+                writer.finish().await.unwrap();
                 tracing::debug!(
                     "Object successfully uploaded to store. Path: {}",
                     raw_path.clone()

@@ -13,8 +13,9 @@ use super::{
 };
 use crate::api::auth_backend::AuthBackend;
 use crate::api::template_models::login_model::LoginModel;
-use askama::Template;
+use askama_axum::Template;
 use axum::{
+    body::Body,
     extract::Query,
     response::{Html, IntoResponse, Redirect},
     routing::{get, post},
@@ -69,7 +70,7 @@ async fn login(
         redirect: redirect.next.unwrap_or(String::from("/login-success")),
     };
 
-    (token, template).into_response()
+    (token, Body::new(template.render().unwrap())).into_response()
 }
 
 async fn do_login(

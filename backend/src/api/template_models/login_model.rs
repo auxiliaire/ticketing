@@ -1,4 +1,4 @@
-use askama::Template;
+use askama_axum::Template;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Template)]

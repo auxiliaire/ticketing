@@ -76,7 +76,7 @@ pub struct ProjectDto {
     #[validate(custom(ProjectValidation::deadline_validation))]
     pub deadline: Option<DateTime<Utc>>,
     pub user_id: Uuid,
-    #[validate(enumerate(0, 1), message = "Active can be either 0 or 1.")]
+    #[validate(enumerate = [0, 1], message = "Active can be either 0 or 1.")]
     pub active: i8,
 }
 

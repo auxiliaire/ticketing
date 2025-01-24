@@ -13,22 +13,22 @@ base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
 entity = { path = "../entity" }
 gloo = "0.11"
-gloo-net = "0.5"
+gloo-net = "0.6"
 gloo-timers = "0.3"
 gloo-utils = "0.2"
-implicit-clone = "0.4"
+implicit-clone = "0.5"
 instant = { version = "0.1", features = ["wasm-bindgen"] }
 log = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
-serde_valid = "0.19"
-serde-email = { version = "3.0", features = ["sea-orm"] }
+serde_valid = "1.0"
+serde-email = { version = "3.1", features = ["sea-orm"] }
 shared = { path = "../shared" }
 strum = "0.26"
 strum_macros = "0.26"
 syn = "2.0"
 tracing = "0.1"
-uuid = "1.8"
+uuid = "1.12"
 wasm-bindgen = { version = "0.2" }
 wasm-logger = "0.2"
 web-time = "1.0"
