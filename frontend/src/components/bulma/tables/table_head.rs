@@ -89,7 +89,7 @@ impl TableHead {
         match self.data.sort.clone() {
             Some(TableHeadSort { sort: _, order }) => html! {
                 <span class="icon-text">
-                    <span>{ label }</span>
+                    <span>{ label.as_str() }</span>
                     <span class="icon">{ self.icon_view(order) }</span>
                 </span>
             },

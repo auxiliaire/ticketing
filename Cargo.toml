@@ -6,13 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
-# Add "frontend" for local cargo builds, keep it commented out for Docker builds:
-members = [".", "backend", "entity", "migration", "shared"] # , "frontend"]
+# Workspace "frontend" added for local Cargo builds. For Docker builds, see below.
+# members = [".", "backend", "entity", "migration", "shared", "frontend"]
+# Frontendless workspace for Docker build:
+members = [".", "backend", "entity", "migration", "shared"]
 
 [dependencies]
 # Modules
 backend = { path = "backend" }
 entity = { path = "entity" }
+# Use with local Cargo builds only:
 # frontend = { path = "frontend" }
 migration = { path = "migration" }
 shared = { path = "shared" }
