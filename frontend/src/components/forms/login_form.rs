@@ -1,6 +1,8 @@
 use crate::components::bulma::field::Field;
 use crate::components::dialogs::dialog_context::DialogContext;
 use crate::components::html::text_input::TextInput;
+use core::convert::From;
+use implicit_clone::sync::{IArray, IString};
 use serde_valid::validation::{Error, Errors, ObjectErrors};
 use serde_valid::Validate;
 use shared::api::error::error_response::ErrorResponse;
@@ -10,6 +12,7 @@ use shared::validation::validation_messages::{
     ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
 };
 use std::rc::Rc;
+use std::sync::Arc;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -80,6 +83,8 @@ impl Component for LoginForm {
                 log::debug!("Error response: {}", error_response);
                 if let Some(errors) = error_response.details {
                     self.update_errors(errors);
+                } else if !error_response.message.is_empty() {
+                    self.update_errors_with_message(error_response.message);
                 }
             }
             LoginMsg::Cancel() => match self.dialog_context.clone() {
@@ -155,5 +160,11 @@ impl LoginForm {
         E: ValidationMessagesTrait,
     {
         self.common_error = errors.get_common_messages();
+    }
+
+    fn update_errors_with_message(&mut self, msg: String) {
+        self.common_error = Some(IArray::<IString>::Rc(
+            vec![IString::Rc(Arc::<str>::from(msg.as_str()))].into(),
+        ));
     }
 }

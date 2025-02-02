@@ -1,3 +1,5 @@
+use core::result::Result::{self, Ok};
+
 use super::get_api_url;
 use crate::app_state::{AppState, AppStateContext};
 use crate::helpers::storage_helper::store_in_storage;
@@ -44,21 +46,30 @@ impl AuthService {
                 Ok(resp) => {
                     let text_result = resp.text().await;
                     match text_result {
-                        Ok(token) => {
-                            log::debug!("Token: {}", token);
-                            match token.is_empty() {
-                                true => {
-                                    callback_error
-                                        .emit(ErrorResponse::from(String::from("Check email")));
-                                    Err(String::from("Check email"))
+                        Ok(token_or_error) => {
+                            log::debug!("Token or error: {}", token_or_error);
+                            let err_result: Result<ErrorResponse, _> =
+                                serde_json::from_str(token_or_error.clone().as_ref());
+                            match err_result {
+                                Ok(err) => {
+                                    let message = String::from(err.message.clone());
+                                    callback_error.emit(err);
+                                    Err(message)
                                 }
-                                false => {
-                                    store_in_storage(
-                                        REFRESH_TOKEN_KEY.to_string(),
-                                        token.to_string(),
-                                    );
-                                    Ok(token)
-                                }
+                                Err(_) => match token_or_error.is_empty() {
+                                    true => {
+                                        callback_error
+                                            .emit(ErrorResponse::from(String::from("Check email")));
+                                        Err(String::from("Check email"))
+                                    }
+                                    false => {
+                                        store_in_storage(
+                                            REFRESH_TOKEN_KEY.to_string(),
+                                            token_or_error.to_string(),
+                                        );
+                                        Ok(token_or_error)
+                                    }
+                                },
                             }
                         }
                         Err(e) => {
