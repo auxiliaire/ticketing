@@ -64,6 +64,8 @@ impl Component for LoginPage {
             LoginMsg::LoggedIn(identity) => {
                 log::debug!("Created: {}", identity);
                 AppState::update_identity(&self.app_state, Some(identity));
+                let navigator = ctx.link().navigator().unwrap();
+                navigator.replace(&Route::Home);
             }
             LoginMsg::Authenticated(auth_res) => {
                 if auth_res.is_some() {

@@ -6,7 +6,9 @@ use crate::{
     },
     dialog::Dialog,
     route::Route,
-    services::{auth_service::AuthService, project_service::ProjectService},
+    services::{
+        auth_service::AuthService, project_service::ProjectService, user_service::UserService,
+    },
 };
 use shared::{
     api::error::error_response::ErrorResponse,
@@ -24,6 +26,8 @@ pub enum HomeMsg {
     SubmittedLoginForm((LoginDto, Callback<ErrorResponse>)),
     SubmittedRegistrationForm((UserDto, Callback<ErrorResponse>)),
     LoggedIn(Identity),
+    Registered(UserDto),
+    CloseDialog,
 }
 
 pub struct HomePage {
@@ -88,10 +92,49 @@ impl Component for HomePage {
                     callback_error,
                 );
             }
-            HomeMsg::SubmittedRegistrationForm(_) => todo!(),
+            HomeMsg::SubmittedRegistrationForm((user, callback_error)) => {
+                log::debug!("Submitted registration form for {}", user.username);
+                UserService::create(
+                    user,
+                    ctx.link().callback(HomeMsg::Registered),
+                    callback_error,
+                );
+            }
             HomeMsg::LoggedIn(identity) => {
                 log::debug!("Logged in {}", identity);
                 AppState::update_identity_and_close_dialog(&self.app_state, Some(identity));
+            }
+            HomeMsg::Registered(user) => {
+                log::debug!("Registered {}", user.username);
+                let dialog = Rc::new(Dialog {
+                    active: true,
+                    content: html! {
+                        <FormDialog title="Successful registration">
+                            { html!{
+                                <div class="card">
+                                    <div class="card-content">
+                                        <div class="content">
+                                            { "Log in to continue" }
+                                        </div>
+                                    </div>
+                                    <footer class="card-footer">
+                                        <div class="card-content">
+                                            <div class="field is-grouped">
+                                                <div class="control">
+                                                    <button class="button is-link" onmouseup={ctx.link().callback(|_| HomeMsg::CloseDialog)}>{ "Ok" }</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </footer>
+                                </div>
+                            }}
+                        </FormDialog>
+                    },
+                });
+                AppState::update_dialog(&self.app_state, dialog);
+            }
+            HomeMsg::CloseDialog => {
+                AppState::close_dialog(&self.app_state);
             }
         }
         true

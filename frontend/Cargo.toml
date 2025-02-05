@@ -1,6 +1,6 @@
 [package]
 name = "frontend"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
 
@@ -28,7 +28,7 @@ strum = "0.26"
 strum_macros = "0.26"
 syn = "2.0"
 tracing = "0.1"
-uuid = "1.12"
+uuid = { version = "1.13", features = [ "v4", "js" ] }
 wasm-bindgen = { version = "0.2.100" }
 wasm-logger = "0.2"
 web-time = "1.0"
