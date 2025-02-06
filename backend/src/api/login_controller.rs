@@ -116,7 +116,7 @@ async fn register(
     db: Extension<DatabaseConnection>,
     WithRejection(ValidatedJson(model), _): WithRejection<ValidatedJson<UserDto>, ApiError>,
 ) -> Result<Json<UserDto>, ApiError> {
-    println!("User(): '{}'", model.name);
+    println!("User(): '{}'", model.username);
     let user = users::ActiveModel {
         name: Set(model.name.to_owned()),
         username: Set(model.username.to_owned()),
