@@ -9,10 +9,10 @@ pub fn extract_auth_from_header(
     headers
         .get(AUTHORIZATION)
         .and_then(|header| std::str::from_utf8(header.as_bytes()).ok())
-        .map(|auth_header| {
+        .and_then(|auth_header| {
             auth_header
-                .trim_start_matches(format!("{} ", scheme).as_str())
-                .to_owned()
+                .strip_prefix(format!("{} ", scheme).as_str())
+                .map(|s| s.to_owned())
         })
         .ok_or(AuthError {
             status: StatusCode::BAD_REQUEST,
