@@ -7,7 +7,9 @@
 /.VSCodeCounter
 /k8s/*-secret.yaml
 *.env
+.migrations
 __pycache__
 node_modules
 mysqldump.sql
+dump.rdb
 secret_*.txt

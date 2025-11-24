@@ -1,0 +1,67 @@
+name: ticketing-dev
+services:
+    mariadb:
+        container_name: ticketing-mysql-dev
+        image: mariadb
+        command: --init-file /data/init.sql
+        restart: always
+        env_file: ./.docker-compose.env
+        volumes:
+            - /var/lib/mysql
+            - type: bind
+              source: ../extra_migrations/mariadb
+              target: /data
+        ports:
+          - "${MARIADB_PORT}:3306"
+    adminer:
+        container_name: ticketing-mariadb-adminer-dev
+        image: adminer
+        restart: always
+        ports:
+          - "${ADMINER_PORT}:8080"
+    postgres:
+        container_name: ticketing-postgres-dev
+        env_file:
+            - path: ./.docker-compose.env
+        environment:
+            - POSTGRES_HOST_AUTH_METHOD=password
+            - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            - PGDATA=/var/lib/postgresql/data
+        volumes:
+            - /var/lib/postgresql/data
+            - type: bind
+              source: ../extra_migrations/postgres
+              target: /docker-entrypoint-initdb.d
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready"]
+            interval: 1s
+            timeout: 5s
+            retries: 10
+        restart: always
+        ports:
+            - "${POSTGRES_PORT}:5432"
+        image: postgres:14-alpine
+    redis:
+        container_name: ticketing-redis-dev
+        image: redis:7-alpine
+        env_file: ./.docker-compose.env
+        command: /bin/sh -c 'redis-server --save 60 1 --loglevel warning --port $$REDIS_PORT'
+        volumes:
+            - ./redis-data:/data
+        network_mode: "host"
+    mailhog:
+        container_name: ticketing-mailhog-dev
+        ports:
+            - "${SMTP_PORT}:1025"
+            - "${MAILHOG_PORT}:8025"
+        restart: always
+        image: mailhog/mailhog:latest
+    lighttpd:
+        container_name: ticketing-lighttpd-dev
+        image: sebp/lighttpd
+        env_file: ./.docker-compose.env
+        volumes:
+            - ./htdocs:/var/www/localhost/htdocs
+            - ./lighttpd:/etc/lighttpd
+        network_mode: "host"
+        tty: true

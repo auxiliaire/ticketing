@@ -74,10 +74,13 @@ fn set_postgres_url() -> String {
     let host = dotenvy::var("POSTGRES_HOST")
         .context("POSTGRES_HOST must be defined in the environment file")
         .unwrap();
+    let port = dotenvy::var("POSTGRES_PORT")
+        .context("POSTGRES_PORT must be defined in the environment file")
+        .unwrap();
     let db = dotenvy::var("POSTGRES_DB")
         .context("POSTGRES_DB must be defined in the environment file")
         .unwrap();
-    format!("postgres://{}:{}@{}/{}", user, pass, host, db)
+    format!("postgres://{}:{}@{}:{}/{}", user, pass, host, port, db)
 }
 
 fn set_jwt_secret() -> String {

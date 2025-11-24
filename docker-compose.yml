@@ -1,7 +1,7 @@
 name: ticketing
 services:
     mariadb:
-        container_name: ticketing-mariadb
+        container_name: ticketing-mysql
         image: mariadb
         command: --init-file /data/init.sql
         restart: always
@@ -12,13 +12,13 @@ services:
               source: ./extra_migrations/mariadb
               target: /data
         ports:
-          - 3306:3306
+          - "3307:3306"
     adminer:
         container_name: ticketing-mariadb-adminer
         image: adminer
         restart: always
         ports:
-          - 8088:8080
+          - "7088:8080"
     postgres:
         container_name: ticketing-postgres
         env_file:
@@ -39,17 +39,19 @@ services:
             retries: 10
         restart: always
         ports:
-            - 5432:5432
+            - "5433:5432"
         image: postgres:14-alpine
     redis:
         container_name: ticketing-redis
+        ports:
+            - "6379:6379"
         image: redis:7-alpine
         command: redis-server --save 60 1 --loglevel warning
     mailhog:
         container_name: ticketing-mailhog
         ports:
-            - 1025:1025
-            - 8025:8025
+            - "1027:1025"
+            - "7025:8025"
         restart: always
         image: mailhog/mailhog:latest
     ticketing-backend:
@@ -61,7 +63,7 @@ services:
             - mailhog
         env_file: ./.docker-compose.env
         ports:
-            - 8000:8000
+            - "7000:8000"
         restart: always
         image: viktordaroczi/ticketing
     ticketing-frontend:
@@ -73,6 +75,6 @@ services:
             - BACKEND_HOST=ticketing-backend
             - BACKEND_PORT=8000
         ports:
-          - 8080:8080
+          - "7080:8080"
         restart: always
         image: viktordaroczi/ticketing-frontend

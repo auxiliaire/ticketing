@@ -19,6 +19,6 @@ WORKDIR $SRCDIR/frontend
 RUN trunk build --release
 
 FROM jitesoft/lighttpd AS prod
-ENV PORT=8080
+ENV PROXY_PORT=8080
 COPY --from=build-client /src/frontend/dist /var/www/html/
 COPY --from=build-client /src/frontend/lighttpd.conf /etc/lighttpd/lighttpd.conf

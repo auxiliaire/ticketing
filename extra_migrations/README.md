@@ -20,4 +20,9 @@ To run the migrations required by Fang, follow these instructions:
 
 2. Run the migrations from the command line at project root (provided POSTGRES_URL env var is set):
 
-    ˙diesel migration run --database-url $POSTGRES_URL --migration-dir ./extra_migrations/fang`
+    `diesel migration run --database-url $POSTGRES_URL --migration-dir ./extra_migrations/fang`
+
+#### Troubleshooting
+
+1. Diesel CLI compilation might fail with cryptic compiler errors.
+   It's usually looking for a library like `pq` (PostgreSQL), which can be installed as part of the `libpq-dev` package.

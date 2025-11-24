@@ -50,6 +50,11 @@ This is an integrated Rust backend and frontend (with Yew) application sample im
 
 ## Starting
 
+The easiest way to start a development version of the application is using the `start.sh`
+script. This will verify the requirements, provide hints if necessary, and start all
+components in order, eventually building and running the backend and the frontend as
+found in the source code.
+
 ### Prerequisites
 
 The following prerequisites have to be fulfilled before trying to start the application.
