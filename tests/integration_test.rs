@@ -30,22 +30,16 @@ async fn test_with_webdriver() -> WebDriverResult<()> {
     Ok(())
 }
 
-#[test]
-fn test_app() {
+#[tokio::test]
+async fn test_app() {
     common::setup();
-    tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(async {
-            assert!(test_with_webdriver()
-                .await
-                // Disabled, because webdriver presence is not guaranteed:
-                .or::<WebDriverResult<()>>(Ok(()))
-                .is_ok());
-            // match test_with_webdriver().await {
-            //    Ok(_) => println!("OK"),
-            //    Err(e) => assert_eq!("", e.to_string()),
-            // }
-        })
+    assert!(test_with_webdriver()
+        .await
+        // Disabled, because webdriver presence is not guaranteed:
+        .or::<WebDriverResult<()>>(Ok(()))
+        .is_ok());
+    // match test_with_webdriver().await {
+    //    Ok(_) => println!("OK"),
+    //    Err(e) => assert_eq!("", e.to_string()),
+    // }
 }

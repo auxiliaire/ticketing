@@ -4,14 +4,8 @@ use users::Entity as User;
 
 mod common;
 
-#[test]
-fn test_user() -> Result<(), DbErr> {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    let future = user();
-    rt.block_on(future)
-}
-
-async fn user() -> Result<(), DbErr> {
+#[tokio::test]
+async fn test_user() -> Result<(), DbErr> {
     // Connecting SQLite
     let db = Database::connect("sqlite::memory:").await?;
 

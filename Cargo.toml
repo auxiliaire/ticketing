@@ -7,9 +7,9 @@ edition = "2021"
 
 [workspace]
 # Workspace "frontend" added for local Cargo builds. For Docker builds, see below.
-members = [".", "backend", "entity", "migration", "shared", "frontend"]
+# members = [".", "backend", "entity", "migration", "shared", "frontend"]
 # Frontendless workspace for Docker build:
-# members = [".", "backend", "entity", "migration", "shared"]
+members = [".", "backend", "entity", "migration", "shared"]
 
 [dependencies]
 # Modules
