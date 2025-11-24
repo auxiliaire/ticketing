@@ -4,9 +4,20 @@ use std::fmt::Display;
 use strum::{Display, EnumIter, EnumString};
 
 #[derive(
-    Clone, Copy, Debug, Display, EnumIter, EnumString, PartialEq, Eq, Serialize, Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    Display,
+    EnumIter,
+    EnumString,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
 )]
 pub enum TicketStatus {
+    #[default]
     Created,
     Selected,
     Started,
@@ -14,12 +25,6 @@ pub enum TicketStatus {
     Testing,
     Done,
     Closed,
-}
-
-impl Default for TicketStatus {
-    fn default() -> Self {
-        Self::Created
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
