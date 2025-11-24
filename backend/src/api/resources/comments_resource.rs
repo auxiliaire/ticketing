@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::error::{ApiError, JsonError};
 
+#[allow(dead_code)]
 #[derive(Serialize, Deserialize)]
 struct CommentDto {
     pub text: String,
