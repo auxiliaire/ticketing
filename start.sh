@@ -6,7 +6,6 @@
 
 DEV_DIR="./dev"
 MIGRATIONS_DIR="./extra_migrations/fang"
-MIGRATIONS_OUT_FILE=".migrations"
 SAMPLE_ENV_FILE=".env.sample"
 ENV_FILE=".env"
 EXPECTED_NUMBER_OF_CONTAINERS=6
@@ -134,14 +133,12 @@ cd .. || exit 1
 
 # Running Diesel migration:
 
-if ! [[ -e $MIGRATIONS_OUT_FILE ]]; then
-  printf "%sRunning migrations...%s " "$BOLD" "$RESET"
-  if ! diesel migration run --database-url "$POSTGRES_URL" --migration-dir $MIGRATIONS_DIR > $MIGRATIONS_OUT_FILE; then
-    printf "%sFAILED%s\n" "$RED" "$RESET"
-    exit 1
-  fi
-  printf "%sDONE%s\n" "$GREEN" "$RESET"
+printf "%sRunning migrations...%s " "$BOLD" "$RESET"
+if ! diesel migration run --database-url "$POSTGRES_URL" --migration-dir $MIGRATIONS_DIR; then
+  printf "%sFAILED%s\n" "$RED" "$RESET"
+  exit 1
 fi
+printf "%sDONE%s\n" "$GREEN" "$RESET"
 
 printf "%sStartup requirements fulfilled ✅%s\n" "$GREEN" "$RESET"
 printf "%sComponent requirements might still be lacking\n" "$YELLOW"
