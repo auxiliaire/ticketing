@@ -1,11 +1,11 @@
+use super::is_empty::IsEmpty;
 use implicit_clone::sync::{IArray, IString};
+use serde_email::EmailError;
 use serde_valid::{
     json::{json, Value},
     validation::Errors,
 };
 use std::sync::Arc;
-use serde_email::EmailError;
-use super::is_empty::IsEmpty;
 
 pub struct ValidationMessages(pub Option<Vec<String>>);
 
@@ -64,16 +64,16 @@ impl IsEmpty for IValidationMessages {
     }
 }
 
+impl From<ErrorMessage> for IValidationMessages {
+    fn from(e: ErrorMessage) -> Self {
+        e.0.clone()
+    }
+}
+
 impl From<EmailError> for ErrorMessage {
     fn from(e: EmailError) -> Self {
         let v = vec![e.to_string()];
         ErrorMessage(Some(vec_string_to_immutable(v)))
-    }
-}
-
-impl Into<IValidationMessages> for ErrorMessage {
-    fn into(self) -> IValidationMessages {
-        self.0
     }
 }
 
