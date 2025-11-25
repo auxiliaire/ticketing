@@ -8,6 +8,7 @@ DEV_DIR="./dev"
 MIGRATIONS_DIR="./extra_migrations/fang"
 SAMPLE_ENV_FILE=".env.sample"
 ENV_FILE=".env"
+COMPOSE_ENV_FILE="./dev/.docker-compose.env"
 EXPECTED_NUMBER_OF_CONTAINERS=6
 
 # Reusable functions:
@@ -85,10 +86,11 @@ if ! [[ -d $DEV_DIR ]]; then
   exit 1
 fi
 
-if ! [[ -e $ENV_FILE ]]; then
+if ! [[ -e $ENV_FILE && -e $COMPOSE_ENV_FILE ]]; then
   echo "Creating environment... "
   if [[ -e $SAMPLE_ENV_FILE ]]; then
     cp $SAMPLE_ENV_FILE $ENV_FILE
+    cp $SAMPLE_ENV_FILE $COMPOSE_ENV_FILE
     # shellcheck source=.env
     source $ENV_FILE
   else
