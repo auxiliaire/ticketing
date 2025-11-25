@@ -61,7 +61,8 @@ services:
         image: sebp/lighttpd
         env_file: ./.docker-compose.env
         volumes:
-            - ./htdocs:/var/www/localhost/htdocs
-            - ./lighttpd:/etc/lighttpd
+            - ./lighttpd/error:/var/www/localhost/error
+            - ./lighttpd/htdocs:/var/www/localhost/htdocs
+            - ./lighttpd/config:/etc/lighttpd
         network_mode: "host"
         tty: true
