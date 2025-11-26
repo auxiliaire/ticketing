@@ -1,68 +1,163 @@
 name: ticketing-dev
 services:
-    mariadb:
-        container_name: ticketing-mysql-dev
-        image: mariadb
-        command: --init-file /data/init.sql
-        restart: always
-        env_file: ./.docker-compose.env
-        volumes:
-            - /var/lib/mysql
-            - type: bind
-              source: ../extra_migrations/mariadb
-              target: /data
-        ports:
-          - "${MARIADB_PORT}:3306"
-    adminer:
-        container_name: ticketing-mariadb-adminer-dev
-        image: adminer
-        restart: always
-        ports:
-          - "${ADMINER_PORT}:8080"
-    postgres:
-        container_name: ticketing-postgres-dev
-        env_file:
-            - path: ./.docker-compose.env
-        environment:
-            - POSTGRES_HOST_AUTH_METHOD=password
-            - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-            - PGDATA=/var/lib/postgresql/data
-        volumes:
-            - /var/lib/postgresql/data
-            - type: bind
-              source: ../extra_migrations/postgres
-              target: /docker-entrypoint-initdb.d
-        healthcheck:
-            test: ["CMD-SHELL", "pg_isready"]
-            interval: 1s
-            timeout: 5s
-            retries: 10
-        restart: always
-        ports:
-            - "${POSTGRES_PORT}:5432"
-        image: postgres:14-alpine
-    redis:
-        container_name: ticketing-redis-dev
-        image: redis:7-alpine
-        env_file: ./.docker-compose.env
-        command: /bin/sh -c 'redis-server --save 60 1 --loglevel warning --port $$REDIS_PORT'
-        volumes:
-            - ./redis-data:/data
-        network_mode: "host"
-    mailhog:
-        container_name: ticketing-mailhog-dev
-        ports:
-            - "${SMTP_PORT}:1025"
-            - "${MAILHOG_PORT}:8025"
-        restart: always
-        image: mailhog/mailhog:latest
-    lighttpd:
-        container_name: ticketing-lighttpd-dev
-        image: sebp/lighttpd
-        env_file: ./.docker-compose.env
-        volumes:
-            - ./lighttpd/error:/var/www/localhost/error
-            - ./lighttpd/htdocs:/var/www/localhost/htdocs
-            - ./lighttpd/config:/etc/lighttpd
-        network_mode: "host"
-        tty: true
+  mariadb:
+    container_name: ticketing-mariadb-dev
+    image: mariadb
+    command: --init-file /data/init.sql
+    restart: always
+    env_file: ./.docker-compose.env
+    volumes:
+      - mariadb-storage:/var/lib/mysql
+      - type: bind
+        source: ../extra_migrations/mariadb
+        target: /data
+    healthcheck:
+      test: [ "CMD-SHELL",
+              "MARIADB_HOST=127.0.0.1",
+              "healthcheck.sh --connect --innodb_initialized" ]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "${MARIADB_PORT}:3306"
+  adminer:
+    container_name: ticketing-mariadb-adminer-dev
+    image: adminer
+    restart: always
+    ports:
+      - "${ADMINER_PORT}:8080"
+  postgres:
+    container_name: ticketing-postgres-dev
+    env_file:
+      - path: ./.docker-compose.env
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=password
+      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - PGDATA=/var/lib/postgresql/data
+    volumes:
+      - /var/lib/postgresql/data
+      - type: bind
+        source: ../extra_migrations/postgres
+        target: /docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    restart: always
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    image: postgres:14-alpine
+  redis:
+    container_name: ticketing-redis-dev
+    image: redis:7-alpine
+    env_file: ./.docker-compose.env
+    command: /bin/sh -c 'redis-server --save 60 1 --loglevel warning --port $$REDIS_PORT'
+    volumes:
+      - ./redis-data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli -p $$REDIS_PORT ping | grep PONG" ]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+    network_mode: "host"
+  mailhog:
+    container_name: ticketing-mailhog-dev
+    image: mailhog/mailhog:latest
+    ports:
+      - "${SMTP_PORT}:1025"
+      - "${MAILHOG_PORT}:8025"
+    restart: always
+  lighttpd:
+    container_name: ticketing-lighttpd-dev
+    image: sebp/lighttpd
+    env_file: ./.docker-compose.env
+    volumes:
+      - ./lighttpd/error:/var/www/localhost/error
+      - ./lighttpd/htdocs:/var/www/localhost/htdocs
+      - ./lighttpd/config:/etc/lighttpd
+    network_mode: "host"
+    tty: true
+  ################
+  #  MONITORING  #
+  ################
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: monitoring-prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-storage:/prometheus
+    links:
+      - cadvisor:cadvisor
+    depends_on:
+      - node-exporter
+      - cadvisor
+    restart: unless-stopped
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: monitoring-node-exporter
+    ports:
+      - "9100"
+    volumes:
+      - '/proc:/host/proc:ro'
+      - '/sys:/host/sys:ro'
+      - '/:/rootfs:ro'
+      # - '/:/host:ro,rslave'
+    command:
+      - '--path.rootfs=/host'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points'
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+    restart: unless-stopped
+    expose:
+      - 9100
+    pid: host
+    deploy:
+      mode: global
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: monitoring-cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      # Change host path to /var/lib/docker/ in case of non-snap docker installation:
+      - /var/snap/docker/common/var-lib-docker/:/var/lib/docker:ro
+    depends_on:
+      - mariadb
+      - adminer
+      - postgres
+      - redis
+      - mailhog
+      - lighttpd
+    deploy:
+      mode: global
+  grafana:
+    image: grafana/grafana:latest
+    container_name: monitoring-grafana
+    env_file: ./.docker-compose.env
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    links:
+      - prometheus:prometheus
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    depends_on:
+      - prometheus
+volumes:
+  mariadb-storage: { }
+  prometheus-storage: { }
+  grafana-storage: { }
