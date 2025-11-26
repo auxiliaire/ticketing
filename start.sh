@@ -9,7 +9,7 @@ MIGRATIONS_DIR="./extra_migrations/fang"
 SAMPLE_ENV_FILE=".env.sample"
 ENV_FILE=".env"
 COMPOSE_ENV_FILE="./dev/.docker-compose.env"
-EXPECTED_NUMBER_OF_CONTAINERS=6
+EXPECTED_NUMBER_OF_CONTAINERS=10
 
 # Reusable functions:
 
@@ -126,16 +126,23 @@ trap 'docker compose down' SIGINT; docker compose up --detach
 until false
 do
   number_of_running_containers=$(docker compose ps | grep -c "Up")
-  if [[ $number_of_running_containers -eq $EXPECTED_NUMBER_OF_CONTAINERS ]]; then
+  if [[ $number_of_running_containers -ge $EXPECTED_NUMBER_OF_CONTAINERS ]]; then
     break
   fi
 done
 printf "%sDONE%s\n" "$GREEN" "$RESET"
-cd .. || exit 1
 
 # Running Diesel migration:
 
 printf "%sRunning migrations...%s " "$BOLD" "$RESET"
+until false
+do
+  postgres_ready=$(docker compose ps | grep "postgres" | grep -c "healthy")
+  if [[ $postgres_ready -ge 1 ]]; then
+    break
+  fi
+done
+cd .. || exit 1
 if ! diesel migration run --database-url "$POSTGRES_URL" --migration-dir $MIGRATIONS_DIR; then
   printf "%sFAILED%s\n" "$RED" "$RESET"
   exit 1
