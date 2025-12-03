@@ -13,7 +13,7 @@ use super::{
 };
 use crate::api::auth_backend::AuthBackend;
 use crate::api::template_models::login_model::LoginModel;
-use askama_axum::Template;
+use askama::Template;
 use axum::{
     body::Body,
     extract::Query,

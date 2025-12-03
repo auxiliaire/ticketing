@@ -1,4 +1,4 @@
 trunk-version = "*"
 
 [tools]
-wasm_bindgen = "0.2.100"
+wasm_bindgen = "0.2.106"

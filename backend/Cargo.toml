@@ -10,15 +10,13 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0"
-askama = { version = "0.12", features = [ "with-axum" ] }
-askama_axum = "0.4"
-askama_derive = { version = "0.12", features = [ "with-axum" ] }
+askama = { version = "0.14" }
 async-trait = "0.1"
 axum = { version = "0.8", features = ["macros", "query"] }
 axum_csrf = { version = "0.11", features = ["layer"] }
-axum_typed_multipart = "0.15"
-axum-extra = { version = "0.10", features = ["cookie"] }
-axum-login = "0.17"
+axum_typed_multipart = "0.16"
+axum-extra = { version = "0.12", features = ["cookie", "with-rejection"] }
+axum-login = "0.18"
 base64 = "0.22"
 chrono = { version = "0.4", default-features = false }
 dotenvy = "0.15"
@@ -29,17 +27,13 @@ fang = { version = "0.10", features = [
 ], default-features = false }
 futures = "0.3.27"
 http = "1.0"
-http-body = "1.0"
-hyper = "1"
 jsonwebtoken = "9"
 lazy_static = "1.4"
 lettre = "0.11"
-log = "0.4"
 migration = { path = "../migration" }
 mime = "0.3"
 object_store = { version = "0.11", features = ["aws"] }
-quick-xml = "0.37"
-redis = { version = "0.28", features = ["tokio-comp"] }
+redis = { version = "0.32", features = ["tokio-comp"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
 serde_valid = "1.0"
@@ -49,8 +43,9 @@ strum = "0.26"
 strum_macros = "0.26"
 tempfile = "3.8"
 thiserror = "2.0"
-tokio = { version = "1.28", features = ["full"] }
+tokio = { version = "1.48", features = ["full"] }
 tower-http = { version = "0.6", features = ["cors"] }
+tower-sessions = { version = "0.14", features = ["memory-store"] }
 tower = "0.5"
 tracing = "0.1"
 tracing-subscriber = "0.3"

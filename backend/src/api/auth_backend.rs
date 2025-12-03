@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use axum_login::{AuthnBackend, UserId};
 use entity::users::{self, Entity as User};
 use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
@@ -17,9 +16,8 @@ impl AuthBackend {
     }
 }
 
-#[async_trait]
 impl AuthnBackend for AuthBackend {
-    type User = entity::users::Model;
+    type User = users::Model;
     type Credentials = LoginDto;
     type Error = DbErr;
 
