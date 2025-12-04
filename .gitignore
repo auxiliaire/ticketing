@@ -12,3 +12,4 @@ node_modules
 mysqldump.sql
 dump.rdb
 secret_*.txt
+*.pid
