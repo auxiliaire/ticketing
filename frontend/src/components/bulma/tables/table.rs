@@ -62,15 +62,6 @@ where
         }
     }
 
-    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        self.datasource = ctx.props().datasource.clone();
-        if let Some(data) = ctx.props().sort.clone() {
-            self.sortmanager.update(data);
-        }
-        self.sorthandler = ctx.props().sorthandler.clone();
-        true
-    }
-
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             TableMsg::SortClicked(data) => {
@@ -80,6 +71,15 @@ where
                 }
             }
         }
+        true
+    }
+
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
+        self.datasource = ctx.props().datasource.clone();
+        if let Some(data) = ctx.props().sort.clone() {
+            self.sortmanager.update(data);
+        }
+        self.sorthandler = ctx.props().sorthandler.clone();
         true
     }
 
@@ -109,7 +109,9 @@ where
                     data: entry.clone(),
                 });
                 if let Some(cell) = render {
-                    match self.datasource.has_row_head && field.into() == 0 {
+                    match self.datasource.has_row_head
+                        && <F as Into<usize>>::into(field.clone()) == 0usize
+                    {
                         true => html! {
                             <th>{ cell }</th>
                         },

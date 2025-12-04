@@ -14,7 +14,7 @@ impl TableHeadSortManager {
             .map(|old_data| match old_data.label == data.label {
                 true => data.clone(),
                 false => TableHeadData {
-                    label: old_data.label,
+                    label: old_data.label.clone(),
                     sort: None,
                 },
             })

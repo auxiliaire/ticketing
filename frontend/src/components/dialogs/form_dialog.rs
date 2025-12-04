@@ -1,5 +1,6 @@
 use super::dialog_context::DialogContext;
 use crate::app_state::{AppState, AppStateContext};
+use crate::helpers::component_helper::to_html;
 use implicit_clone::unsync::IString;
 use std::rc::Rc;
 use yew::{html, Children, Component, Context, ContextProvider, Html, Properties};
@@ -38,10 +39,6 @@ impl Component for FormDialog {
         }
     }
 
-    fn changed(&mut self, _ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        true
-    }
-
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             FormDialogMsg::ContextChanged(state) => {
@@ -52,12 +49,16 @@ impl Component for FormDialog {
         true
     }
 
+    fn changed(&mut self, _ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
+        true
+    }
+
     fn view(&self, ctx: &yew::Context<Self>) -> Html {
         let context = self.dialog_context.clone();
         html! {
             <>
                 <header class="modal-card-head">
-                    <p class="modal-card-title">{ ctx.props().title.clone() }</p>
+                    <p class="modal-card-title">{ to_html(ctx.props().title.clone()) }</p>
                     <button class="delete" aria-label="close" onclick={ctx.link().callback(|_| FormDialogMsg::CloseDialog)}></button>
                 </header>
                 <ContextProvider<Rc<DialogContext>> {context}>

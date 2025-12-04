@@ -17,8 +17,8 @@ use redis::ToRedisArgs;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
-use strum_macros::Display;
-use strum_macros::EnumString;
+use strum::Display;
+use strum::EnumString;
 
 #[derive(Clone, Debug, Display, EnumString, Eq, PartialEq)]
 #[strum(serialize_all = "lowercase")]

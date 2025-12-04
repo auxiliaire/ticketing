@@ -27,12 +27,12 @@ use yew::prelude::*;
 use yew_router::prelude::Link;
 
 impl OptionData for TicketDto {
-    fn get_key(&self) -> implicit_clone::unsync::IString {
-        implicit_clone::unsync::IString::from(format!("{}", self.id.unwrap()))
+    fn get_key(&self) -> AttrValue {
+        format!("{}", self.id.unwrap()).into()
     }
 
-    fn get_label(&self) -> implicit_clone::unsync::IString {
-        implicit_clone::unsync::IString::from(self.title.as_str().to_string())
+    fn get_label(&self) -> AttrValue {
+        self.title.as_str().to_string().into()
     }
 }
 

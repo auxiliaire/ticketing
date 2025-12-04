@@ -18,10 +18,10 @@ gloo-utils = "0.2"
 implicit-clone = "0.4"
 log = "0.4"
 serde_json = "1.0"
-serde_valid = "1.0"
+serde_valid = "2.0"
 serde-email = { version = "3.1", features = ["sea-orm"] }
 shared = { path = "../shared" }
-strum = "0.26"
+strum = { version = "0.27", features = ["derive"] }
 uuid = { version = "1.13", features = ["v4", "js"] }
 wasm-bindgen = { version = "0.2.106" }
 wasm-logger = "0.2"

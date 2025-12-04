@@ -1,6 +1,6 @@
-use implicit_clone::unsync::IString;
+use yew::AttrValue;
 
 pub trait OptionData {
-    fn get_key(&self) -> IString;
-    fn get_label(&self) -> IString;
+    fn get_key(&self) -> AttrValue;
+    fn get_label(&self) -> AttrValue;
 }

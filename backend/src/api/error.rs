@@ -9,7 +9,7 @@ use serde_json::json;
 use serde_valid::validation::Errors;
 use shared::api::error::{error_detail::ErrorDetail, error_response::ErrorResponse};
 use std::fmt::Display;
-use strum_macros::Display as StrumDisplay;
+use strum::Display as StrumDisplay;
 use thiserror::Error;
 
 #[derive(Debug, Error, Serialize)]
