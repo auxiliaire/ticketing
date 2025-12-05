@@ -288,4 +288,5 @@ finally
     Set-Location $PSScriptRoot/$DevDir
     docker compose down
     Write-Host "DONE" -ForegroundColor Green
+    Set-Location $PSScriptRoot
 }
