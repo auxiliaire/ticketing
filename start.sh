@@ -81,6 +81,25 @@ else
   printf "Diesel found ✅\n"
 fi
 
+if ! hasInstalled "trunk"
+then
+  printf "Trunk could not be found %s❌%s\n" "$RED" "$RESET"
+  printf "Trying to install Trunk... "
+  if ! cargo install --locked trunk; then
+    printf "%sFAILED%s\n" "$RED" "$RESET"
+    exit 1
+  fi
+  if ! hasInstalled "trunk"
+  then
+    printf "%sFAILED%s\n" "$RED" "$RESET"
+    exit 1
+  else
+    printf "%sDONE%s\n" "$GREEN" "$RESET"
+  fi
+else
+  printf "Trunk found ✅\n"
+fi
+
 if ! [[ -d $DEV_DIR ]]; then
   printf "%sFATAL%s: directory '%s' is missing (try pull)\n" "$RED" "$RESET" $DEV_DIR
   exit 1

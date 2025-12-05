@@ -106,6 +106,31 @@ else
     Write-Host "Diesel found ✅"
 }
 
+if (!(Test-Command "trunk"))
+{
+    Write-Host "Trunk could not be found " -NoNewline
+    Write-Host "❌" -ForegroundColor Red
+    Write-Host "Trying to install Trunk... "
+    if (!(cargo install --locked trunk))
+    {
+        Write-Host "FAILED" -ForegroundColor Red
+        exit 1
+    }
+    if (!(Test-Command "trunk"))
+    {
+        Write-Host "FAILED" -ForegroundColor Red
+        exit 1
+    }
+    else
+    {
+        Write-Host "DONE" -ForegroundColor Green
+    }
+}
+else
+{
+    Write-Host "Trunk found ✅"
+}
+
 if (!(Test-Path $PSScriptRoot/$DevDir))
 {
     Write-Host "FATAL" -ForegroundColor Red -NoNewline
