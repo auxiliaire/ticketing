@@ -55,6 +55,10 @@ script. This will verify the requirements, provide hints if necessary, and start
 components in order, eventually building and running the backend and the frontend as
 found in the source code.
 
+Alternatively, a PowerShell script can be used too. This can start the application on
+macOS and Windows as well, provided that PowerShell is already installed.
+Usage: `pwsh start.ps1`
+
 ### Prerequisites
 
 The following prerequisites have to be fulfilled before trying to start the application.
@@ -90,19 +94,36 @@ cargo -Z unstable-options -C ./ watch -c -w src -x run
 
 ### Start the frontend
 
-By default the backend is listening on [localhost:8000](http://127.0.0.1:8080/),
+By default, the backend is listening on [localhost:7000](http://127.0.0.1:8080/),
 but it's possible to change that in the .env file, and the frontend has to know about that,
 so we pass it as an environment variable.
+Similarly, the client uses its own port, which is `7070` by default.
 
 ```bash
 cd frontend
-export SERVER_URL=http://127.0.0.1:8000 && trunk serve
+export SERVER_URL=http://127.0.0.1:7000 && trunk serve --port=7070
 ```
 
 ### Or combined
+
+#### Bash
 
 ```bash
 ./start.sh
 ```
 
-Visit [Localhost](http://127.0.0.1:8080/).
+#### Powershell
+
+Windows:
+
+```powershell
+.\start.ps1
+```
+
+macOS / Linux:
+
+```powershell
+pwsh start.ps1
+```
+
+Visit [Localhost](http://127.0.0.1:7070/).

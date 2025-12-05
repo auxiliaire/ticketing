@@ -1,5 +1,11 @@
 # START SCRIPT FOR THE WHOLE TICKETING STACK
 
+# Global settings:
+
+[Console]::TreatControlCAsInput = $true
+Start-Sleep -Seconds 1
+$Host.UI.RawUI.FlushInputBuffer()
+
 # Constants:
 
 $DevDir = "dev"
@@ -8,6 +14,8 @@ $SampleEnvFile = ".env.sample"
 $EnvFile = ".env"
 $ComposeEnvFile = "$PSScriptRoot/$DevDir/.docker-compose.env"
 $ExpectedNumberOfContainers = 10
+$BackendPidFile = "$PSScriptRoot/backend.pid"
+$FrontendPidFile = "$PSScriptRoot/frontend.pid"
 
 # Reusable functions:
 
@@ -26,6 +34,21 @@ function Test-Env()
         $EnvVar
     )
     return ([System.Environment]::GetEnvironmentVariable($EnvVar).Length -gt 0)
+}
+
+function Stop-Children()
+{
+    param (
+        $ParentPid
+    )
+    $Children = Get-Process | Where-Object { $_.Parent.Id -eq $ParentPid } | Select-Object -ExpandProperty Id
+    foreach ($Child in $Children)
+    {
+        Write-Host "-" -NoNewline
+        Stop-Children $Child
+        Stop-Process $Child
+        Write-Host "- Stopped sub-process ($Child)"
+    }
 }
 
 # Checking requirements:
@@ -176,6 +199,7 @@ try
         $PostgresReady = ((docker compose ps)|Select-String -Pattern "postgres"|Select-String -Pattern "healthy").Matches.Count
         if ($PostgresReady -ge 1)
         {
+            Start-Sleep -Seconds 1
             break
         }
     }
@@ -200,30 +224,43 @@ try
     # Starting dev backend and frontend:
     $p = Start-Process -Path "cargo" -ArgumentList "-Z","unstable-options","-C","./","watch","-c","-w","src","-x","run" -PassThru
     $BackendPid = $p.Id
-    Out-File -FilePath "$PSScriptRoot/backend.pid" -InputObject "$BackendPid"
+    Out-File -FilePath $BackendPidFile -InputObject "$BackendPid"
 
     Set-Location "$PSScriptRoot/frontend"
     $p = Start-Process -Path "trunk" -ArgumentList "serve","--port=$env:CLIENT_PORT" -PassThru
     $FrontendPid = $p.Id
-    Out-File -FilePath "$PSScriptRoot/frontend.pid" -InputObject "$FrontendPid"
+    Out-File -FilePath $FrontendPidFile -InputObject "$FrontendPid"
 
-    while ($true)
+    while (($BackendPid -ne 0) -or ($FrontendPid -ne 0))
     {
-        Start-Sleep -Milliseconds 500
+        if ($Host.UI.RawUI.KeyAvailable -and ($Key = $Host.UI.RawUI.ReadKey("AllowCtrlC,NoEcho,IncludeKeyUp")))
+        {
+            if ([Int32]$Key.Character -eq 3)
+            {
+                Write-Host ""
+                Write-Host "Ctrl-C was pressed - performing cleanup..." -ForegroundColor Yellow
+                exit
+            }
+        }
     }
 }
 finally
 {
     if (!($BackendPid -eq 0))
     {
+        Stop-Children $BackendPid
         Stop-Process $BackendPid
         Write-Host "Stopped Backend process ($BackendPid)"
+        Remove-Item $BackendPidFile
     }
     if (!($FrontendPid -eq 0))
     {
         Stop-Process $FrontendPid
         Write-Host "Stopped Frontend process ($FrontendPid)"
+        Remove-Item $FrontendPidFile
     }
+    Write-Host "Stopping containers..."
     Set-Location $PSScriptRoot/$DevDir
     docker compose down
+    Write-Host "DONE" -ForegroundColor Green
 }
