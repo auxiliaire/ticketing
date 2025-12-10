@@ -106,6 +106,31 @@ else
     Write-Host "Diesel found ✅"
 }
 
+if (!(Test-Command "bacon"))
+{
+    Write-Host "Bacon could not be found " -NoNewline
+    Write-Host "❌" -ForegroundColor Red
+    Write-Host "Trying to install Bacon... "
+    if (!(cargo install --locked bacon))
+    {
+        Write-Host "FAILED" -ForegroundColor Red
+        exit 1
+    }
+    if (!(Test-Command "bacon"))
+    {
+        Write-Host "FAILED" -ForegroundColor Red
+        exit 1
+    }
+    else
+    {
+        Write-Host "DONE" -ForegroundColor Green
+    }
+}
+else
+{
+    Write-Host "Bacon found ✅"
+}
+
 if (!(Test-Command "trunk"))
 {
     Write-Host "Trunk could not be found " -NoNewline
@@ -145,10 +170,10 @@ if (!((Test-Path $EnvFile) -and (Test-Path $ComposeEnvFile)))
     {
         Copy-Item $SampleEnvFile $EnvFile
         Copy-Item $SampleEnvFile $ComposeEnvFile
-        if (!(Test-Command "Set-DotEnv"))
+        if (!(Test-Command "Import-Dotenv"))
         {
             Write-Host "Module to read environment not found. Trying to install it... " -ForegroundColor Yellow -NoNewline
-            Find-Module -Name dotenv | Install-Module -Confirm
+            Find-Module -Name pwsh-dotenv | Install-Module -Confirm
             if ($?)
             {
                 Write-Host "DONE" -ForegroundColor Green
@@ -159,7 +184,6 @@ if (!((Test-Path $EnvFile) -and (Test-Path $ComposeEnvFile)))
                 exit 1
             }
         }
-        Set-DotEnv -Path $EnvFile
     }
     else
     {
@@ -170,6 +194,9 @@ if (!((Test-Path $EnvFile) -and (Test-Path $ComposeEnvFile)))
     Write-Host "DONE" -ForegroundColor Green
     Write-Host "Consider changing default passwords in .env file!" -ForegroundColor Yellow
 }
+
+Import-Module pwsh-dotenv
+Import-Dotenv
 
 if (!(Test-Env "CLIENT_PORT"))
 {
@@ -247,12 +274,12 @@ try
     Start-Sleep -Seconds 2
 
     # Starting dev backend and frontend:
-    $p = Start-Process -Path "cargo" -ArgumentList "-Z","unstable-options","-C","./","watch","-c","-w","src","-x","run" -PassThru
+    $p = Start-Process "bacon" -ArgumentList "--watch","src" -PassThru -WorkingDirectory $PSScriptRoot
     $BackendPid = $p.Id
     Out-File -FilePath $BackendPidFile -InputObject "$BackendPid"
 
     Set-Location "$PSScriptRoot/frontend"
-    $p = Start-Process -Path "trunk" -ArgumentList "serve","--port=$env:CLIENT_PORT" -PassThru
+    $p = Start-Process "trunk" -ArgumentList "serve","--port=$env:CLIENT_PORT" -PassThru
     $FrontendPid = $p.Id
     Out-File -FilePath $FrontendPidFile -InputObject "$FrontendPid"
 

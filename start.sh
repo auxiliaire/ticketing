@@ -81,6 +81,30 @@ else
   printf "Diesel found ✅\n"
 fi
 
+if ! hasInstalled "bacon"
+then
+  printf "Bacon could not be found %s❌%s\n" "$RED" "$RESET"
+  printf "Trying to install Bacon... "
+  if ! cargo install --locked bacon; then
+    printf "%sFAILED%s\n" "$RED" "$RESET"
+    exit 1
+  fi
+  if ! hasInstalled "bacon"
+  then
+    printf "%sFAILED%s\n" "$RED" "$RESET"
+    exit 1
+  else
+    printf "%sDONE%s\n" "$GREEN" "$RESET"
+  fi
+else
+  printf "Bacon found ✅\n"
+fi
+
+if ! [[ -d $DEV_DIR ]]; then
+  printf "%sFATAL%s: directory '%s' is missing (try pull)\n" "$RED" "$RESET" $DEV_DIR
+  exit 1
+fi
+
 if ! hasInstalled "trunk"
 then
   printf "Trunk could not be found %s❌%s\n" "$RED" "$RESET"
@@ -119,6 +143,8 @@ if ! [[ -e $ENV_FILE && -e $COMPOSE_ENV_FILE ]]; then
   printf "%sDONE%s\n" "$GREEN" "$RESET"
   printf "%sConsider changing default passwords in .env file!%s\n" "$YELLOW" "$RESET"
 fi
+
+source $ENV_FILE
 
 if ! [[ -v CLIENT_PORT ]]
 then
@@ -180,5 +206,5 @@ printf "%sThen 'docker compose down' to remove containers.%s\n" "$YELLOW" "$RESE
 sleep 2
 
 # Starting dev backend and frontend:
-(trap 'kill 0' SIGINT; (trap 'kill 0' SIGINT; cargo -Z unstable-options -C ./ watch -c -w src -x run) &\
+(trap 'kill 0' SIGINT; (trap 'kill 0' SIGINT; bacon --watch src) &\
  (cd frontend || exit; trunk serve --port="${CLIENT_PORT}") & wait)
