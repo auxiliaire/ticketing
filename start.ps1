@@ -13,6 +13,13 @@ $MigrationsDir = "extra_migrations/fang"
 $SampleEnvFile = ".env.sample"
 $EnvFile = ".env"
 $ComposeEnvFile = "$PSScriptRoot/$DevDir/.docker-compose.env"
+$OSTestCmd = "Get-WMIObject"
+$EnvImportModuleUX = "dotenv"
+$EnvImportModuleWin = "pwsh-dotenv"
+$EnvImportModule = $EnvImportModuleUX
+$EnvImportCmdUX = "Set-DotEnv"
+$EnvImportCmdWin = "Import-Dotenv"
+$EnvImportCmd = $EnvImportCmdUX
 $ExpectedNumberOfContainers = 10
 $BackendPidFile = "$PSScriptRoot/backend.pid"
 $FrontendPidFile = "$PSScriptRoot/frontend.pid"
@@ -163,6 +170,19 @@ if (!(Test-Path $PSScriptRoot/$DevDir))
     exit 1
 }
 
+# Detecting OS:
+if (Test-Command $OSTestCmd)
+{
+    # Windows:
+    Write-Host "Windows detected" -ForegroundColor Blue
+    $EnvImportModule = $EnvImportModuleWin
+    $EnvImportCmd = $EnvImportCmdWin
+}
+else
+{
+    Write-Host "UX detected" -ForegroundColor Yellow
+}
+
 if (!((Test-Path $EnvFile) -and (Test-Path $ComposeEnvFile)))
 {
     Write-Host "Creating environment..."
@@ -170,10 +190,10 @@ if (!((Test-Path $EnvFile) -and (Test-Path $ComposeEnvFile)))
     {
         Copy-Item $SampleEnvFile $EnvFile
         Copy-Item $SampleEnvFile $ComposeEnvFile
-        if (!(Test-Command "Import-Dotenv"))
+        if (!(Test-Command $EnvImportCmd))
         {
             Write-Host "Module to read environment not found. Trying to install it... " -ForegroundColor Yellow -NoNewline
-            Find-Module -Name pwsh-dotenv | Install-Module -Confirm
+            Find-Module -Name $EnvImportModule | Install-Module -Confirm
             if ($?)
             {
                 Write-Host "DONE" -ForegroundColor Green
@@ -195,8 +215,8 @@ if (!((Test-Path $EnvFile) -and (Test-Path $ComposeEnvFile)))
     Write-Host "Consider changing default passwords in .env file!" -ForegroundColor Yellow
 }
 
-Import-Module pwsh-dotenv
-Import-Dotenv
+Import-Module $EnvImportModule
+Invoke-Expression $EnvImportCmd
 
 if (!(Test-Env "CLIENT_PORT"))
 {
