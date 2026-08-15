@@ -82,7 +82,7 @@ async fn set_preferences(
             .await?;
         }
     }
-    update_subscriptions(store, update.clone(), request_user.username.clone());
+    update_subscriptions(store, update.clone(), request_user.username.clone().into());
 
     Ok(Json(update))
 }

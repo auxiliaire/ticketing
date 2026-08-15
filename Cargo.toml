@@ -7,23 +7,23 @@ edition = "2021"
 
 [workspace]
 # Workspace "frontend" added for local Cargo builds. For Docker builds, see below.
-# members = [".", "backend", "entity", "migration", "shared", "frontend"]
+members = [".", "backend", "entity", "migration", "shared", "frontend"]
 # Frontendless workspace for Docker build:
-members = [".", "backend", "entity", "migration", "shared"]
+# members = [".", "backend", "entity", "migration", "shared"]
 
 [dependencies]
 # Modules
 backend = { path = "backend" }
 entity = { path = "entity" }
 # Use with local Cargo builds only:
-# frontend = { path = "frontend" }
+frontend = { path = "frontend" }
 migration = { path = "migration" }
 shared = { path = "shared" }
 # Core dependencies
-tokio = { version = "1.48", features = ["full"] }
+tokio = { version = "1.53", features = ["full"] }
 
 [dev-dependencies]
-cucumber = "0.21"
+cucumber = "0.23"
 playwright = "0.0.20"
 reqwest = "0.12"
 thirtyfour = "0.36"

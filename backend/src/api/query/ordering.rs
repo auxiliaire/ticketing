@@ -11,7 +11,7 @@ impl Serialize for Order {
         let s_value = match self.0 {
             sea_orm::Order::Asc => String::from("asc"),
             sea_orm::Order::Desc => String::from("desc"),
-            sea_orm::Order::Field(_) => String::from("unsupported"),
+            _ => String::from("unsupported"),
         };
         serializer.serialize_str(s_value.as_str())
     }

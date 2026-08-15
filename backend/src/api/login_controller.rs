@@ -119,7 +119,7 @@ async fn register(
     println!("User(): '{}'", model.username);
     let user = users::ActiveModel {
         name: Set(model.name.to_owned()),
-        username: Set(model.username.to_owned()),
+        username: Set(model.username.to_owned().into()),
         password: Set(model.password.unwrap().to_owned()),
         role: Set(OptionUserRole(model.role).to_string()),
         ..Default::default()

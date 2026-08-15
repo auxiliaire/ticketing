@@ -89,7 +89,7 @@ async fn post_user(
     println!("User(): '{}'", model.name);
     let user = users::ActiveModel {
         name: Set(model.name.to_owned()),
-        username: Set(model.username.to_owned()),
+        username: Set(model.username.to_owned().into()),
         password: Set(model.password.unwrap().to_owned()),
         role: Set(OptionUserRole(model.role).to_string()),
         ..Default::default()
@@ -138,7 +138,7 @@ async fn delete_user(
     .await
     .map_or_else(
         |e| JsonError::from((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())).into_response(),
-        |DeleteResult { rows_affected }| match rows_affected {
+        |DeleteResult { rows_affected, .. }| match rows_affected {
             0 => {
                 JsonError::from((StatusCode::NOT_FOUND, String::from("Not found"))).into_response()
             }

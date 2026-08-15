@@ -116,7 +116,7 @@ impl From<&Model> for UserDto {
             id: Some(value.id),
             public_id: Some(value.public_id),
             name: value.name.to_owned(),
-            username: value.username.to_owned(),
+            username: value.username.to_owned().into(),
             password: None,
             role: UserRole::try_from(value.role.as_str()).ok(),
         }
@@ -129,7 +129,7 @@ impl From<Model> for UserDto {
             id: Some(value.id),
             public_id: Some(value.public_id),
             name: value.name.to_owned(),
-            username: value.username.to_owned(),
+            username: value.username.to_owned().into(),
             password: None,
             role: UserRole::try_from(value.role.as_str()).ok(),
         }

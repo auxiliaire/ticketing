@@ -20,9 +20,42 @@ pub struct Model {
     pub password: String,
     pub role: String,
     #[sea_orm(unique)]
-    pub username: Email,
+    pub username: Email2,
     #[sea_orm(unique)]
     pub public_id: Uuid,
+}
+
+/**
+ * A newtype for the outdated Email type to support SeaORM 2.0.
+ */
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveValueType)]
+pub struct Email2(String);
+
+impl From<String> for Email2 {
+    fn from(v: String) -> Self {
+        Email2(v)
+    }
+}
+
+impl From<Email> for Email2 {
+    fn from(email: Email) -> Self {
+        Email2(email.to_string())
+    }
+}
+
+impl Into<Email> for Email2 {
+    fn into(self) -> Email {
+        match Email::from_string(self.0) {
+            Ok(email_string) => email_string,
+            Err(_) => Email::default()
+        }
+    }
+}
+
+impl Display for Email2 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
 
 impl std::fmt::Debug for Model {
