@@ -52,7 +52,7 @@ impl AuthService {
                                 serde_json::from_str(token_or_error.clone().as_ref());
                             match err_result {
                                 Ok(err) => {
-                                    let message = String::from(err.message.clone());
+                                    let message = err.message.clone();
                                     callback_error.emit(err);
                                     Err(message)
                                 }
