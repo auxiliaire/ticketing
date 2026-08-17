@@ -43,12 +43,9 @@ impl From<Email> for Email2 {
     }
 }
 
-impl Into<Email> for Email2 {
-    fn into(self) -> Email {
-        match Email::from_string(self.0) {
-            Ok(email_string) => email_string,
-            Err(_) => Email::default()
-        }
+impl From<Email2> for Email {
+    fn from(val: Email2) -> Self {
+        Email::from_string(val.0).unwrap_or_default()
     }
 }
 
