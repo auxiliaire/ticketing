@@ -1,12 +1,11 @@
 use fang::AsyncQueue;
 use fang::AsyncWorkerPool;
-use fang::NoTls;
 
 #[derive(Debug)]
 pub struct Scheduler {}
 
 impl Scheduler {
-    pub async fn init(database_url: String) -> AsyncQueue<NoTls> {
+    pub async fn init(database_url: String) -> AsyncQueue {
         tracing::info!("Initializing Scheduler...");
         let max_pool_size: u32 = 3;
         let mut queue = AsyncQueue::builder()
@@ -14,10 +13,10 @@ impl Scheduler {
             .max_pool_size(max_pool_size)
             .build();
 
-        queue.connect(NoTls).await.unwrap();
+        queue.connect().await.unwrap();
         tracing::info!(" - Queue connected...");
 
-        let mut pool: AsyncWorkerPool<AsyncQueue<NoTls>> = AsyncWorkerPool::builder()
+        let mut pool: AsyncWorkerPool<AsyncQueue> = AsyncWorkerPool::builder()
             .number_of_workers(10_u32)
             .queue(queue.clone())
             .build();

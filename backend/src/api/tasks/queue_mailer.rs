@@ -58,7 +58,7 @@ pub struct QueueMailer {}
 #[async_trait]
 #[typetag::serde]
 impl AsyncRunnable for QueueMailer {
-    async fn run(&self, _queue: &mut dyn AsyncQueueable) -> Result<(), FangError> {
+    async fn run(&self, _queue: &dyn AsyncQueueable) -> Result<(), FangError> {
         tracing::info!("RUNNING QueueMailer");
 
         // Acquire Redis connection

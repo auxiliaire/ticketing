@@ -14,7 +14,6 @@ use axum_login::{
     AuthManagerLayerBuilder,
 };
 use fang::AsyncQueue;
-use fang::NoTls;
 use fang::{AsyncQueueable, AsyncRunnable};
 use http::{
     header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, ORIGIN},
@@ -42,11 +41,7 @@ pub mod tasks;
 pub mod template_models;
 pub mod validated_json;
 
-pub async fn serve(
-    store: Client,
-    db: DatabaseConnection,
-    queue: AsyncQueue<NoTls>,
-) -> anyhow::Result<()> {
+pub async fn serve(store: Client, db: DatabaseConnection, queue: AsyncQueue) -> anyhow::Result<()> {
     let listener = TcpListener::bind(&SocketAddr::new(SERVER_IP, *SERVER_PORT))
         .await
         .context("failed to bind listener");
@@ -58,7 +53,7 @@ pub async fn serve(
     .context("failed to serve API")
 }
 
-pub fn router(store: Client, db: DatabaseConnection, queue: AsyncQueue<NoTls>) -> Router {
+pub fn router(store: Client, db: DatabaseConnection, queue: AsyncQueue) -> Router {
     let cors = CorsLayer::new()
         .allow_methods([
             Method::POST,
@@ -95,7 +90,7 @@ pub fn router(store: Client, db: DatabaseConnection, queue: AsyncQueue<NoTls>) -
         tracing::warn!("Unable to initialize Notification Service. Reason: {}", e);
     }
 
-    let mut q = queue.clone();
+    let q = queue.clone();
     let task = QueueMailer {};
     tokio::spawn(async move {
         if let Err(e) = q.schedule_task(&task as &dyn AsyncRunnable).await {
