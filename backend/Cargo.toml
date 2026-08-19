@@ -10,7 +10,7 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0"
-askama = { version = "0.14" }
+askama = { version = "0.16" }
 async-trait = "0.1"
 axum = { version = "0.8", features = ["macros", "query"] }
 axum_csrf = { version = "0.11", features = ["layer"] }
