@@ -20,7 +20,7 @@ use http::StatusCode;
 use lettre::Message;
 use object_store::{
     aws::{AmazonS3, AmazonS3Builder},
-    ObjectStore, WriteMultipart,
+    GetOptions, ObjectStore, PutMultipartOptions, WriteMultipart,
 };
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use serde::{Deserialize, Serialize};
@@ -65,9 +65,10 @@ pub async fn upload_file(
                 let raw_path = format!("tickets/{}/attachments/{}", ticket_id, file_name);
                 let obj_path = object_store::path::Path::from(raw_path.clone());
                 let bytes = tokio::fs::read(path.clone()).await.unwrap();
+                let opts = PutMultipartOptions::default();
 
                 let upload = bucket
-                    .put_multipart(&obj_path)
+                    .put_multipart_opts(&obj_path, opts)
                     .await
                     .context("Multipart upload failed")
                     .unwrap();
@@ -120,9 +121,10 @@ pub async fn download_file(
         .unwrap();
     let raw_path = format!("tickets/{}/attachments/{}", ticket_id, file_name);
     let obj_path = object_store::path::Path::from(raw_path.clone());
+    let opts = GetOptions::default();
 
     let stream = bucket
-        .get(&obj_path)
+        .get_opts(&obj_path, opts)
         .await
         .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .into_stream();
