@@ -1,4 +1,5 @@
 use axum::{
+    debug_handler,
     extract::{Json, Path},
     http::StatusCode,
     response::IntoResponse,
@@ -10,7 +11,7 @@ use entity::{comments, comments::Entity as Comment};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait, Set};
 use serde::{Deserialize, Serialize};
 
-use crate::api::error::{ApiError, JsonError};
+use crate::api::error::{ApiError, BoxError, JsonError};
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize)]
@@ -29,9 +30,10 @@ pub fn router() -> Router {
         .route("/comments/{id}", delete(delete_comment))
 }
 
+#[debug_handler]
 async fn get_comments(
     db: Extension<DatabaseConnection>,
-) -> Result<Json<Vec<comments::Model>>, ApiError> {
+) -> Result<Json<Vec<comments::Model>>, BoxError<ApiError>> {
     let list = Comment::find().all(&*db).await?;
     Ok(Json(list))
 }
@@ -39,12 +41,9 @@ async fn get_comments(
 async fn get_comment(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> Result<Json<comments::Model>, ApiError> {
+) -> Result<Json<comments::Model>, BoxError<ApiError>> {
     Comment::find_by_id(id).one(&*db).await?.map_or(
-        Err(ApiError::new(
-            StatusCode::NOT_FOUND,
-            String::from("Not found"),
-        )),
+        Err(ApiError::new(StatusCode::NOT_FOUND, String::from("Not found")).into()),
         |comment| Ok(Json(comment)),
     )
 }
@@ -52,7 +51,7 @@ async fn get_comment(
 async fn post_comment(
     db: Extension<DatabaseConnection>,
     WithRejection(Json(model), _): WithRejection<Json<comments::Model>, ApiError>,
-) -> Result<Json<comments::Model>, ApiError> {
+) -> Result<Json<comments::Model>, BoxError<ApiError>> {
     println!("New comment on ticket({})", model.ticket_id);
     let comment = comments::ActiveModel {
         text: Set(model.text.to_owned()),
@@ -69,7 +68,7 @@ async fn put_comment(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
     WithRejection(Json(update), _): WithRejection<Json<comments::Model>, ApiError>,
-) -> Result<Json<comments::Model>, ApiError> {
+) -> Result<Json<comments::Model>, BoxError<ApiError>> {
     let original_result = Comment::find_by_id(id).one(&*db).await?;
     match original_result {
         Some(original) => {
@@ -84,10 +83,7 @@ async fn put_comment(
             .await?;
             Ok(Json(updated))
         }
-        None => Err(ApiError::new(
-            StatusCode::NOT_FOUND,
-            String::from("Not found"),
-        )),
+        None => Err(ApiError::new(StatusCode::NOT_FOUND, String::from("Not found")).into()),
     }
 }
 

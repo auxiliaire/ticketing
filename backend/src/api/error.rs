@@ -149,6 +149,61 @@ impl Default for AuthError {
     }
 }
 
+pub trait DisplayableResponse:
+    std::fmt::Debug + Display + std::error::Error + IntoResponse
+{
+}
+
+#[derive(Debug, Error)]
+pub struct BoxError<T>
+where
+    T: DisplayableResponse,
+{
+    pub error: Box<T>,
+}
+
+impl<T> Display for BoxError<T>
+where
+    T: DisplayableResponse,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.error)
+    }
+}
+
+impl<T> IntoResponse for BoxError<T>
+where
+    T: DisplayableResponse,
+{
+    fn into_response(self) -> axum::response::Response {
+        self.error.into_response()
+    }
+}
+
+impl From<ApiError> for BoxError<ApiError> {
+    fn from(value: ApiError) -> Self {
+        BoxError {
+            error: Box::new(value),
+        }
+    }
+}
+
+impl From<DbErr> for BoxError<ApiError> {
+    fn from(value: DbErr) -> Self {
+        BoxError {
+            error: Box::new(ApiError::from(value)),
+        }
+    }
+}
+
+impl From<AuthError> for BoxError<ApiError> {
+    fn from(value: AuthError) -> Self {
+        BoxError {
+            error: Box::new(value.into()),
+        }
+    }
+}
+
 #[derive(Debug, StrumDisplay, Error)]
 pub enum ApiError {
     #[error(transparent)]
@@ -159,6 +214,8 @@ pub enum ApiError {
     HandlerError(#[from] JsonError),
     AuthError(#[from] AuthError),
 }
+
+impl DisplayableResponse for ApiError {}
 
 impl ApiError {
     pub fn new(status_code: StatusCode, message: String) -> Self {

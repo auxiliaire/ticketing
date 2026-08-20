@@ -1,5 +1,5 @@
 use crate::api::{
-    error::{ApiError, JsonError},
+    error::{ApiError, BoxError, JsonError},
     query::{
         filters::{pagination::Pagination, search::Search},
         ordering::Ordering,
@@ -36,7 +36,7 @@ async fn get_users(
     Query(search): Query<Search>,
     Query(pagination): Query<Pagination>,
     Query(ordering): Query<Ordering>,
-) -> Result<Json<Vec<UserDto>>, ApiError> {
+) -> Result<Json<Vec<UserDto>>, BoxError<ApiError>> {
     let mut select = match ordering.sort.and_then(|s| sort_to_column(s.as_str())) {
         Some(sort) => User::find().order_by::<users::Column>(sort, ordering.order.0),
         None => User::find().order_by(users::Column::Id, Order::Asc),
@@ -68,16 +68,13 @@ fn sort_to_column(s: &str) -> Option<users::Column> {
 async fn get_user(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<Uuid>, ApiError>,
-) -> Result<Json<UserDto>, ApiError> {
+) -> Result<Json<UserDto>, BoxError<ApiError>> {
     User::find()
         .filter(users::Column::PublicId.eq(id))
         .one(&*db)
         .await?
         .map_or(
-            Err(ApiError::new(
-                StatusCode::NOT_FOUND,
-                String::from("Not found"),
-            )),
+            Err(ApiError::new(StatusCode::NOT_FOUND, String::from("Not found")).into()),
             |user| Ok(Json(user.into())),
         )
 }
@@ -85,7 +82,7 @@ async fn get_user(
 async fn post_user(
     db: Extension<DatabaseConnection>,
     WithRejection(ValidatedJson(model), _): WithRejection<ValidatedJson<UserDto>, ApiError>,
-) -> Result<Json<UserDto>, ApiError> {
+) -> Result<Json<UserDto>, BoxError<ApiError>> {
     println!("User(): '{}'", model.name);
     let user = users::ActiveModel {
         name: Set(model.name.to_owned()),
@@ -103,7 +100,7 @@ async fn put_user(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
     WithRejection(Json(update), _): WithRejection<Json<UserDto>, ApiError>,
-) -> Result<Json<UserDto>, ApiError> {
+) -> Result<Json<UserDto>, BoxError<ApiError>> {
     let original_result = User::find_by_id(id).one(&*db).await?;
     match original_result {
         Some(original) => {
@@ -119,10 +116,7 @@ async fn put_user(
             .await?;
             Ok(Json(updated.into()))
         }
-        None => Err(ApiError::new(
-            StatusCode::NOT_FOUND,
-            String::from("Not found"),
-        )),
+        None => Err(ApiError::new(StatusCode::NOT_FOUND, String::from("Not found")).into()),
     }
 }
 

@@ -2,7 +2,7 @@ use super::{
     auth_backend::AuthSession,
     auth_utils::extract_auth_from_header,
     consts::CLIENT_URL,
-    error::{ApiError, AuthError},
+    error::{ApiError, AuthError, BoxError},
     jwt::encode_jwt,
     query,
     services::{
@@ -115,7 +115,7 @@ async fn logout(mut auth_session: AuthSession) -> impl IntoResponse {
 async fn register(
     db: Extension<DatabaseConnection>,
     WithRejection(ValidatedJson(model), _): WithRejection<ValidatedJson<UserDto>, ApiError>,
-) -> Result<Json<UserDto>, ApiError> {
+) -> Result<Json<UserDto>, BoxError<ApiError>> {
     println!("User(): '{}'", model.username);
     let user = users::ActiveModel {
         name: Set(model.name.to_owned()),
@@ -133,7 +133,7 @@ async fn authenticate_cookie(
     headers: HeaderMap,
     Extension(auth_backend): Extension<AuthBackend>,
     jar: CookieJar,
-) -> Result<(CookieJar, String), ApiError> {
+) -> Result<(CookieJar, String), BoxError<ApiError>> {
     let (_, token) = generate_token_using_auth(headers, auth_backend).await?;
     Ok((
         jar.add(
@@ -153,7 +153,7 @@ async fn authenticate_raw(
     db: Extension<DatabaseConnection>,
     Extension(auth_backend): Extension<AuthBackend>,
     Extension(notification_service): Extension<NotificationService>,
-) -> Result<String, ApiError> {
+) -> Result<String, BoxError<ApiError>> {
     // We can just return the token in the body, or create a refresh token instead.
     let (auth_user, token) = generate_token_using_auth(headers, auth_backend).await?;
 
@@ -180,7 +180,7 @@ async fn send_mfa_message(
     notification_service: NotificationService,
     auth_user: User,
     token: String,
-) -> Result<String, ApiError> {
+) -> Result<String, BoxError<ApiError>> {
     // Prepare email:
     let template = MfaEmailModel {
         client_url: CLIENT_URL.to_string(),
@@ -198,7 +198,7 @@ async fn send_mfa_message(
                 .body(template.render().unwrap())
                 .unwrap(),
         )
-        .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+        .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into())
         .map(|_| String::default())
 }
 
@@ -206,7 +206,7 @@ async fn refresh_token(
     headers: HeaderMap,
     jar: CookieJar,
     Extension(store): Extension<Client>,
-) -> Result<String, ApiError> {
+) -> Result<String, BoxError<ApiError>> {
     let bearer = extract_auth_from_header(&headers, AuthScheme::Bearer);
     let refresh_token_cookie = jar.get("refresh-token");
 
@@ -215,10 +215,9 @@ async fn refresh_token(
         (Some(refresh_token_cookie), _) => refresh_token_cookie.value().to_owned(),
         (_, Ok(bearer)) => bearer,
         _ => {
-            return Err(ApiError::new(
-                StatusCode::UNAUTHORIZED,
-                String::from("Token is missing"),
-            ));
+            return Err(
+                ApiError::new(StatusCode::UNAUTHORIZED, String::from("Token is missing")).into(),
+            );
         }
     };
 
@@ -242,7 +241,7 @@ async fn refresh_token(
 async fn generate_token_using_auth(
     headers: HeaderMap,
     auth_backend: AuthBackend,
-) -> Result<(User, String), ApiError> {
+) -> Result<(User, String), BoxError<ApiError>> {
     let creds_vec =
         extract_auth_from_header(&headers, AuthScheme::Basic).and_then(|base64_string| {
             engine::general_purpose::STANDARD
@@ -267,7 +266,8 @@ async fn generate_token_using_auth(
         return Err(ApiError::new(
             StatusCode::UNAUTHORIZED,
             String::from("Invalid credentials"),
-        ));
+        )
+        .into());
     };
 
     let token = encode_jwt(user.public_id)

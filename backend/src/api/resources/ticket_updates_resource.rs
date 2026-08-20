@@ -8,7 +8,7 @@ use axum_extra::extract::WithRejection;
 use entity::{ticket_updates, ticket_updates::Entity as TicketUpdate};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 
-use crate::api::error::ApiError;
+use crate::api::error::{ApiError, BoxError};
 
 pub fn router() -> Router {
     Router::new()
@@ -19,7 +19,7 @@ pub fn router() -> Router {
 
 async fn get_ticket_updates(
     db: Extension<DatabaseConnection>,
-) -> Result<Json<Vec<ticket_updates::Model>>, ApiError> {
+) -> Result<Json<Vec<ticket_updates::Model>>, BoxError<ApiError>> {
     let list = TicketUpdate::find().all(&*db).await?;
     Ok(Json(list))
 }
@@ -27,12 +27,9 @@ async fn get_ticket_updates(
 async fn get_ticket_update(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> Result<Json<ticket_updates::Model>, ApiError> {
+) -> Result<Json<ticket_updates::Model>, BoxError<ApiError>> {
     TicketUpdate::find_by_id(id).one(&*db).await?.map_or(
-        Err(ApiError::new(
-            StatusCode::NOT_FOUND,
-            String::from("Not found"),
-        )),
+        Err(ApiError::new(StatusCode::NOT_FOUND, String::from("Not found")).into()),
         |ticket_update| Ok(Json(ticket_update)),
     )
 }
@@ -40,7 +37,7 @@ async fn get_ticket_update(
 async fn post_ticket_update(
     db: Extension<DatabaseConnection>,
     WithRejection(Json(model), _): WithRejection<Json<ticket_updates::Model>, ApiError>,
-) -> Result<Json<ticket_updates::Model>, ApiError> {
+) -> Result<Json<ticket_updates::Model>, BoxError<ApiError>> {
     println!(
         "TicketUpdate(): {} -> {}",
         model.previous_state, model.next_state

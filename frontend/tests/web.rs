@@ -8,11 +8,6 @@ mod common;
 
 wasm_bindgen_test_configure!(run_in_browser);
 
-#[derive(Clone, Debug, PartialEq)]
-struct Context {
-    checked: bool,
-}
-
 #[function_component]
 fn App() -> Html {
     let checked = use_state(|| false);

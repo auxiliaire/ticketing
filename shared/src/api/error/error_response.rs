@@ -27,6 +27,24 @@ use std::fmt::Display;
 }
 */
 
+pub struct BoxErrorResponse {
+    pub error_response: Box<ErrorResponse>,
+}
+
+impl From<ErrorResponse> for BoxErrorResponse {
+    fn from(value: ErrorResponse) -> Self {
+        BoxErrorResponse {
+            error_response: Box::new(value),
+        }
+    }
+}
+
+impl From<String> for BoxErrorResponse {
+    fn from(value: String) -> Self {
+        ErrorResponse::from(value).into()
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ErrorResponse {
     pub code: String,

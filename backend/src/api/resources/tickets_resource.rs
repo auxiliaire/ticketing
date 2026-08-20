@@ -1,5 +1,5 @@
 use crate::api::{
-    error::{ApiError, JsonError},
+    error::{ApiError, BoxError, JsonError},
     query::{
         filters::{
             pagination::{Pagination, TotalCount},
@@ -52,7 +52,7 @@ async fn get_tickets(
     Query(search): Query<Search>,
     Query(pagination): Query<Pagination>,
     Query(ordering): Query<Ordering>,
-) -> Result<Json<Page<TicketDto>>, ApiError> {
+) -> Result<Json<Page<TicketDto>>, BoxError<ApiError>> {
     let total = Ticket::find()
         .select_only()
         .column_as(tickets::Column::Id.count(), "count")
@@ -102,7 +102,7 @@ fn sort_to_column(s: &str) -> Option<tickets::Column> {
 
 async fn get_unassigned_tickets(
     db: Extension<DatabaseConnection>,
-) -> Result<Json<Vec<TicketDto>>, ApiError> {
+) -> Result<Json<Vec<TicketDto>>, BoxError<ApiError>> {
     let list = Ticket::find()
         .filter(
             Condition::all()
@@ -118,7 +118,7 @@ async fn get_unassigned_tickets(
 async fn get_ticket(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> Result<Json<TicketDto>, ApiError> {
+) -> Result<Json<TicketDto>, BoxError<ApiError>> {
     Ticket::find()
         .filter(tickets::Column::Id.eq(id))
         .columns([
@@ -135,10 +135,7 @@ async fn get_ticket(
         .one(&*db)
         .await?
         .map_or(
-            Err(ApiError::new(
-                StatusCode::NOT_FOUND,
-                String::from("Not found"),
-            )),
+            Err(ApiError::new(StatusCode::NOT_FOUND, String::from("Not found")).into()),
             |ticket| Ok(Json(ticket.into())),
         )
 }
@@ -146,7 +143,7 @@ async fn get_ticket(
 async fn post_ticket(
     db: Extension<DatabaseConnection>,
     WithRejection(Json(model), _): WithRejection<Json<TicketDto>, ApiError>,
-) -> Result<Json<TicketDto>, ApiError> {
+) -> Result<Json<TicketDto>, BoxError<ApiError>> {
     println!("Ticket(): '{}'", model.title);
 
     let user_id = User::find()
@@ -177,7 +174,7 @@ async fn put_ticket(
     Extension(auth_user): Extension<users::Model>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
     WithRejection(Json(update), _): WithRejection<Json<TicketDto>, ApiError>,
-) -> Result<Json<TicketDto>, ApiError> {
+) -> Result<Json<TicketDto>, BoxError<ApiError>> {
     let original_result = Ticket::find_by_id(id).one(&*db).await?;
 
     let user_id = User::find()
@@ -207,10 +204,7 @@ async fn put_ticket(
 
             Ok(Json(updated.into()))
         }
-        None => Err(ApiError::new(
-            StatusCode::NOT_FOUND,
-            String::from("Not found"),
-        )),
+        None => Err(ApiError::new(StatusCode::NOT_FOUND, String::from("Not found")).into()),
     }
 }
 

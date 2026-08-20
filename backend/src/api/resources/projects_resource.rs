@@ -1,5 +1,5 @@
 use crate::api::{
-    error::{ApiError, JsonError},
+    error::{ApiError, BoxError, JsonError},
     query::{
         filters::pagination::{Pagination, TotalCount},
         ordering::Ordering,
@@ -44,7 +44,7 @@ async fn get_projects(
     db: Extension<DatabaseConnection>,
     Query(pagination): Query<Pagination>,
     Query(ordering): Query<Ordering>,
-) -> Result<Json<Page<ProjectDto>>, ApiError> {
+) -> Result<Json<Page<ProjectDto>>, BoxError<ApiError>> {
     let total = Project::find()
         .select_only()
         .column_as(projects::Column::Id.count(), "count")
@@ -86,7 +86,7 @@ fn sort_to_column(s: &str) -> Option<projects::Column> {
 async fn get_project(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> Result<Json<ProjectDto>, ApiError> {
+) -> Result<Json<ProjectDto>, BoxError<ApiError>> {
     Project::find()
         .filter(projects::Column::Id.eq(id))
         .columns([
@@ -101,10 +101,7 @@ async fn get_project(
         .one(&*db)
         .await?
         .map_or(
-            Err(ApiError::new(
-                StatusCode::NOT_FOUND,
-                String::from("Not found"),
-            )),
+            Err(ApiError::new(StatusCode::NOT_FOUND, String::from("Not found")).into()),
             |project| Ok(Json(project.into())),
         )
 }
@@ -112,7 +109,7 @@ async fn get_project(
 async fn get_project_tickets(
     db: Extension<DatabaseConnection>,
     WithRejection(Path(id), _): WithRejection<Path<u64>, ApiError>,
-) -> Result<Json<Vec<TicketDto>>, ApiError> {
+) -> Result<Json<Vec<TicketDto>>, BoxError<ApiError>> {
     let list = Ticket::find()
         .filter(tickets::Column::ProjectId.eq(id))
         .columns([
@@ -140,7 +137,7 @@ async fn post_project_tickets(
         ValidatedJson<ProjectTicketsDto>,
         ApiError,
     >,
-) -> Result<Json<Vec<TicketDto>>, ApiError> {
+) -> Result<Json<Vec<TicketDto>>, BoxError<ApiError>> {
     Ticket::update_many()
         .col_expr(
             <entity::prelude::Tickets as EntityTrait>::Column::ProjectId,
@@ -168,7 +165,7 @@ async fn post_project_tickets(
 async fn post_project(
     db: Extension<DatabaseConnection>,
     WithRejection(ValidatedJson(model), _): WithRejection<ValidatedJson<ProjectDto>, ApiError>,
-) -> Result<Json<ProjectDto>, ApiError> {
+) -> Result<Json<ProjectDto>, BoxError<ApiError>> {
     println!("Project(): '{}'", model.summary);
 
     let Some(user_id) = User::find()
@@ -179,10 +176,7 @@ async fn post_project(
         .one(&*db)
         .await?
     else {
-        return Err(ApiError::new(
-            StatusCode::BAD_REQUEST,
-            String::from("User not found"),
-        ));
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, String::from("User not found")).into());
     };
 
     let project = projects::ActiveModel {
