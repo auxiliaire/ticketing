@@ -162,7 +162,7 @@ async fn authenticate_raw(
 
     // Storing the JWT token in cache:
     let mut con = store
-        .get_multiplexed_tokio_connection()
+        .get_multiplexed_async_connection()
         .await
         .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let _: () = con
@@ -222,7 +222,7 @@ async fn refresh_token(
     };
 
     let mut con = store
-        .get_multiplexed_tokio_connection()
+        .get_multiplexed_async_connection()
         .await
         .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let jwt = con
