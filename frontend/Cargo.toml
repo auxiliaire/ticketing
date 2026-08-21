@@ -9,7 +9,7 @@ name = "frontend"
 path = "src/lib.rs"
 
 [dependencies]
-base64 = "0.22"
+base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
 entity = { path = "../entity" }
 gloo-net = "0.6"

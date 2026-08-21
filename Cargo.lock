@@ -2145,7 +2145,7 @@ dependencies = [
 name = "frontend"
 version = "0.2.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "chrono",
  "entity",
  "gloo-net 0.6.0",
