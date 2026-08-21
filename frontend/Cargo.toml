@@ -12,9 +12,9 @@ path = "src/lib.rs"
 base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
 entity = { path = "../entity" }
-gloo-net = "0.6"
-gloo-timers = "0.3"
-gloo-utils = "0.2"
+gloo-net = "0.7"
+gloo-timers = "0.4"
+gloo-utils = "0.3"
 implicit-clone = "0.4"
 log = "0.4"
 serde_json = "1.0"
