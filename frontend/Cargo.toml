@@ -56,5 +56,5 @@ features = [
 ]
 
 [dev-dependencies]
-gloo-utils = "0.2"
+gloo-utils = "0.3"
 wasm-bindgen-test = "0.3"
