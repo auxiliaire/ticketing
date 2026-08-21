@@ -2157,7 +2157,7 @@ dependencies = [
  "serde_json",
  "serde_valid",
  "shared",
- "strum 0.27.2",
+ "strum 0.28.0",
  "uuid",
  "wasm-bindgen",
  "wasm-bindgen-test",
@@ -5875,7 +5875,7 @@ dependencies = [
  "serde-email",
  "serde_json",
  "serde_valid",
- "strum 0.27.2",
+ "strum 0.28.0",
  "uuid",
 ]
 
