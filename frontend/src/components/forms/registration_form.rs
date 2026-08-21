@@ -10,7 +10,9 @@ use shared::api::error::error_response::ErrorResponse;
 use shared::dtos::user_dto::UserDto;
 use shared::validation::is_empty::IsEmpty;
 use shared::validation::user_validation::{OptionUserRole, UserRole, UserValidation};
-use shared::validation::validation_messages::{ErrorMessage, ErrorsWrapper, IValidationMessages, ValidationMessagesTrait};
+use shared::validation::validation_messages::{
+    ErrorMessage, ErrorsWrapper, IValidationMessages, ValidationMessagesTrait,
+};
 use std::rc::Rc;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
@@ -85,7 +87,7 @@ impl Component for RegistrationForm {
                     Ok(email) => {
                         self.user.username = email;
                         self.username_error = None
-                    },
+                    }
                     Err(e) => self.username_error = ErrorMessage::from(e).into(),
                 }
             }

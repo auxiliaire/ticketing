@@ -1,4 +1,4 @@
-use entity::users::self;
+use entity::users;
 use sea_orm::{ActiveModelTrait, Database, DbConn, DbErr, Set};
 use shared::validation::user_validation::{OptionUserRole, UserRole::Developer};
 
