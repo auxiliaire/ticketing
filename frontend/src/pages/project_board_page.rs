@@ -159,7 +159,7 @@ impl Component for ProjectBoardPage {
                     ProjectService::assign_tickets(
                         token.to_string(),
                         ctx.props().id,
-                        tickets.iter().collect::<Vec<u64>>(),
+                        tickets.iter().cloned().collect::<Vec<u64>>(),
                         callback,
                     );
                 }
@@ -401,7 +401,9 @@ impl ProjectBoardPage {
                 }
             },
         );
-        html! { for tickets }
+        html! { for ticket in tickets {
+            { ticket }
+        } }
     }
 
     fn drop_callback(ctx: &Context<Self>, column: TicketStatus) -> Callback<DragEvent> {

@@ -69,7 +69,9 @@ impl Component for Authenticator {
         match route_option.clone() {
             Some(route) => {
                 if RouteSelector::is_public(route) || self.app_state.identity.is_some() {
-                    html! { for ctx.props().children.iter() }
+                    html! { for child in ctx.props().children.iter() {
+                        { child }
+                    } }
                 } else {
                     AppState::update_referer(&self.app_state, route_option);
                     let navigator = ctx.link().navigator().unwrap();
