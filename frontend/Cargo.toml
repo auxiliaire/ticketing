@@ -23,7 +23,7 @@ serde-email = { version = "3.2", features = ["sea-orm"] }
 shared = { path = "../shared" }
 strum = { version = "0.28", features = ["derive"] }
 uuid = { version = "1.13", features = ["v4", "js"] }
-wasm-bindgen = { version = "0.2.106" }
+wasm-bindgen = { version = "0.2.127" }
 wasm-logger = "0.2"
 web-time = "1.0"
 yew-router = "0.20"
