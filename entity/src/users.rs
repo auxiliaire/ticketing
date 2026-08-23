@@ -45,7 +45,7 @@ impl From<Email> for Email2 {
 
 impl From<Email2> for Email {
     fn from(val: Email2) -> Self {
-        Email::from_string(val.0).unwrap_or_default()
+        Email::new(val.0).unwrap_or_default()
     }
 }
 
