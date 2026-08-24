@@ -44,6 +44,7 @@ tempfile = "3.8"
 thiserror = "2.0"
 tokio = { version = "1.53", features = ["full"] }
 tower-http = { version = "0.7", features = ["cors"] }
+# Must be kept at 0.14 for now because of Axum internal reference:
 tower-sessions = { version = "0.14", features = ["memory-store"] }
 tower = "0.5"
 tracing = "0.1"
