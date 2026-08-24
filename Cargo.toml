@@ -25,7 +25,7 @@ tokio = { version = "1.53", features = ["full"] }
 [dev-dependencies]
 cucumber = "0.23"
 playwright-rs = "0.16"
-reqwest = "0.12"
+reqwest = "0.13"
 thirtyfour = "0.36"
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "time"] }
 
