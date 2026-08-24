@@ -9,7 +9,6 @@ name = "entity"
 path = "src/lib.rs"
 
 [dependencies]
-axum-login = "0.18"
 sea-orm = { version = "2.0" }
 serde-email = { version = "4.0", features = ["sea-orm"] }
 strum = "0.28"

@@ -270,8 +270,8 @@ async fn generate_token_using_auth(
         .into());
     };
 
-    let token = encode_jwt(user.public_id)
+    let token = encode_jwt(user.model.public_id)
         .map_err(|status| ApiError::new(status, String::from("Token creation error")))?;
 
-    Ok((user, token))
+    Ok((user.model, token))
 }

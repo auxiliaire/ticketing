@@ -8,6 +8,9 @@ publish = false
 name = "frontend"
 path = "src/lib.rs"
 
+# Might be needed for `cargo tree` etc.:
+# [workspace]
+
 [dependencies]
 base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
