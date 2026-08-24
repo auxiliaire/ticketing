@@ -108,7 +108,7 @@ impl TicketService {
                             match returned_ticket_result {
                                 Ok(returned_ticket) => callback.emit(returned_ticket),
                                 Err(e) => {
-                                    log::debug!("Serde result error: {}", e.to_string());
+                                    log::debug!("Serde result error: {}", e);
                                     let returned_error_result: Result<ErrorResponse, _> =
                                         serde_json::from_str(text.as_str());
                                     match returned_error_result {
@@ -160,7 +160,7 @@ impl TicketService {
                             match returned_ticket_result {
                                 Ok(returned_ticket) => callback.emit(returned_ticket),
                                 Err(e) => {
-                                    log::debug!("Serde result error: {}", e.to_string());
+                                    log::debug!("Serde result error: {}", e);
                                     let returned_error_result: Result<ErrorResponse, _> =
                                         serde_json::from_str(text.as_str());
                                     match returned_error_result {

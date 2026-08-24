@@ -1,5 +1,5 @@
 use crate::api::{
-    error::ApiError,
+    error::{ApiError, BoxError},
     tasks::queue_mailer::{PROJECT_SUBSCRIBER_SET, TICKET_SUBSCRIBER_SET},
 };
 use axum::{
@@ -33,7 +33,7 @@ pub struct PreferencesQueryResult {
 async fn get_preferences(
     db: Extension<DatabaseConnection>,
     request_user: Extension<users::Model>,
-) -> Result<Json<PreferencesDto>, ApiError> {
+) -> Result<Json<PreferencesDto>, BoxError<ApiError>> {
     Preferences::find()
         .select_only()
         .column(preferences::Column::Values)
@@ -42,10 +42,7 @@ async fn get_preferences(
         .one(&*db)
         .await?
         .map_or(
-            Err(ApiError::new(
-                StatusCode::NOT_FOUND,
-                String::from("Not found"),
-            )),
+            Err(ApiError::new(StatusCode::NOT_FOUND, String::from("Not found")).into()),
             |preferences| Ok(Json(preferences.values)),
         )
 }
@@ -55,7 +52,7 @@ async fn set_preferences(
     db: Extension<DatabaseConnection>,
     request_user: Extension<users::Model>,
     WithRejection(Json(update), _): WithRejection<Json<PreferencesDto>, ApiError>,
-) -> Result<Json<PreferencesDto>, ApiError> {
+) -> Result<Json<PreferencesDto>, BoxError<ApiError>> {
     let values = serde_json::to_string(&update)
         .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, e.to_string()))?;
     match Preferences::find()
@@ -82,7 +79,7 @@ async fn set_preferences(
             .await?;
         }
     }
-    update_subscriptions(store, update.clone(), request_user.username.clone());
+    update_subscriptions(store, update.clone(), request_user.username.clone().into());
 
     Ok(Json(update))
 }

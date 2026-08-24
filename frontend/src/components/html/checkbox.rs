@@ -13,7 +13,7 @@ pub struct Props {
     pub error_classes: AttrValue,
 }
 
-#[function_component(Checkbox)]
+#[component(Checkbox)]
 pub fn checkbox(props: &Props) -> Html {
     let Props {
         checked,

@@ -18,7 +18,7 @@ pub struct Props {
     pub error_classes: AttrValue,
 }
 
-#[function_component(DateInput)]
+#[component(DateInput)]
 pub fn text_input(props: &Props) -> Html {
     let Props {
         value,

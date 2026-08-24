@@ -345,7 +345,8 @@ impl TicketForm {
     }
 
     fn soft_body(&self, ctx: &Context<Self>) -> Html {
-        let users = self.user_list.iter().map(|t| {
+        let user_list = self.user_list.iter().cloned();
+        let users = user_list.map(|t| {
             let select_user = ctx.link().callback(TicketMsg::UpdateUserId);
             let name = t.1.clone();
             html! {
@@ -462,7 +463,8 @@ impl TicketForm {
     }
 
     fn hard_body(&self, ctx: &Context<Self>) -> Html {
-        let users = self.user_list.iter().map(|t| {
+        let user_list = self.user_list.iter().cloned();
+        let users = user_list.map(|t| {
             let select_user = ctx.link().callback(TicketMsg::UpdateUserId);
             let name = t.1.clone();
             html! {

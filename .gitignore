@@ -13,3 +13,4 @@ mysqldump.sql
 dump.rdb
 secret_*.txt
 *.pid
+rustc-ice-*.txt

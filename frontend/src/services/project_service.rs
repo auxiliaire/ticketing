@@ -166,7 +166,7 @@ impl ProjectService {
                             match returned_project_result {
                                 Ok(returned_project) => callback.emit(returned_project),
                                 Err(e) => {
-                                    log::debug!("Serde result error: {}", e.to_string());
+                                    log::debug!("Serde result error: {}", e);
                                     let returned_error_result: Result<ErrorResponse, _> =
                                         serde_json::from_str(text.as_str());
                                     match returned_error_result {

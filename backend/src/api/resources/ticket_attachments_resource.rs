@@ -1,6 +1,6 @@
 use crate::api::{
     consts::{ADMIN_EMAIL, BUCKET_NAME},
-    error::ApiError,
+    error::{ApiError, BoxError},
     services::notification_service::NotificationService,
 };
 use anyhow::Context;
@@ -20,7 +20,7 @@ use http::StatusCode;
 use lettre::Message;
 use object_store::{
     aws::{AmazonS3, AmazonS3Builder},
-    ObjectStore, WriteMultipart,
+    GetOptions, ObjectStore, PutMultipartOptions, WriteMultipart,
 };
 use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use serde::{Deserialize, Serialize};
@@ -49,7 +49,7 @@ pub async fn upload_file(
     Extension(notification_service): Extension<NotificationService>,
     WithRejection(Path(ticket_id), _): WithRejection<Path<u64>, ApiError>,
     TypedMultipart(UploadForm { file }): TypedMultipart<UploadForm>,
-) -> Result<Json<UploadResponse>, ApiError> {
+) -> Result<Json<UploadResponse>, BoxError<ApiError>> {
     let file_name = file.metadata.file_name.unwrap_or(String::from("data.bin"));
     let path = path::Path::new("/tmp").join(file_name.clone());
 
@@ -65,9 +65,10 @@ pub async fn upload_file(
                 let raw_path = format!("tickets/{}/attachments/{}", ticket_id, file_name);
                 let obj_path = object_store::path::Path::from(raw_path.clone());
                 let bytes = tokio::fs::read(path.clone()).await.unwrap();
+                let opts = PutMultipartOptions::default();
 
                 let upload = bucket
-                    .put_multipart(&obj_path)
+                    .put_multipart_opts(&obj_path, opts)
                     .await
                     .context("Multipart upload failed")
                     .unwrap();
@@ -102,17 +103,14 @@ pub async fn upload_file(
             });
             Ok(Json(UploadResponse {}))
         }
-        Err(e) => Err(ApiError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            e.to_string(),
-        )),
+        Err(e) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into()),
     }
 }
 
 #[axum::debug_handler]
 pub async fn download_file(
     WithRejection(Path((ticket_id, file_name)), _): WithRejection<Path<(u64, String)>, ApiError>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> Result<impl IntoResponse, BoxError<ApiError>> {
     let bucket: AmazonS3 = AmazonS3Builder::from_env()
         .with_bucket_name(BUCKET_NAME.clone())
         .build()
@@ -120,9 +118,10 @@ pub async fn download_file(
         .unwrap();
     let raw_path = format!("tickets/{}/attachments/{}", ticket_id, file_name);
     let obj_path = object_store::path::Path::from(raw_path.clone());
+    let opts = GetOptions::default();
 
     let stream = bucket
-        .get(&obj_path)
+        .get_opts(&obj_path, opts)
         .await
         .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .into_stream();

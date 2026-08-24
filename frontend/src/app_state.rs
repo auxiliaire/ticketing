@@ -5,8 +5,7 @@ use shared::dtos::{
 };
 use std::rc::Rc;
 use yew::{
-    function_component, html, use_reducer, ContextProvider, Html, Properties, Reducible,
-    UseReducerHandle,
+    component, html, use_reducer, ContextProvider, Html, Properties, Reducible, UseReducerHandle,
 };
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -147,7 +146,7 @@ pub struct AppStateProviderProps {
     pub children: Html,
 }
 
-#[function_component]
+#[component]
 pub fn AppStateProvider(props: &AppStateProviderProps) -> Html {
     let context = use_reducer(AppState::default);
 

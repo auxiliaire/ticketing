@@ -1,6 +1,6 @@
 [package]
 name = "frontend"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 publish = false
 
@@ -8,28 +8,31 @@ publish = false
 name = "frontend"
 path = "src/lib.rs"
 
+# Might be needed for `cargo tree` etc.:
+# [workspace]
+
 [dependencies]
-base64 = "0.22"
+base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
 entity = { path = "../entity" }
-gloo-net = "0.6"
-gloo-timers = "0.3"
-gloo-utils = "0.2"
-implicit-clone = "0.4"
+gloo-net = "0.7"
+gloo-timers = "0.4"
+gloo-utils = "0.3"
+implicit-clone = "0.6"
 log = "0.4"
 serde_json = "1.0"
 serde_valid = "2.0"
-serde-email = { version = "3.1", features = ["sea-orm"] }
+serde-email = { version = "4.0", features = ["sea-orm"] }
 shared = { path = "../shared" }
-strum = { version = "0.27", features = ["derive"] }
-uuid = { version = "1.13", features = ["v4", "js"] }
-wasm-bindgen = { version = "0.2.106" }
+strum = { version = "0.28", features = ["derive"] }
+uuid = { version = "1.25", features = ["v4", "js"] }
+wasm-bindgen = { version = "0.2.127" }
 wasm-logger = "0.2"
 web-time = "1.0"
-yew-router = "0.18"
+yew-router = "0.20"
 
 [dependencies.yew]
-version = "0.21"
+version = "0.23"
 features = ["csr"]
 
 [dependencies.web-sys]
@@ -56,5 +59,5 @@ features = [
 ]
 
 [dev-dependencies]
-gloo-utils = "0.2"
+gloo-utils = "0.3"
 wasm-bindgen-test = "0.3"

@@ -6,7 +6,7 @@ use crate::helpers::storage_helper::store_in_storage;
 use base64::{engine, Engine};
 use gloo_net::http::Request;
 use shared::api::auth::Claims;
-use shared::api::error::error_response::ErrorResponse;
+use shared::api::error::error_response::{BoxErrorResponse, ErrorResponse};
 use shared::dtos::identity::Identity;
 use shared::dtos::login_dto::LoginDto;
 use uuid::Uuid;
@@ -52,7 +52,7 @@ impl AuthService {
                                 serde_json::from_str(token_or_error.clone().as_ref());
                             match err_result {
                                 Ok(err) => {
-                                    let message = String::from(err.message.clone());
+                                    let message = err.message.clone();
                                     callback_error.emit(err);
                                     Err(message)
                                 }
@@ -135,7 +135,7 @@ pub async fn fetch_jwt_async(refresh_token: String) -> Result<Identity, String> 
     }
 }
 
-async fn try_authenticate_async(app_state: &AppStateContext) -> Result<String, ErrorResponse> {
+async fn try_authenticate_async(app_state: &AppStateContext) -> Result<String, BoxErrorResponse> {
     if app_state
         .identity
         .as_ref()
@@ -148,9 +148,9 @@ async fn try_authenticate_async(app_state: &AppStateContext) -> Result<String, E
     let refresh_token = match storage.get(REFRESH_TOKEN_KEY) {
         Ok(Some(t)) => t,
         _ => {
-            return Err(ErrorResponse::from(String::from(
-                "Could not retrieve refresh token",
-            )));
+            return Err(
+                ErrorResponse::from(String::from("Could not retrieve refresh token")).into(),
+            );
         }
     };
 
@@ -182,11 +182,11 @@ async fn try_authenticate_async(app_state: &AppStateContext) -> Result<String, E
                 Err(e) => {
                     let storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
                     storage.delete(REFRESH_TOKEN_KEY).unwrap_or_default();
-                    Err(ErrorResponse::from(e.to_string()))
+                    Err(ErrorResponse::from(e.to_string()).into())
                 }
             }
         }
-        Err(e) => Err(ErrorResponse::from(e.to_string())),
+        Err(e) => Err(ErrorResponse::from(e.to_string()).into()),
     }
 }
 

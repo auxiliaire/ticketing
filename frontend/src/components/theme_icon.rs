@@ -1,4 +1,4 @@
-use yew::{classes, function_component, html, Html, Properties};
+use yew::{classes, component, html, Html, Properties};
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -6,7 +6,7 @@ pub struct Props {
     pub dark: bool,
 }
 
-#[function_component]
+#[component]
 pub fn ThemeIcon(props: &Props) -> Html {
     let icon_class = match props.dark {
         true => "fa-regular fa-sun",

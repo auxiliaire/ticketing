@@ -1,7 +1,7 @@
 use entity::sea_orm_active_enums::Priority;
 use shared::validation::ticket_validation::TicketPriority;
 use std::rc::Rc;
-use yew::{classes, function_component, html, Html, Properties};
+use yew::{classes, component, html, Html, Properties};
 
 type TagPriority = Rc<TicketPriority>;
 
@@ -10,7 +10,7 @@ pub struct Props {
     pub priority: TagPriority,
 }
 
-#[function_component(PriorityTag)]
+#[component(PriorityTag)]
 pub fn priority_tag(props: &Props) -> Html {
     let priority_class = match props.priority.0 {
         Priority::Low => "is-info",

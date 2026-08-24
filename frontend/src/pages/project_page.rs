@@ -149,7 +149,7 @@ impl Component for ProjectPage {
                     ProjectService::assign_tickets(
                         token.to_string(),
                         ctx.props().id,
-                        tickets.iter().collect::<Vec<u64>>(),
+                        tickets.iter().cloned().collect::<Vec<u64>>(),
                         callback,
                     );
                 }

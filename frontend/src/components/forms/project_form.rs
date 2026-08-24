@@ -124,7 +124,7 @@ impl Component for ProjectForm {
                                 .unwrap(),
                         );
                     }
-                    Err(e) => log::debug!("Parse failed with '{}'", e.to_string()),
+                    Err(e) => log::debug!("Parse failed with '{}'", e),
                 }
             }
             ProjectMsg::UpdateOwner(value) => {
@@ -140,7 +140,7 @@ impl Component for ProjectForm {
                         self.project.user_id = uuid;
                     }
                     Err(e) => {
-                        log::error!("Uuid parse error: '{}'", e.to_string());
+                        log::error!("Uuid parse error: '{}'", e);
                     }
                 }
                 self.user_search = name;
@@ -228,7 +228,8 @@ impl Component for ProjectForm {
         let on_cancel_pressed = |_: MouseEvent| ProjectMsg::Cancel();
         let on_submit_pressed = |_: MouseEvent| ProjectMsg::Submit();
 
-        let users = self.user_list.iter().map(|t| {
+        let user_list = self.user_list.iter().cloned();
+        let users = user_list.map(|t| {
             let select_user = ctx.link().callback(ProjectMsg::UpdateUserId);
             let name = t.1.clone();
             html! {

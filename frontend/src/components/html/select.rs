@@ -19,7 +19,7 @@ pub struct Props {
     pub error_classes: AttrValue,
 }
 
-#[function_component(Select)]
+#[component(Select)]
 pub fn select(props: &Props) -> Html {
     let Props {
         value,
@@ -47,7 +47,7 @@ pub fn select(props: &Props) -> Html {
                 }
                 {
                     options.iter().map(|option| {
-                        html!{<option selected={value == option}>{ option }</option>}
+                        html!{<option selected={value.eq(option)}>{ option }</option>}
                     }).collect::<Html>()
                 }
             </select>
