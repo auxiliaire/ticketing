@@ -763,7 +763,7 @@ dependencies = [
 
 [[package]]
 name = "backend"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "askama",
@@ -1808,7 +1808,7 @@ dependencies = [
 
 [[package]]
 name = "entity"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "axum-login",
  "sea-orm",
@@ -2043,7 +2043,7 @@ dependencies = [
 
 [[package]]
 name = "frontend"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64 0.23.1",
  "chrono",
@@ -5259,7 +5259,7 @@ dependencies = [
 
 [[package]]
 name = "shared"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "chrono",
  "entity",
@@ -6111,7 +6111,7 @@ dependencies = [
 
 [[package]]
 name = "ticketing"
-version = "0.1.0"
+version = "0.2.1"
 dependencies = [
  "backend",
  "cucumber",
